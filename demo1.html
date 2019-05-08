@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
-    <title>bantam Demo</title>
+    <title>GridChip Demo</title>
 
     <style>
         body {
@@ -12,15 +12,14 @@
 </head>
 <body>
 
-<h1>bantam Demo</h1>
+<h1>One Simple Grid</h1>
 
 <p>
     You can change row count via location hash.
 </p>
 
 <div>
-    <bantam-grid id="mybantam1" style="display:inline-block;height:400px;"></bantam-grid>
-    <bantam-grid id="mybantam2" style="display:inline-block;height:400px;"></bantam-grid>
+    <grid-chip id="mybantam1" style="display:inline-block;height:400px;"></grid-chip>
 </div>
 
 <script type="module">
@@ -51,7 +50,6 @@
         }
 
         document.getElementById('mybantam1').resetFromMatrix(schemas, simulateData());
-        document.getElementById('mybantam2').resetFromMatrix(schemas, simulateData());
     }
 
     /**

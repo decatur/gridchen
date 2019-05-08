@@ -5,23 +5,25 @@ declare module Bantam {
     }
 
     export interface ISchema {
-        type: string,
-        title: string,
-        width: number,
-        fractionDigits?: number,
-        sort?: number
+        type: string;
+        title: string;
+        width: number;
+        fractionDigits?: number;
+        sort?: number;
+        parse?: (a: string) => (number | Date | string | boolean);
+        format?: (a: (number | Date | string | boolean)) => string;
     }
 
     export interface IPosition {
-        rowIndex: number,
-        colIndex: number
+        rowIndex: number;
+        colIndex: number;
     }
 
     /**
      * Right open interval.
      */
     export interface IInterval {
-        min: number
-        sup: number
+        min: number;
+        sup: number;
     }
 }

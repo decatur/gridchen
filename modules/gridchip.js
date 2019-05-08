@@ -10,8 +10,11 @@ import {deFormat, formatNumber, parseNumber, parseDate} from "./chronos.js"
 let logCounter = 0;
 const console = {
     assert: window.console.assert,
-    log: function (arg) {
-        window.console.log(logCounter++ + ': ' + arg);
+    log: function (a, b) {
+        window.console.log(logCounter++ + ': ' + a, b);
+    },
+    error: function (a, b) {
+        window.console.error(logCounter++ + ': ' + a, b);
     }
 };
 
@@ -66,7 +69,7 @@ function intersectInterval(i1, i2) {
     return {min, sup};
 }
 
-class BantamGrid extends HTMLElement {
+class GridChip extends HTMLElement {
     constructor() {
         super();
     }
@@ -100,7 +103,7 @@ class BantamGrid extends HTMLElement {
     }
 }
 
-customElements.define('bantam-grid', BantamGrid);
+customElements.define('grid-chip', GridChip);
 
 const minFreq = 1000 * 60;
 
@@ -225,7 +228,6 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
     style.height = rowHeight + 'px';
     style.textAlign = 'center';
     style.fontWeight = 'bold';
-    // headerRow.style.border = '1px solid black';
     container.appendChild(headerRow);
 
     let total = 0;
@@ -259,7 +261,19 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
                 maximumFractionDigits: fractionDigits
             });
             schema.format = (value) => formatNumber(value, nf);
+            schema.parse = (value) => parseNumber(value);
+        } else if (schema.type === 'date') {
+            schema.format = (value) => deFormat(/** @type {Date} */ value, minFreq);
+            schema.parse = (value) => parseDate(value);
+        } else if (schema.type === 'boolean') {
+            schema.format = (value) => String(value);
+            schema.parse = (value) => Boolean(value);
+        } else {
+            // string and others
+            schema.format = (value) => String(value);
+            schema.parse = (value) => value;
         }
+
     });
 
     let totalWidth = columnEnds[columnEnds.length - 1] + 20 + 20;
@@ -328,8 +342,11 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         if (!rr) return;
         for (let row = rr.row.min; row < rr.row.sup; row++) {
             for (let col = rr.col.min; col < rr.col.sup; col++) {
-                const style = spanMatrix[row][col].style;
-                if (backgroundColor === undefined) {
+                const span = spanMatrix[row][col];
+                const style = span.style;
+                if (spanMatrix[row][col] == activeCell.span) {
+                    // Do not change color of active cell.
+                } else if (backgroundColor === undefined) {
                     style.removeProperty('background-color');
                 } else {
                     style.backgroundColor = backgroundColor;
@@ -339,6 +356,12 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
     }
 
     cellParent.onmousedown = function (evt) {
+        if (evt.shiftKey) {
+            // This is a selection expand action and will be handled by onclick.
+            // TODO: MSE does this onmousedown.
+            return;
+        }
+
         console.log('onmousedown');
         const rect = cellParent.getBoundingClientRect();
 
@@ -356,11 +379,6 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             return {rowIndex: grid_y + firstRow, colIndex: grid_x}
         }
 
-        if (evt.shiftKey && selection) {
-            //let {colIndex, rowIndex} = index(evt);
-            //selection.currentRow(rowIndex, colIndex);
-        }
-        //selection = Selection();
         let {rowIndex, colIndex} = index(evt);
         activateCell(evt, rowIndex - activeCell.row, colIndex - activeCell.col);
 
@@ -395,7 +413,10 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         console.log(evt);
         // TODO: This is not MSE behaviour. MSE only scrolls and does not move the active cell.
         // TODO: Use evt.deltaMode
-        setFirstRow(firstRow + 3 * Math.sign(-evt.wheelDeltaY), 0);
+        let newFrirstRow = firstRow + 3 * Math.sign(-evt.wheelDeltaY);
+        if (newFrirstRow >= 0) {
+            setFirstRow(newFrirstRow, 0);
+        }
     };
 
     cellParent.onkeydown = function (evt) {
@@ -429,7 +450,12 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         } else if (evt.code === 'KeyC' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation(); // Prevent text is copied from container.
-            navigator.clipboard.writeText(dataSource.toClipboard(selection))
+            // TODO: Always provide a selection?
+            const rect = selection || new Rectangle(
+                {min: activeCell.row, sup: activeCell.row + 1},
+                {min: activeCell.col, sup: activeCell.col + 1}
+            );
+            navigator.clipboard.writeText(dataSource.toClipboard(rect))
                 .then(() => {
                     console.log('Text copied to clipboard');
                 })
@@ -490,7 +516,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             activeCell.input.blur();
         }
 
-        if (activeCell.span) activeCell.span.style.border = '1px solid black';
+        if (activeCell.span) activeCell.span.style.removeProperty('background-color');
 
         // Note that HTMLSpanElement is not focusable.
         let rowIndex = Math.min(rowCount - 1, Math.max(0, activeCell.row + rowOffset));
@@ -536,7 +562,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         // TODO: activeCell may be undefined.
         const offsetTop = activeCell.span.offsetTop;
 
-        activeCell.span.style.border = '2px solid black';
+        activeCell.span.style.backgroundColor = 'mistyrose';
         deleteRowButton.style.top = offsetTop + 'px';
         deleteRowButton.style.display = 'inline-block';
         insertRowButton.style.top = (offsetTop - 20) + 'px';
@@ -544,7 +570,8 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
     }
 
     /** @type {Selection} */
-    let selection = undefined;
+    let selection = new Selection();
+    selection = undefined;
 
     body.appendChild(cellParent);
 
@@ -564,14 +591,15 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             activeCell.input.style.display = 'none';
             activeCell.span.style.display = 'inline-block';
             cellParent.focus();
-            let value = activeCell.input.value;
+            let value = activeCell.input.value.trim();
             activeCell.input.value = '';
-            activeCell.span.textContent = value;
+            // activeCell.span.textContent = value;
             const type = schemas[colIndex].type;
-            if (type === 'number') {
-                value = parseNumber(value)
-            } else if (type === 'date') {
-                value = parseDate(value)
+            // TODO: Make sure pasting does the same.
+            if (value === '') {
+                value = undefined;
+            } else {
+                value = schemas[colIndex].parse(value)
             }
             viewModel.onCellChange(rowIndex, colIndex, value);
         }
@@ -704,12 +732,9 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
                     let input = inputRow[colIndex];
                     let value = (row ? row[colIndex] : undefined);
                     if (value === undefined) {
-                        value = ''
-                    } else if (type === 'number') {
+                        value = '';
+                    } else {
                         value = schemas[colIndex].format(value);
-                    } else if (type === 'date') {
-                        // TODO: Choose appropriate frequency
-                        value = deFormat(value, minFreq)
                     }
                     input.textContent = value;
                 }

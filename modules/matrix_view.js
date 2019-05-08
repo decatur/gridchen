@@ -100,13 +100,7 @@ export function createSimpleControler(schemas, data) {
                 let endColIndex = colIndex + matrix[0].length;
                 for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
                     let value = matrix[i][j];
-                    let type = schemas[colIndex].type;
-                    if (type === 'number') {
-                        value = parseNumber(value);
-                    } else if (type === 'date') {
-                        value = parseDate(value);
-                    }
-                    row[colIndex] = value;
+                    row[colIndex] = schemas[colIndex].parse(value);
                 }
             }
 

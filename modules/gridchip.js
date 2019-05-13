@@ -1,11 +1,12 @@
 /**
  * Author: Wolfgang Kühn 2019
+ * https://github.com/decatur/GridChip
  *
  * See README.md
  */
 
 import {createSimpleControler} from "./matrix_view.js"
-import {deFormat, formatNumber, parseNumber, parseDate} from "./chronos.js"
+import {DateTimeStringConverter, NumberStringConverter} from "./chronos.js"
 
 let logCounter = 0;
 const console = {
@@ -105,8 +106,6 @@ class GridChip extends HTMLElement {
 
 customElements.define('grid-chip', GridChip);
 
-const minFreq = 1000 * 60;
-
 class Slider {
 
     /**
@@ -129,6 +128,8 @@ class Slider {
         this.element.min = 0;
 
         container.parentElement.appendChild(this.element);
+        // When this.element gains focus, container.parentElement.parentElement will loose is, so re-focus.
+        //this.element.onfocus = () => container.parentElement.parentElement.focus();
         this.element.oninput = () => {
             console.log('slider oninput');
             this.handler(Math.round(this.element.max - this.element.value));
@@ -159,23 +160,28 @@ class Selection extends Rectangle {
         this.repainter = repainter
     }
 
+    /**
+     * TODO: remove
+     */
     unselect() {
         console.log('unselect');
-        this.repaint();
+        this.hide();
     }
 
     /**
-     * TODO: Remove this method.
-     * @param {string?} color
      */
-    repaint(color) {
-        this.repainter(color, this);
+    show() {
+        this.repainter('LightBlue', this);
+    }
+
+    hide() {
+        this.repainter(undefined, this);
     }
 
     expand(rowIndex, colIndex) {
         console.log('expand');
         if (this.initial) {
-            this.repaint();
+            this.hide();
         } else {
             this.initial = {rowIndex: rowIndex, colIndex: colIndex};
         }
@@ -190,7 +196,7 @@ class Selection extends Rectangle {
             sup: 1 + Math.max(this.initial.colIndex, colIndex)
         };
 
-        this.repaint('LightBlue');
+        this.show();
     }
 }
 
@@ -260,18 +266,22 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
                 minimumFractionDigits: fractionDigits,
                 maximumFractionDigits: fractionDigits
             });
-            schema.format = (value) => formatNumber(value, nf);
-            schema.parse = (value) => parseNumber(value);
+            schema.converter = new NumberStringConverter(nf);
+        } else if (schema.type === 'datetime') {
+            schema.converter = new DateTimeStringConverter(schema.frequency || 'T1M');
         } else if (schema.type === 'date') {
-            schema.format = (value) => deFormat(/** @type {Date} */ value, minFreq);
-            schema.parse = (value) => parseDate(value);
+            schema.converter = new DateTimeStringConverter();
         } else if (schema.type === 'boolean') {
-            schema.format = (value) => String(value);
-            schema.parse = (value) => Boolean(value);
+            schema.converter = {
+                toString: (value) => String(value),
+                fromString: (value) => Boolean(value)
+            };
         } else {
             // string and others
-            schema.format = (value) => String(value);
-            schema.parse = (value) => value;
+            schema.converter = {
+                toString: (value) => String(value),
+                fromString: (value) => value
+            };
         }
 
     });
@@ -321,7 +331,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
     cellParent.style.width = columnEnds[columnEnds.length - 1] + 'px';
     cellParent.style.height = viewPortHeight + 'px';
     cellParent.style.marginLeft = '20px';
-    cellParent.tabIndex = 0;
+    container.tabIndex = 0;
 
     const input = /** @type{HTMLInputElement} */ document.createElement('input');
     input.style.position = 'absolute';
@@ -329,7 +339,29 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
     input.style.height = innerHeight + 'px';
     input.style.padding = cellPadding + 'px';
     /** @type {{span?:{HTMLSpanElement}, input:{HTMLInputElement}, row:number, col:number, mode:string}} */
-    let activeCell = {input: input, row: 0, col: 0, mode: 'active'};
+    let activeCell = {
+        span: undefined, input: input, row: 0, col: 0, mode: 'active',
+        hide: function() {
+            if (this.span) this.span.style.removeProperty('background-color');
+        },
+        show: function() {
+            if (this.span) this.span.style.backgroundColor = 'mistyrose';
+        },
+        move: function(rowIndex, colIndex) {
+            this.hide();
+            const targetRow = rowIndex - firstRow;
+            if (targetRow < 0 || targetRow >= viewPortRowCount) return;
+            this.span = spanMatrix[rowIndex - firstRow][colIndex];
+            this.col = colIndex;
+            this.row = rowIndex;
+            const offsetTop = this.span.offsetTop;
+            this.show();
+            deleteRowButton.style.top = offsetTop + 'px';
+            deleteRowButton.style.display = 'inline-block';
+            insertRowButton.style.top = (offsetTop - 20) + 'px';
+            insertRowButton.style.display = 'inline-block';
+        }
+    };
 
     /**
      *
@@ -356,13 +388,20 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
     }
 
     cellParent.onmousedown = function (evt) {
+        console.log('onmousedown');
+        // But we do not want it to propagate as we want to avoid side effects.
+        evt.stopPropagation();
+        // The evt default is (A) to focus container element, and (B) start selecting text.
+        // We want (A), but not (B), so we prevent defaults and focus explicitly.
+        evt.preventDefault();
+        container.focus();
+
         if (evt.shiftKey) {
             // This is a selection expand action and will be handled by onclick.
             // TODO: MSE does this onmousedown.
             return;
         }
 
-        console.log('onmousedown');
         const rect = cellParent.getBoundingClientRect();
 
         function index(evt) {
@@ -380,7 +419,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         }
 
         let {rowIndex, colIndex} = index(evt);
-        activateCell(evt, rowIndex - activeCell.row, colIndex - activeCell.col);
+        navigateCell(evt, rowIndex - activeCell.row, colIndex - activeCell.col);
 
         function resetHandlers() {
             cellParent.onmousemove = cellParent.onmouseup = cellParent.onmouseleave = undefined;
@@ -419,25 +458,53 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         }
     };
 
-    cellParent.onkeydown = function (evt) {
+    container.onblur = function(evt) {
+        console.log('container.onblur: ' + evt);
+        if (evt.relatedTarget == null) {
+            activeCell.hide();
+            if (selection) selection.hide();
+        } else {
+            //container.focus();
+        }
+    };
+
+    container.onfocus = function(evt) {
+        console.log('container.onfocus: ' + evt);
+        activeCell.show();
+        if (selection) selection.show();
+    };
+
+    container.onkeydown = function (evt) {
         console.log(evt);
-        if (activeCell.mode === 'edit') return;
+        if (activeCell.mode === 'edit') throw Error();
         // Note 1: All handlers call both preventDefault() and stopPropagation().
         //         The reason is documented in the handler code.
         // Note 2: For responsiveness, make sure this code is executed fast.
 
         if (evt.code === 'ArrowLeft' || (evt.code === "Tab" && evt.shiftKey)) {
-            activateCell(evt, 0, -1);
+            evt.preventDefault();
+            evt.stopPropagation();
+            navigateCell(evt, 0, -1);
         } else if (evt.code === 'ArrowRight' || evt.code === 'Tab') {
-            activateCell(evt, 0, 1);
+            evt.preventDefault();
+            evt.stopPropagation();
+            navigateCell(evt, 0, 1);
         } else if (evt.code === "ArrowUp" || (evt.code === "Enter" && evt.shiftKey)) {
-            activateCell(evt, -1, 0);
+            evt.preventDefault();
+            evt.stopPropagation();
+            navigateCell(evt, -1, 0);
         } else if (evt.code === 'ArrowDown' || evt.code === 'Enter') {
-            activateCell(evt, 1, 0);
+            evt.preventDefault();
+            evt.stopPropagation();
+            navigateCell(evt, 1, 0);
         } else if (evt.code === 'PageUp') {
-            activateCell(evt, -pageIncrement, 0);
+            evt.preventDefault();
+            evt.stopPropagation();
+            navigateCell(evt, -pageIncrement, 0);
         } else if (evt.code === 'PageDown') {
-            activateCell(evt, pageIncrement, 0);
+            evt.preventDefault();
+            evt.stopPropagation();
+            navigateCell(evt, pageIncrement, 0);
         } else if (evt.code === 'KeyA' && evt.ctrlKey) {
             // Like MS-Excel selects all non-empty cells, in our case the complete grid.
             // This is reverted on the next onblur event.
@@ -481,18 +548,18 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             // Leave edit mode.
             evt.preventDefault();
             evt.stopPropagation();
-            activeCell.mode = 'active';
+            activeCell.input.blur();
         } else if (evt.code === 'Delete') {
             evt.preventDefault();
             evt.stopPropagation();
             if (selection) {
                 let emptyRow = Array(selection.col.sup - selection.col.min);
-                emptyRow.fill('');
+                emptyRow.fill(undefined);
                 let emptyMatrix = Array(selection.row.sup - selection.row.min);
                 emptyMatrix.fill(emptyRow);
                 viewModel.onPaste(selection.row.min, selection.col.min, emptyMatrix);
             } else {
-                viewModel.onPaste(activeCell.row, activeCell.col, [['']]);
+                viewModel.onPaste(activeCell.row, activeCell.col, [[undefined]]);
             }
         } else if (evt.keyCode >= 32) {
             // focus on input element, which will then receive this keyboard event.
@@ -508,17 +575,11 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         }
     };
 
-    function activateCell(evt, rowOffset, colOffset) {
-        evt.preventDefault();  // Prevents moving the caret on the target input field
-        evt.stopPropagation();
-
+    function navigateCell(evt, rowOffset, colOffset) {
         if (activeCell.mode === 'input' || activeCell.mode === 'edit') {
             activeCell.input.blur();
         }
 
-        if (activeCell.span) activeCell.span.style.removeProperty('background-color');
-
-        // Note that HTMLSpanElement is not focusable.
         let rowIndex = Math.min(rowCount - 1, Math.max(0, activeCell.row + rowOffset));
         rowIndex = activeCell.row + rowOffset;
         let colIndex = Math.min(colCount - 1, Math.max(0, activeCell.col + colOffset));
@@ -536,12 +597,13 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         console.log(`activateCell rowIndex ${rowIndex} colIndex ${colIndex}`);
         activeCell.input.blur();
 
-        if (rowIndex - firstRow < 0 || rowIndex - firstRow >= viewPortRowCount) {
+        const viewRow = rowIndex - firstRow;
+
+        if (viewRow < 0 || viewRow >= viewPortRowCount) {
             // Trigger scrolling. Note that for all scrolls we do not need nor want to change the active cell.
             // Meaning that rowIndex - firstRow is invariant before and after the scroll.
             if (firstRow === 0 && rowOffset < 0) {
-                if (rowIndex - firstRow >= 0) {
-                    activeCell.span = spanMatrix[rowIndex - firstRow][colIndex];
+                if (viewRow >= 0) {
                 } else if (rowOffset === -1) {
                     rowIndex = 0;
                 } else {
@@ -549,24 +611,12 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
                 }
             } else if (firstRow + rowOffset < 0) {
                 setFirstRow(0);
-                activeCell.span = spanMatrix[rowIndex - firstRow][colIndex];
-            } else {
+            } else if (rowOffset !== 0) {
                 setFirstRow(firstRow + rowOffset);
             }
-        } else {
-            activeCell.span = spanMatrix[rowIndex - firstRow][colIndex];
         }
 
-        activeCell.col = colIndex;
-        activeCell.row = rowIndex;
-        // TODO: activeCell may be undefined.
-        const offsetTop = activeCell.span.offsetTop;
-
-        activeCell.span.style.backgroundColor = 'mistyrose';
-        deleteRowButton.style.top = offsetTop + 'px';
-        deleteRowButton.style.display = 'inline-block';
-        insertRowButton.style.top = (offsetTop - 20) + 'px';
-        insertRowButton.style.display = 'inline-block';
+        activeCell.move(rowIndex, colIndex);
     }
 
     /** @type {Selection} */
@@ -583,14 +633,13 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
 
     input.onblur = function () {
         console.log('onblur');
-        // activeCell.span.style.removeProperty('border');
+        activeCell.input.style.display = 'none';
+        activeCell.span.style.display = 'inline-block';
+        container.focus();
+
         if (activeCell.mode === 'input' || activeCell.mode === 'edit') {
             const rowIndex = activeCell.row;
             const colIndex = activeCell.col;
-            activeCell.mode = 'active';
-            activeCell.input.style.display = 'none';
-            activeCell.span.style.display = 'inline-block';
-            cellParent.focus();
             let value = activeCell.input.value.trim();
             activeCell.input.value = '';
             // activeCell.span.textContent = value;
@@ -599,25 +648,40 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             if (value === '') {
                 value = undefined;
             } else {
-                value = schemas[colIndex].parse(value)
+                value = schemas[colIndex].converter.fromString(value)
             }
             viewModel.onCellChange(rowIndex, colIndex, value);
         }
+
+        activeCell.mode = 'active';
     };
 
     input.onkeydown = function (evt) {
-        console.log(evt);
+        console.log('input.onkeydown: ' + evt);
+        // Clicking editor should invoke default: move caret. It should not delegate to containers action.
+        evt.stopPropagation();
+
         if (evt.code === 'Enter') {
             evt.preventDefault();
             evt.stopPropagation();
             input.blur();
-            activateCell(evt, 1, 0);
+            navigateCell(evt, 1, 0);
         } else if (evt.code === 'Tab') {
             evt.preventDefault();
             evt.stopPropagation();
             input.blur();
-            activateCell(evt, 0, 1);
+            navigateCell(evt, 0, 1);
+        } else if (evt.code === 'Escape') {
+            // Leave edit mode.
+            evt.preventDefault();
+            evt.stopPropagation();
+            input.blur();
         }
+    };
+
+    input.onmousedown = function(evt) {
+        // Clicking editor should invoke default: move caret. It should not delegate to containers action.
+        evt.stopPropagation();
     };
 
 
@@ -630,12 +694,13 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
 
 
     function setFirstRow(_firstRow, caller) {
+        activeCell.hide();
         if (selection) {
-            selection.repaint();
+            selection.hide();
         }
 
         firstRow = _firstRow;
-        if (firstRow + viewPortRowCount > rowCount) {
+        if (rowCount < firstRow + viewPortRowCount) {
             rowCount = firstRow + viewPortRowCount;
         }
 
@@ -649,8 +714,9 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         }
 
         dataSource.setViewportRange(firstRow, firstRow + viewPortRowCount);
+        activeCell.move(activeCell.row, activeCell.col);
         if (selection) {
-            selection.repaint('LightBlue');
+            selection.show();
         }
     }
 
@@ -689,7 +755,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
                 if (selection) {
                     selection = selection.unselect();
                 }
-                activateCell(evt, firstRow + vpRowIndex - activeCell.row, colIndex - activeCell.col);
+                navigateCell(evt, firstRow + vpRowIndex - activeCell.row, colIndex - activeCell.col);
             }
             activeCell.mode = 'active';
         };
@@ -698,7 +764,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         span.ondblclick = function (_evt) {
             console.log('ondblclick');
             const evt = /** @type {MouseEvent} */ _evt;
-            activateCell(evt, firstRow + vpRowIndex - activeCell.row, colIndex - activeCell.col);
+            navigateCell(evt, firstRow + vpRowIndex - activeCell.row, colIndex - activeCell.col);
             const style = activeCell.input.style;
             const spanStyle = activeCell.span.style;
             style.top = spanStyle.top;
@@ -734,7 +800,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
                     if (value === undefined) {
                         value = '';
                     } else {
-                        value = schemas[colIndex].format(value);
+                        value = schemas[colIndex].converter.toString(value);
                     }
                     input.textContent = value;
                 }

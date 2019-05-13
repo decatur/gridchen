@@ -1,4 +1,3 @@
-import {deFormat, formatNumber, parseDate, parseNumber} from "./chronos.js";
 
 /**
  * @param {Bantam.ISchema[]} schemas
@@ -17,11 +16,8 @@ function toXSV(schemas, selection, data, sep) {
         for (let j = 0, colIndex = selection.col.min; colIndex < selection.col.sup; colIndex++, j++) {
             let schema = schemas[colIndex];
             let value = row[colIndex];
-            let type = schema.type;
-            if (type === 'number') {
-                value = schema.format(value);
-            } else if (type === 'date') {
-                value = deFormat(value, 60 * 1000);
+            if (value !== undefined) {
+                value = schema.converter.toString(value);
             }
             tsvRows[i][j] = value;
         }
@@ -100,7 +96,8 @@ export function createSimpleControler(schemas, data) {
                 let endColIndex = colIndex + matrix[0].length;
                 for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
                     let value = matrix[i][j];
-                    row[colIndex] = schemas[colIndex].parse(value);
+                    if (value !== undefined) value = schemas[colIndex].converter.fromString(value);
+                    row[colIndex] = value;
                 }
             }
 

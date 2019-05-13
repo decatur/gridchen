@@ -6,7 +6,7 @@
  */
 
 import {createSimpleControler} from "./matrix_view.js"
-import {DateTimeStringConverter, NumberStringConverter} from "./chronos.js"
+import {DateTimeStringConverter, NumberStringConverter} from "./converter.js"
 
 let logCounter = 0;
 const console = {
@@ -460,11 +460,10 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
 
     container.onblur = function(evt) {
         console.log('container.onblur: ' + evt);
-        if (evt.relatedTarget == null) {
+        if (!container.contains(evt.relatedTarget)) {
+            // We are leaving the component.
             activeCell.hide();
             if (selection) selection.hide();
-        } else {
-            //container.focus();
         }
     };
 
@@ -548,7 +547,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             // Leave edit mode.
             evt.preventDefault();
             evt.stopPropagation();
-            activeCell.input.blur();
+            commit();
         } else if (evt.code === 'Delete') {
             evt.preventDefault();
             evt.stopPropagation();
@@ -577,7 +576,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
 
     function navigateCell(evt, rowOffset, colOffset) {
         if (activeCell.mode === 'input' || activeCell.mode === 'edit') {
-            activeCell.input.blur();
+            commit();
         }
 
         let rowIndex = Math.min(rowCount - 1, Math.max(0, activeCell.row + rowOffset));
@@ -595,7 +594,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         }
 
         console.log(`activateCell rowIndex ${rowIndex} colIndex ${colIndex}`);
-        activeCell.input.blur();
+        //commit();
 
         const viewRow = rowIndex - firstRow;
 
@@ -631,11 +630,9 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
     /** @type{number} */
     let rowCount = undefined;
 
-    input.onblur = function () {
-        console.log('onblur');
-        activeCell.input.style.display = 'none';
+    function commit(focusContainer) {
+        console.log('commit');
         activeCell.span.style.display = 'inline-block';
-        container.focus();
 
         if (activeCell.mode === 'input' || activeCell.mode === 'edit') {
             const rowIndex = activeCell.row;
@@ -654,6 +651,20 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         }
 
         activeCell.mode = 'active';
+        if (focusContainer !== false) {
+            container.focus();
+        }
+    }
+
+    input.onblur = function (evt) {
+        console.log('input.onblur');
+
+        if (!container.contains(evt.relatedTarget)) {
+            commit(false);
+        }
+
+        // This will NOT implicitly trigger input.onblur because that is just happening. For this reason we do it here!
+        input.style.display = 'none';
     };
 
     input.onkeydown = function (evt) {
@@ -664,18 +675,18 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         if (evt.code === 'Enter') {
             evt.preventDefault();
             evt.stopPropagation();
-            input.blur();
+            commit();
             navigateCell(evt, 1, 0);
         } else if (evt.code === 'Tab') {
             evt.preventDefault();
             evt.stopPropagation();
-            input.blur();
+            commit();
             navigateCell(evt, 0, 1);
         } else if (evt.code === 'Escape') {
             // Leave edit mode.
             evt.preventDefault();
             evt.stopPropagation();
-            input.blur();
+            commit();
         }
     };
 

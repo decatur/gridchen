@@ -21,8 +21,8 @@ const console = {
 
 export class Rectangle {
     /**
-     * @param {Bantam.IInterval} row
-     * @param {Bantam.IInterval} col
+     * @param {GridChip.IInterval} row
+     * @param {GridChip.IInterval} col
      */
     constructor(row, col) {
         this.row = row;
@@ -57,9 +57,9 @@ export class Rectangle {
 }
 
 /**
- * @param {Bantam.IInterval} i1
- * @param {Bantam.IInterval} i2
- * @returns {Bantam.IInterval}
+ * @param {GridChip.IInterval} i1
+ * @param {GridChip.IInterval} i2
+ * @returns {GridChip.IInterval}
  */
 function intersectInterval(i1, i2) {
     const min = Math.max(i1.min, i2.min);
@@ -76,7 +76,7 @@ class GridChip extends HTMLElement {
     }
 
     /**
-     * @param {Array<Bantam.ISchema>} schemas
+     * @param {Array<GridChip.ISchema>} schemas
      * @param {Array<Array<number | string | Date | boolean>>} matrix
      */
     resetFromMatrix(schemas, matrix) {
@@ -154,18 +154,12 @@ class Slider {
 
 class Selection extends Rectangle {
     constructor(repainter) {
-        super(undefined, undefined);
-        /** @type {Bantam.IPosition} */
-        this.initial = undefined;
-        this.repainter = repainter
-    }
-
-    /**
-     * TODO: remove
-     */
-    unselect() {
-        console.log('unselect');
-        this.hide();
+        super({min: 0, sup: 1}, {min: 0, sup: 1});
+        /** @type {GridChip.IPosition} */
+        this.initial = {row: 0, col: 0};
+        /** @type {GridChip.IPosition} */
+        this.head = {row: 0, col: 0}; // Cell opposite the initial.
+        this.repainter = repainter;
     }
 
     /**
@@ -178,22 +172,28 @@ class Selection extends Rectangle {
         this.repainter(undefined, this);
     }
 
-    expand(rowIndex, colIndex) {
-        console.log('expand');
-        if (this.initial) {
-            this.hide();
-        } else {
-            this.initial = {rowIndex: rowIndex, colIndex: colIndex};
-        }
+    set(rowIndex, colIndex) {
+        console.log('Selection.set');
+        this.hide(); // TODO: Why?
+        this.initial = {row: rowIndex, col: colIndex};
+        this.head = {row: rowIndex, col: colIndex};
+        this.row = {min: rowIndex, sup: 1 + rowIndex};
+        this.col = {min: colIndex, sup: 1 + colIndex};
+    }
 
+    expand(rowIndex, colIndex) {
+        console.log('Selection.expand');
+        this.hide();
+
+        this.head = {row: rowIndex, col: colIndex};
         this.row = {
-            min: Math.min(this.initial.rowIndex, rowIndex),
-            sup: 1 + Math.max(this.initial.rowIndex, rowIndex)
+            min: Math.min(this.initial.row, rowIndex),
+            sup: 1 + Math.max(this.initial.row, rowIndex)
         };
 
         this.col = {
-            min: Math.min(this.initial.colIndex, colIndex),
-            sup: 1 + Math.max(this.initial.colIndex, colIndex)
+            min: Math.min(this.initial.col, colIndex),
+            sup: 1 + Math.max(this.initial.col, colIndex)
         };
 
         this.show();
@@ -207,9 +207,10 @@ const cellPadding = 3;
 
 /**
  * @param {HTMLElement} container
- * @param {Bantam.ISchema[]} schemas
+ * @param {GridChip.ISchema[]} schemas
  * @param dataSource
  * @param viewModel
+ * @param {Array<Array>} patches
  */
 function Grid(container, schemas, dataSource, viewModel, patches) {
     let totalHeight = parseInt(container.style.height);
@@ -239,25 +240,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
     let total = 0;
     const columnEnds = [];
     schemas.forEach(function (schema, index) {
-        const header = document.createElement('span');
-        const style = header.style;
-        style.position = 'absolute';
-        style.left = total + 'px';
-        style.width = schema.width + 'px';
-        style.height = innerHeight;
-        style.padding = cellPadding + 'px';
-        style.border = '1px solid black';
-        header.textContent = schema.title;
-        if (schema.sort === 1) {
-            header.textContent += ' ↑';
-        } else if (schema.sort === -1) {
-            header.textContent += ' ↓'
-        }
-        header.onclick = function (ev) {
-            // header.textContent = schema.title + ' ' + (header.textContent.substr(-1)==='↑'?'↓':'↑');
-            viewModel.onSort(index);
-        };
-        headerRow.appendChild(header);
+        schema.width = Number(schema.width);
         total += schema.width + 2 * cellBorderWidth + 2 * cellPadding;
         columnEnds[index] = total;
         if (schema.type === 'number') {
@@ -270,7 +253,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         } else if (schema.type === 'datetime') {
             schema.converter = new DateTimeStringConverter(schema.frequency || 'T1M');
         } else if (schema.type === 'date') {
-            schema.converter = new DateTimeStringConverter();
+            schema.converter = new DateTimeStringConverter(); // TODO: Define DateStringConverter
         } else if (schema.type === 'boolean') {
             schema.converter = {
                 toString: (value) => String(value),
@@ -283,8 +266,36 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
                 fromString: (value) => value
             };
         }
-
     });
+
+    refreshHeaders();
+
+    function refreshHeaders() {
+        headerRow.textContent = '';
+        let left = 0;
+        schemas.forEach(function (schema, index) {
+            const header = document.createElement('span');
+            const style = header.style;
+            style.position = 'absolute';
+            style.left = left + 'px';
+            style.width = schema.width + 'px';
+            style.height = innerHeight;
+            style.padding = cellPadding + 'px';
+            style.border = '1px solid black';
+            header.textContent = schema.title;
+            if (schema.sortDirection === 1) {
+                header.textContent += ' ↑';
+            } else if (schema.sortDirection === -1) {
+                header.textContent += ' ↓'
+            }
+            header.onclick = function () {
+                // header.textContent = schema.title + ' ' + (header.textContent.substr(-1)==='↑'?'↓':'↑');
+                viewModel.onSort(index);
+            };
+            headerRow.appendChild(header);
+            left = columnEnds[index];
+        });
+    }
 
     let totalWidth = columnEnds[columnEnds.length - 1] + 20 + 20;
     container.style.width = totalWidth + 'px';
@@ -341,13 +352,13 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
     /** @type {{span?:{HTMLSpanElement}, input:{HTMLInputElement}, row:number, col:number, mode:string}} */
     let activeCell = {
         span: undefined, input: input, row: 0, col: 0, mode: 'active',
-        hide: function() {
+        hide: function () {
             if (this.span) this.span.style.removeProperty('background-color');
         },
-        show: function() {
+        show: function () {
             if (this.span) this.span.style.backgroundColor = 'mistyrose';
         },
-        move: function(rowIndex, colIndex) {
+        move: function (rowIndex, colIndex) {
             this.hide();
             const targetRow = rowIndex - firstRow;
             if (targetRow < 0 || targetRow >= viewPortRowCount) return;
@@ -376,7 +387,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             for (let col = rr.col.min; col < rr.col.sup; col++) {
                 const span = spanMatrix[row][col];
                 const style = span.style;
-                if (spanMatrix[row][col] == activeCell.span) {
+                if (spanMatrix[row][col] === activeCell.span) {
                     // Do not change color of active cell.
                 } else if (backgroundColor === undefined) {
                     style.removeProperty('background-color');
@@ -396,18 +407,12 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         evt.preventDefault();
         container.focus();
 
-        if (evt.shiftKey) {
-            // This is a selection expand action and will be handled by onclick.
-            // TODO: MSE does this onmousedown.
-            return;
-        }
-
         const rect = cellParent.getBoundingClientRect();
 
         function index(evt) {
             const y = evt.clientY - rect.y;
             const x = evt.clientX - rect.x;
-            console.log(x + ' ' + y);
+            // console.log(x + ' ' + y);
             const grid_y = Math.trunc(y / rowHeight);
             let grid_x = 0;
             for (grid_x; grid_x < colCount; grid_x++) {
@@ -419,7 +424,13 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         }
 
         let {rowIndex, colIndex} = index(evt);
-        navigateCell(evt, rowIndex - activeCell.row, colIndex - activeCell.col);
+
+        if (evt.shiftKey) {
+            selection.expand(rowIndex, colIndex);
+        } else {
+            navigateCell(evt, rowIndex - activeCell.row, colIndex - activeCell.col);
+            selection.set(rowIndex, colIndex);
+        }
 
         function resetHandlers() {
             cellParent.onmousemove = cellParent.onmouseup = cellParent.onmouseleave = undefined;
@@ -430,12 +441,11 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             console.log(`onmousemove ${rowIndex} ${colIndex}`);
 
             if (rowIndex - firstRow < spanMatrix.length) {
-                if (!selection) selection = new Selection(repainter);
                 selection.expand(rowIndex, colIndex);
             }
         };
 
-        cellParent.onmouseleave = function (evt) {
+        cellParent.onmouseleave = function () {
             console.log('onmouseleave');
             resetHandlers();
         };
@@ -454,23 +464,23 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         // TODO: Use evt.deltaMode
         let newFrirstRow = firstRow + 3 * Math.sign(-evt.wheelDeltaY);
         if (newFrirstRow >= 0) {
-            setFirstRow(newFrirstRow, 0);
+            setFirstRow(newFrirstRow);
         }
     };
 
-    container.onblur = function(evt) {
+    container.onblur = function (evt) {
         console.log('container.onblur: ' + evt);
-        if (!container.contains(evt.relatedTarget)) {
+        if (!container.contains(/** @type {HTMLElement} */ evt.relatedTarget)) {
             // We are leaving the component.
             activeCell.hide();
-            if (selection) selection.hide();
+            selection.hide();
         }
     };
 
-    container.onfocus = function(evt) {
+    container.onfocus = function (evt) {
         console.log('container.onfocus: ' + evt);
         activeCell.show();
-        if (selection) selection.show();
+        selection.show();
     };
 
     container.onkeydown = function (evt) {
@@ -509,14 +519,11 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             // This is reverted on the next onblur event.
             evt.preventDefault();  // Do not select the inputs content.
             evt.stopPropagation();
-            if (selection) selection.unselect();
-            selection = new Selection(repainter);
-            selection.expand(0, 0);
+            selection.set(0, 0);
             selection.expand(rowCount - 1, colCount - 1);
         } else if (evt.code === 'KeyC' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation(); // Prevent text is copied from container.
-            // TODO: Always provide a selection?
             const rect = selection || new Rectangle(
                 {min: activeCell.row, sup: activeCell.row + 1},
                 {min: activeCell.col, sup: activeCell.col + 1}
@@ -551,16 +558,13 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         } else if (evt.code === 'Delete') {
             evt.preventDefault();
             evt.stopPropagation();
-            if (selection) {
-                let emptyRow = Array(selection.col.sup - selection.col.min);
-                emptyRow.fill(undefined);
-                let emptyMatrix = Array(selection.row.sup - selection.row.min);
-                emptyMatrix.fill(emptyRow);
-                viewModel.onPaste(selection.row.min, selection.col.min, emptyMatrix);
-            } else {
-                viewModel.onPaste(activeCell.row, activeCell.col, [[undefined]]);
-            }
+            let emptyRow = Array(selection.col.sup - selection.col.min);
+            emptyRow.fill(undefined);
+            let emptyMatrix = Array(selection.row.sup - selection.row.min);
+            emptyMatrix.fill(emptyRow);
+            viewModel.onPaste(selection.row.min, selection.col.min, emptyMatrix);
         } else if (evt.keyCode >= 32) {
+            // TODO: move this to keypress because keyCode is deprecated.
             // focus on input element, which will then receive this keyboard event.
             const style = activeCell.input.style;
             const spanStyle = activeCell.span.style;
@@ -575,26 +579,31 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
     };
 
     function navigateCell(evt, rowOffset, colOffset) {
+        console.log('navigateCell');
+
         if (activeCell.mode === 'input' || activeCell.mode === 'edit') {
             commit();
         }
 
-        let rowIndex = Math.min(rowCount - 1, Math.max(0, activeCell.row + rowOffset));
-        rowIndex = activeCell.row + rowOffset;
-        let colIndex = Math.min(colCount - 1, Math.max(0, activeCell.col + colOffset));
+        let isExpansion = evt.shiftKey && !(evt.code === 'Tab' || evt.code === 'Enter');
 
-        if (evt.shiftKey && !(evt.code === 'Tab' || evt.code === 'Enter')) {
-            if (!selection) {
-                selection = new Selection(repainter);
-                selection.expand(activeCell.row, activeCell.col);
-            }
-            selection.expand(rowIndex, colIndex);
+        let cell;
+        if (isExpansion) {
+            cell = selection.head;
         } else {
-            if (selection) selection = selection.unselect();
+            cell = activeCell;
         }
 
-        console.log(`activateCell rowIndex ${rowIndex} colIndex ${colIndex}`);
-        //commit();
+        let rowIndex = cell.row + rowOffset;
+        let colIndex = Math.min(colCount - 1, Math.max(0, cell.col + colOffset));
+
+        if (isExpansion) {
+            selection.expand(rowIndex, colIndex);
+        } else {
+            selection.set(rowIndex, colIndex);
+        }
+
+        console.log(`rowIndex ${rowIndex} colIndex ${colIndex}`);
 
         const viewRow = rowIndex - firstRow;
 
@@ -606,7 +615,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
                 } else if (rowOffset === -1) {
                     rowIndex = 0;
                 } else {
-                    rowIndex = activeCell.row;
+                    rowIndex = cell.row;
                 }
             } else if (firstRow + rowOffset < 0) {
                 setFirstRow(0);
@@ -615,12 +624,10 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             }
         }
 
-        activeCell.move(rowIndex, colIndex);
+        if (!isExpansion) {
+            activeCell.move(rowIndex, colIndex);
+        }
     }
-
-    /** @type {Selection} */
-    let selection = new Selection();
-    selection = undefined;
 
     body.appendChild(cellParent);
 
@@ -640,13 +647,12 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             let value = activeCell.input.value.trim();
             activeCell.input.value = '';
             // activeCell.span.textContent = value;
-            const type = schemas[colIndex].type;
-            // TODO: Make sure pasting does the same.
             if (value === '') {
                 value = undefined;
             } else {
                 value = schemas[colIndex].converter.fromString(value)
             }
+            patches.push(['change', rowIndex, colIndex, value]);
             viewModel.onCellChange(rowIndex, colIndex, value);
         }
 
@@ -656,7 +662,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         }
     }
 
-    input.onblur = function (evt) {
+    input.addEventListener('blur', function (evt) {
         console.log('input.onblur');
 
         if (!container.contains(evt.relatedTarget)) {
@@ -665,9 +671,13 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
 
         // This will NOT implicitly trigger input.onblur because that is just happening. For this reason we do it here!
         input.style.display = 'none';
-    };
+    });
 
-    input.onkeydown = function (evt) {
+    /**
+     * @param {KeyboardEvent} evt
+     */
+    input.addEventListener('keydown', function (evt) {
+
         console.log('input.onkeydown: ' + evt);
         // Clicking editor should invoke default: move caret. It should not delegate to containers action.
         evt.stopPropagation();
@@ -676,24 +686,24 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             evt.preventDefault();
             evt.stopPropagation();
             commit();
-            navigateCell(evt, 1, 0);
+            navigateCell(evt, evt.shiftKey?-1:1, 0);
         } else if (evt.code === 'Tab') {
             evt.preventDefault();
             evt.stopPropagation();
             commit();
-            navigateCell(evt, 0, 1);
+            navigateCell(evt, 0, evt.shiftKey?-1:1);
         } else if (evt.code === 'Escape') {
             // Leave edit mode.
             evt.preventDefault();
             evt.stopPropagation();
             commit();
         }
-    };
+    });
 
-    input.onmousedown = function(evt) {
-        // Clicking editor should invoke default: move caret. It should not delegate to containers action.
+    input.addEventListener('mousedown', function (evt) {
+        // Clicking editor should invoke default: move the caret. It should not delegate to containers action.
         evt.stopPropagation();
-    };
+    });
 
 
     let viewPortRowCount = Math.floor(viewPortHeight / rowHeight);
@@ -705,10 +715,9 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
 
 
     function setFirstRow(_firstRow, caller) {
+        refreshHeaders();
         activeCell.hide();
-        if (selection) {
-            selection.hide();
-        }
+        selection.hide();
 
         firstRow = _firstRow;
         if (rowCount < firstRow + viewPortRowCount) {
@@ -726,9 +735,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
 
         dataSource.setViewportRange(firstRow, firstRow + viewPortRowCount);
         activeCell.move(activeCell.row, activeCell.col);
-        if (selection) {
-            selection.show();
-        }
+        selection.show();
     }
 
     function createCell(vpRowIndex, colIndex) {
@@ -749,33 +756,9 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             span.className = 'number_column'
         }
 
-        /* Needed to capture shiftKey! */
-        span.onclick = function (_evt) {
-            console.log('onclick');
-            // cellParent.focus(); // So that we receive keyboard events.
-            const evt = /** @type {MouseEvent} */ _evt;
-            if (evt.shiftKey) {
-                // TODO: Do we need this (it is already in onmouseup)?
-                if (!selection) selection = new Selection(repainter);
-                selection.expand(activeCell.row, activeCell.col);
-                selection.expand(firstRow + vpRowIndex, colIndex);
-                // We do not want DOM text node selection, its confusing.
-                document.getSelection().empty();
-                // Do not change the active cell.
-            } else {
-                if (selection) {
-                    selection = selection.unselect();
-                }
-                navigateCell(evt, firstRow + vpRowIndex - activeCell.row, colIndex - activeCell.col);
-            }
-            activeCell.mode = 'active';
-        };
-
-        /* Needed to capture shiftKey! */
-        span.ondblclick = function (_evt) {
+        span.addEventListener('dblclick', function () {
             console.log('ondblclick');
-            const evt = /** @type {MouseEvent} */ _evt;
-            navigateCell(evt, firstRow + vpRowIndex - activeCell.row, colIndex - activeCell.col);
+            // Switch to EDIT mode.
             const style = activeCell.input.style;
             const spanStyle = activeCell.span.style;
             style.top = spanStyle.top;
@@ -786,7 +769,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             activeCell.input.focus();
             activeCell.mode = 'edit';
             activeCell.input.value = activeCell.span.textContent;
-        };
+        });
 
         cellParent.appendChild(span);
 
@@ -805,7 +788,6 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
                 let inputRow = spanMatrix[index];
                 let row = matrix[firstRow + index];
                 for (let colIndex = 0; colIndex < colCount; colIndex++) {
-                    let type = schemas[colIndex].type;
                     let input = inputRow[colIndex];
                     let value = (row ? row[colIndex] : undefined);
                     if (value === undefined) {
@@ -831,7 +813,14 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
 
     cellParent.appendChild(input);
 
+    /** @type {Selection} */
+    let selection = new Selection(repainter);
+    //selection.set(0, 0);
+
     dataSource.init(params);
+    // Revoke action by setFirstRow(). TODO: Refactor.
+    activeCell.hide();
+    selection.hide();
 }
 
 /**
@@ -841,13 +830,15 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
  */
 export function tsvToMatrix(text) {
     let lines = text.split(/\r?\n/);
+    // We always expect a line separator, so we expect at least two lines.
+    // An empty clipboard is encoded as '\n', which yields [['']]
     if (lines[lines.length - 1] === '') {
         lines.pop();
     }
 
     if (!lines.length) {
-        alert('Nothing to paste.');
-        return
+        // Note that this should not happen.
+        return [];
     }
 
     let matrix = Array(lines.length);

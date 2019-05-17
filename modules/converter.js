@@ -12,7 +12,7 @@ let decimalSep = testNumber[5];
 
 
 /**
- * @interface {Bantam.StringConverter}
+ * @interface {GridChip.StringConverter}
  */
 export class NumberStringConverter {
     constructor(nf) {
@@ -205,6 +205,7 @@ export class DateTimeStringConverter {
      * @returns {string}
      */
     toString(d) {
+        if (typeof  d === 'string') return d;  // TODO: Is this the right way, or should we be strict?
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
         let s = pad(d.getFullYear()) + '-' + pad(1 + d.getMonth()) + '-' + pad(d.getDate());
@@ -220,13 +221,13 @@ export class DateTimeStringConverter {
     }
 
     /**
-     * Parses any valid date format, but iso format is preferred.
+     * Parses any valid date-time format, but iso format is preferred.
      * @param {string} s
      * @returns {Date}
      */
     fromString(s) {
         const offsetSign = s.substr(-3, 1);
-        if (offsetSign === '+' || offsetSign === '-') {
+        if (s.includes('T') && (offsetSign === '+' || offsetSign === '-')) {
             s += ':00';
         }
         return new Date(s);
@@ -242,7 +243,8 @@ export class DateStringConverter {
      * @returns {string}
      */
     toString(d) {
-        if (isNaN(d.getTime())) return d.toString();
+        if (typeof  d === 'string') return d;  // TODO: Is this the right way, or should we be strict?
+        // if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
         return pad(d.getFullYear()) + '-' + pad(1 + d.getMonth()) + '-' + pad(d.getDate());
     }

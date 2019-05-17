@@ -6,7 +6,7 @@
  */
 
 import {createSimpleControler} from "./matrix_view.js"
-import {DateTimeStringConverter, NumberStringConverter} from "./converter.js"
+import {DateStringConverter, DateTimeStringConverter, NumberStringConverter} from "./converter.js"
 
 let logCounter = 0;
 const console = {
@@ -78,10 +78,10 @@ class GridChip extends HTMLElement {
     /**
      * @param {Array<GridChip.ISchema>} schemas
      * @param {Array<Array<number | string | Date | boolean>>} matrix
+     * @param {GridChip.onDataChangeCallback} onDataChanged
      */
-    resetFromMatrix(schemas, matrix) {
+    resetFromMatrix(schemas, matrix, onDataChanged) {
         const {dataSource, viewModel} = createSimpleControler(schemas, matrix);
-        this._patches = [];
         if (this.shadowRoot) {
             this.shadowRoot.removeChild(this.shadowRoot.firstChild);
         } else {
@@ -92,16 +92,16 @@ class GridChip extends HTMLElement {
         const container = document.createElement('div');
         container.style.height = totalHeight + 'px';
         this.shadowRoot.appendChild(container);
-        Grid(container, schemas, dataSource, viewModel, this._patches);
+        Grid(container, schemas, dataSource, viewModel, onDataChanged);
     }
 
     // noinspection JSUnusedGlobalSymbols
     /**
      * @returns {Array<string>}
      */
-    getPatches() {
-        return this._patches;
-    }
+    //getPatches() {
+    //    return this._patches;
+    //}
 }
 
 customElements.define('grid-chip', GridChip);
@@ -210,9 +210,9 @@ const cellPadding = 3;
  * @param {GridChip.ISchema[]} schemas
  * @param dataSource
  * @param viewModel
- * @param {Array<Array>} patches
+ * @param {GridChip.onDataChangeCallback} onDataChanged
  */
-function Grid(container, schemas, dataSource, viewModel, patches) {
+function Grid(container, schemas, dataSource, viewModel, onDataChanged) {
     let totalHeight = parseInt(container.style.height);
 
     let styleSheet = document.createElement('style');
@@ -227,23 +227,13 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
     const rowHeight = 22;
     const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
 
-    const headerRow = document.createElement('div');
-    let style = headerRow.style;
-    style.position = 'relative';
-    style.left = '20px';
-    style.width = '100%';
-    style.height = rowHeight + 'px';
-    style.textAlign = 'center';
-    style.fontWeight = 'bold';
-    container.appendChild(headerRow);
-
     let total = 0;
     const columnEnds = [];
     schemas.forEach(function (schema, index) {
         schema.width = Number(schema.width);
         total += schema.width + 2 * cellBorderWidth + 2 * cellPadding;
         columnEnds[index] = total;
-        if (schema.type === 'number') {
+        if (schema.type === 'number' || schema.type === 'integer') {
             const fractionDigits = schema.fractionDigits || 0;
             const nf = Intl.NumberFormat([], {
                 minimumFractionDigits: fractionDigits,
@@ -253,7 +243,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         } else if (schema.type === 'datetime') {
             schema.converter = new DateTimeStringConverter(schema.frequency || 'T1M');
         } else if (schema.type === 'date') {
-            schema.converter = new DateTimeStringConverter(); // TODO: Define DateStringConverter
+            schema.converter = new DateStringConverter();
         } else if (schema.type === 'boolean') {
             schema.converter = {
                 toString: (value) => String(value),
@@ -267,6 +257,18 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             };
         }
     });
+
+    const headerRow = document.createElement('div');
+    let style = headerRow.style;
+    style.position = 'relative';
+    style.left = '20px';
+    style.width = columnEnds[columnEnds.length-1] + 'px';
+    style.height = rowHeight + 'px';
+    style.textAlign = 'center';
+    style.fontWeight = 'bold';
+    style.backgroundColor = 'khaki';
+    container.appendChild(headerRow);
+
 
     refreshHeaders();
 
@@ -306,10 +308,14 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
     body.style.height = (totalHeight - 20) + 'px';
     container.appendChild(body);
 
+    let rowMenu = document.createElement('div');
+    rowMenu.style.position = 'absolute';
+    rowMenu.style.display = 'none';
+
     let insertRowButton = document.createElement('button');
     insertRowButton.type = 'button';
     insertRowButton.style.position = 'absolute';
-    insertRowButton.style.display = 'none';
+    insertRowButton.style.top = '-20px';
     insertRowButton.style.padding = '0';
     insertRowButton.title = "Insert Row Above";
     insertRowButton.textContent = '+';
@@ -317,12 +323,11 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         viewModel.onRowInsert(activeCell.row - 1)
         //inputList[previousFocus.row][0].select()
     };
-    body.appendChild(insertRowButton);
+    rowMenu.appendChild(insertRowButton);
 
     let deleteRowButton = document.createElement('button');
     deleteRowButton.type = 'button';
     deleteRowButton.style.position = 'absolute';
-    deleteRowButton.style.display = 'none';
     deleteRowButton.style.padding = '0';
     deleteRowButton.type = 'button';
     deleteRowButton.title = "Delete Row";
@@ -331,9 +336,10 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         viewModel.onRowDelete(activeCell.row)
         // inputList[previousFocus.row][0].select()
     };
-    body.appendChild(deleteRowButton);
+    rowMenu.appendChild(deleteRowButton);
+    body.appendChild(rowMenu);
 
-    // TODO: Why is sometimes clientHeight not set?
+    // TODO: Why is sometdeleteRowButtonimes clientHeight not set?
     let viewPortHeight = totalHeight - 20;
     let cellParent = /** @type {HTMLElement} */ document.createElement('div');
     cellParent.className = "GRID";
@@ -353,10 +359,13 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
     let activeCell = {
         span: undefined, input: input, row: 0, col: 0, mode: 'active',
         hide: function () {
-            if (this.span) this.span.style.removeProperty('background-color');
+            if (this.span) this.span.style.backgroundColor = 'white'; //removeProperty('background-color');
+            rowMenu.style.display = 'none';
         },
         show: function () {
             if (this.span) this.span.style.backgroundColor = 'mistyrose';
+            rowMenu.style.top = this.span.offsetTop + 'px';
+            rowMenu.style.display = 'block';
         },
         move: function (rowIndex, colIndex) {
             this.hide();
@@ -365,12 +374,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             this.span = spanMatrix[rowIndex - firstRow][colIndex];
             this.col = colIndex;
             this.row = rowIndex;
-            const offsetTop = this.span.offsetTop;
             this.show();
-            deleteRowButton.style.top = offsetTop + 'px';
-            deleteRowButton.style.display = 'inline-block';
-            insertRowButton.style.top = (offsetTop - 20) + 'px';
-            insertRowButton.style.display = 'inline-block';
         }
     };
 
@@ -390,7 +394,7 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
                 if (spanMatrix[row][col] === activeCell.span) {
                     // Do not change color of active cell.
                 } else if (backgroundColor === undefined) {
-                    style.removeProperty('background-color');
+                    style.backgroundColor = 'white'; //removeProperty('background-color');
                 } else {
                     style.backgroundColor = backgroundColor;
                 }
@@ -652,8 +656,9 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
             } else {
                 value = schemas[colIndex].converter.fromString(value)
             }
-            patches.push(['change', rowIndex, colIndex, value]);
             viewModel.onCellChange(rowIndex, colIndex, value);
+            // Must be called AFTER model is updated.
+            onDataChanged(); //['change', rowIndex, colIndex, value]);
         }
 
         activeCell.mode = 'active';
@@ -667,6 +672,8 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
 
         if (!container.contains(evt.relatedTarget)) {
             commit(false);
+            activeCell.hide();
+            selection.hide();
         }
 
         // This will NOT implicitly trigger input.onblur because that is just happening. For this reason we do it here!
@@ -751,8 +758,9 @@ function Grid(container, schemas, dataSource, viewModel, patches) {
         style.overflow = 'hidden';
         style.border = '1px solid black';
         style.padding = cellPadding + 'px';
+        style.backgroundColor = 'white';
 
-        if (type === 'number') {
+        if (type === 'number' || type === 'integer') {
             span.className = 'number_column'
         }
 

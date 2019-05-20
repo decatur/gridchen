@@ -2,11 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
-    <title>GridChip Demo</title>
+    <title>GridChen Demo</title>
 
     <style>
         body {
-            font-family: sans-serif; margin: 2em; background-color: aliceblue;
+            font-family: sans-serif;
+            margin: 2em;
+            background-color: aliceblue;
         }
     </style>
 </head>
@@ -19,20 +21,29 @@
 </p>
 
 <div>
-    <grid-chip id="mybantam1" style="display:inline-block;height:400px;"></grid-chip>
+    <grid-chen id="mygrid" style="display:inline-block;height:400px;"></grid-chen>
 </div>
 
 <script type="module">
-    import {} from "./modules/gridchip.js"
-    import {DateTimeIndex} from "./modules/chronos.js"
+    import {} from "./lunatic/gridchen.js"
 
     function createMyGrid(rowCount) {
-        // Some sample data. Most likely this will come from the server throw an async request.
-        let startDate = new Date('2017-01-01T00:00:00Z');
-        let dtIndex = DateTimeIndex.create(startDate, DateTimeIndex.minFreq * 15);
+        // Some sample data. Most likely this will come from the server via the Fetch API.
+        let startDate = new Date('2017-01-01T00:00+01:00');
 
         const schemas = [
-            {title: 'Date', width: 150, type: 'date', sort: 1, simulate: (row) => dtIndex.at(row)},
+            {
+                title: 'DateTime', width: 200, type: 'datetime', frequency: 'T1M', sortDirection: 1,
+                simulate: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15)
+            },
+            {
+                title: 'Date', width: 200, type: 'date',
+                simulate: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15)
+            },
+            {
+                title: 'DateTimeLocal', width: 200, type: 'datetimelocal', frequency: 'T1M',
+                simulate: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15)
+            },
             {title: 'Index', width: 50, type: 'number', fractionDigits: 0, simulate: (row, col) => row},
             {title: 'Col A', width: 50, type: 'number', fractionDigits: 1, simulate: (row, col) => row},
             {title: 'Col B', width: 100, type: 'number', fractionDigits: 2, simulate: (row, col) => row},
@@ -49,7 +60,7 @@
             return data
         }
 
-        document.getElementById('mybantam1').resetFromMatrix(schemas, simulateData());
+        document.getElementById('mygrid').resetFromMatrix(schemas, simulateData());
     }
 
     /**

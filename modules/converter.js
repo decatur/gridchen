@@ -1,22 +1,23 @@
 /**
  * Author: Wolfgang Kühn 2019
- * https://github.com/decatur/GridChip
+ * https://github.com/decatur/GridChen
  *
  * See README.md
  */
 
-let nf = Intl.NumberFormat([], {minimumFractionDigits: 2, maximumFractionDigits: 2});
-let testNumber = nf.format(1000.5); // 1.000,50 in de-DE
-let thousandSep = testNumber[1];
-let decimalSep = testNumber[5];
-
-
 /**
- * @interface {GridChip.StringConverter}
+ * @interface {GridChen.StringConverter}
  */
 export class NumberStringConverter {
-    constructor(nf) {
-        this.nf = nf;
+    /**
+     * @param {number} fractionDigits
+     * @param {string?} locale
+     */
+    constructor(fractionDigits, locale) {
+        this.nf = Intl.NumberFormat(locale, {minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits});
+        let testNumber = this.nf.format(1000.5); // 1.000,50 in de-DE
+        this.thousandSep = testNumber[1];
+        this.decimalSep = testNumber[5];
     }
 
     toString(n) {
@@ -31,167 +32,16 @@ export class NumberStringConverter {
     fromString(s) {
         s = s.trim();
         if (!s) return undefined;
-        let parts = s.split(decimalSep);
-        parts[0] = parts[0].split(thousandSep).join('');
+        let parts = s.split(this.decimalSep);
+        parts[0] = parts[0].split(this.thousandSep).join('');
         return Number(parts.join('.'))
     }
-}
-
-export function formatNumber(n, nf) {
-    // Note that in IE11 nf.format("") -> 0
-    if (n === undefined) return '';
-    return nf.format(n)
-}
-
-/**
- * For example in locale de: parseNumber('1.000,2') -> 1000.2
- */
-export function parseNumber(s) {
-    s = s.trim();
-    if (!s) return undefined;
-    let parts = s.split(decimalSep);
-    parts[0] = parts[0].split(thousandSep).join('');
-    return Number(parts.join('.'))
-}
-
-
-let secFreq = 1000;
-let minFreq = secFreq * 60;
-let hourFreq = minFreq * 60;
-let dayFreq = hourFreq * 24;
-
-function pad(i) {
-    return String(100 + i).substr(1)
-}
-
-function hasFrequency(d, frequency) {
-    return (d.getTime() % frequency) === 0
-}
-
-let frequencySymbols = {
-    d: dayFreq,
-    h: hourFreq,
-    min: minFreq
-};
-
-/**
- Parse frequencies of the form 1d, 2h or 3min.
- Returns duration in milliseconds.
- */
-function parseFrequency(frequency) {
-    // 'T0H15M'.match(/^T((\d+)H)?((\d+)M)?$/)
-    // -> ["T0H15M", "0H", "0", "15M", "15"]
-    frequency = frequency.toUpperCase();
-    let m = frequency.match(/^T((\d+)H)?((\d+)M)?$/);
-    if (!m) {
-        console.log(`Invalid frequency ${frequency}`);
-        return {M: 1};
-    }
-    return {H: parseInt(m[2]), M: parseInt(m[4])};
-}
-
-/**
- * Returns a time of the form (10(:56(:43)?)?)?
- */
-function timeFormat(d, frequency) {
-    // Never ever use IE11s toLocale methods, as those embed formating characters.
-    let s = '';
-    if (frequency >= dayFreq) return s;
-    s += pad(d.getUTCHours());
-    if (frequency >= hourFreq) return s;
-    s += ':' + pad(d.getUTCMinutes());
-    if (frequency >= minFreq) return s;
-    s += ':' + pad(d.getUTCSeconds());
-    if (frequency >= secFreq) return s;
-    return s + '.' + String(10000 + d.getSeconds()).substr(1)
-}
-
-/**
- * Returns an Excel compatible date string of the form 18.08.2017( 10(:56(:43)?)?)? in UTC locale.
- */
-function deFormatUTC(d, frequency) {
-    if (d === undefined) return;
-    let s = pad(d.getUTCDate()) + '.' + pad(d.getUTCMonth() + 1) + '.' + d.getUTCFullYear();
-    if (frequency >= dayFreq) return s;
-    else return s + ' ' + timeFormat(d, frequency)
-}
-
-/**
- * Returns an Excel de-locale compatible date string of the form 18.08.2017( 10(:56(:43))).
- * @param {Date} d
- */
-export function deFormat(d, frequency) {
-    if (d === undefined) return;
-    if (isNaN(d.getTime())) return d.toString();
-    let s = String(d.getDate()).padStart(2, '0') + '.' +
-        String(1 + d.getMonth()).padStart(2, '0') + '.' +
-        String(d.getFullYear()) + ' ' +
-        String(d.getHours()).padStart(2, '0') + ':' +
-        String(d.getMinutes()).padStart(2, '0');
-    let dh = d.getHours() - d.getUTCHours();
-    if (dh < 0) dh += 24;
-    return s  // + '+' + String(dh).padStart(2, 0);
-}
-
-/*
- * Note on date:
- * This software only supports naive dates. These do not know about time zones
- * or daylight saving times. JavaScript does not support such naive dates.
- * As a workaround we choose the UTC time zone as the 'naive' zone.
- * So the date 2017-01-01 corresponds to new Date('2017-01-01T00:00Z').
- */
-
-/**
- * Example: parseDate('2017-01-01').toISOString() -> "2017-01-01T00:00Z"
- *
- * @param {String} s a date of the form
- *          2016-01-01 or 2016-01-01T13 or 2016-01-01T13:30 or
- *          01.01.2016 or 01.01.2016 13 or 01.01.2016 13:30
- * @return {Date} a naive (UTC) date
- */
-export function parseDate(s) {
-    let d = new Date(0);
-    let mo, year, month, date;
-
-    if (s.indexOf('-') !== -1) {
-        // '2016-01-01T13:30'
-        // 0=2016-01-01T..., 1=2016, 2=01, 3=01, 4=T13:30, 5=13:30
-        mo = s.match(/^(\d+)-(\d+)-(\d+)(T(.*))?$/);
-        if (!mo) return new Date(NaN);
-
-        year = parseInt(mo[1]);
-        month = parseInt(mo[2]);
-        date = parseInt(mo[3])
-    } else if (s.indexOf('.') !== -1) {
-        // '01.01.2016 13:30'
-        // 0=01.01.2016 ..., 1=01, 2=01, 3=2016, 4= 13:30, 5=13:30"
-        mo = s.match(/^(\d+)\.(\d+)\.(\d+)(\s+(.*))?$/);
-        if (!mo) return new Date(NaN);
-        year = parseInt(mo[3]);
-        month = parseInt(mo[2]);
-        date = parseInt(mo[1])
-    } else {
-        return new Date(NaN)
-    }
-    d.setUTCFullYear(year);
-    d.setUTCMonth(month - 1);
-    d.setUTCDate(date);
-    if (mo[5] !== new Date(NaN)) {
-        let timeParts = mo[5].split(':');
-        if (timeParts.length > 0) d.setUTCHours(Number(timeParts[0]));
-        if (timeParts.length > 1) d.setUTCMinutes(Number(timeParts[1]))
-    }
-    d.toJSON = function () {
-        return isoFormat(this, minFreq)
-    };
-    return d
 }
 
 /**
  * Converter for timezone aware dates.
  */
 export class DateTimeStringConverter {
-
     /**
      * @param {string} frequency
      */
@@ -200,8 +50,8 @@ export class DateTimeStringConverter {
     }
 
     /**
-     * Returns a iso formatted string in local time, for example 2017-01-01T02:00+01.
-     * @param {Date} d
+     * Returns a iso formatted string in local time with time zone offset, for example 2017-01-01T02:00+01.
+     * @param {Date|string} d
      * @returns {string}
      */
     toString(d) {
@@ -234,114 +84,145 @@ export class DateTimeStringConverter {
     }
 }
 
-export class DateStringConverter {
-    constructor() {
+function createLocalDateParsers(locale) {
+    // We only support numeric year-month-day formats.
+    const options = {year: 'numeric', month: 'numeric', day: 'numeric'}; //, hour: 'numeric', minute: 'numeric'};
+    const dtf = Intl.DateTimeFormat(locale, options);
+    const testDate = dtf.format(Date.UTC(2019, 0, 17, 2));
+    // -> examples: 17.1.2019, 1/17/2019, 17/1/2019
+    // console.log(testDate);
+
+    const m = testDate.match(/[^0-9]/);  // Heuristic: First non-numeric character is date separator.
+    const r = {};
+    if (m) {
+        r.dateSeparator = m[0];
+        /** @type {number[]} */
+        const testParts = testDate.split(r.dateSeparator).map(v => Number(v));
+        let yearIndex = testParts.indexOf(2019);
+        let monthIndex = testParts.indexOf(1);
+        let dateIndex = testParts.indexOf(17);
+        r.localDateParser = function (s) {
+            const parts = s.split(r.dateSeparator);
+            return new Date(Date.UTC(parts[yearIndex], parts[monthIndex] - 1, parts[dateIndex]));
+        };
+        r.localDateTimeParser = function (s) {
+            const parts = s.split(/,?\s+|T/i);
+            if (parts.length !== 2) return new Date(NaN);
+            const d = r.localDateParser(parts[0]);
+            const timeParts = parts[1].split(':').map(v => Number(v));
+            d.setUTCHours(timeParts[0]);
+            if (timeParts.length > 0) {
+                d.setUTCMinutes(timeParts[1]);
+            }
+            return d;
+        };
+    }
+    return r
+}
+
+/**
+ * Converter for naive dates. Naive dates do not know about time zones
+ * or daylight saving times. JavaScript does not support such naive dates.
+ * As a workaround, we choose the UTC time zone as the 'naive' zone.
+ * So the date 2017-01-01 corresponds to new Date('2017-01-01T00:00Z').
+ */
+export class DateTimeLocalStringConverter {
+
+    /**
+     * @param {string?} frequency
+     * @param {string?} locale
+     */
+    constructor(frequency, locale) {
+        this.frequency = parseFrequency(frequency || 'T1M');
+        const parsers = createLocalDateParsers(locale);
+        this.dateSeparator = parsers.dateSeparator;
+        this.parser = parsers.localDateTimeParser;
     }
 
     /**
-     * @param {Date} d
+     * Returns a iso formatted string in local time without timezone information, for example 2017-01-01T02:00.
+     * @param {Date|string} d
      * @returns {string}
      */
     toString(d) {
         if (typeof  d === 'string') return d;  // TODO: Is this the right way, or should we be strict?
-        // if (isNaN(d.getTime())) return d.toString();
+        if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
-        return pad(d.getFullYear()) + '-' + pad(1 + d.getMonth()) + '-' + pad(d.getDate());
+        let s = pad(d.getUTCFullYear()) + '-' + pad(1 + d.getUTCMonth()) + '-' + pad(d.getUTCDate());
+        if (this.frequency.H || this.frequency.M) {
+            // We use space, not 'T' as time separator to apeace MS-Excel.
+            s += ' ' + pad(d.getUTCHours());
+            if (this.frequency.M) {
+                s += ':' + pad(d.getMinutes());
+            }
+        }
+        return s;
     }
 
     /**
-     *
+     * Parses any valid date-time format, but iso format is preferred.
      * @param {string} s
      * @returns {Date}
      */
     fromString(s) {
-        return new Date(s);
+        if (this.dateSeparator && s.indexOf(this.dateSeparator) !== -1) return this.parser(s);
+        // Note that new Date('2019-10-27').toISOString() -> 2019-10-27T00:00:00Z
+        // But new Date('2019-10-27T00:00').toISOString() -> 2019-10-26T22:00:00Z
+        // Therefore always specify zulu zone.
+        return new Date(s + 'Z');
     }
 }
 
 /**
- * @param {Date} d
- * @returns {string}
+ * Converter for naive dates without time information.
+ * Uses the same concept for date representation as DateTimeLocalStringConverter.
  */
-export function dateToLocalString(d) {
-    return d.toLocaleDateString() + ' ' + d.toLocaleTimeString()
+export class DateStringConverter {
+    /**
+     * @param {string?} locale
+     */
+    constructor(locale) {
+        const parsers = createLocalDateParsers(locale);
+        this.dateSeparator = parsers.dateSeparator;
+        this.parser = parsers.localDateParser;
+    }
+
+    /**
+     * @param {Date|string} d
+     * @returns {string}
+     */
+    toString(d) {
+        if (typeof  d === 'string') return d;  // TODO: Is this the right way, or should we be strict?
+        if (isNaN(d.getTime())) return d.toString();
+        const pad = (v) => String(v).padStart(2, '0');
+        return pad(d.getUTCFullYear()) + '-' + pad(1 + d.getUTCMonth()) + '-' + pad(d.getUTCDate());
+    }
+
+    /**
+     * @param {string} s
+     * @returns {Date}
+     */
+    fromString(s) {
+        if (this.dateSeparator && s.indexOf(this.dateSeparator) !== -1) return this.parser(s);
+        return new Date(s + 'Z');
+    }
 }
 
 /**
- * Example: parseDate('2017-01-01').toISOString() -> "2017-01-01T00:00Z"
- *
- * @param {String} s a date of the form
- *          2016-01-01 or 2016-01-01T13 or 2016-01-01T13:30 or
- *          01.01.2016 or 01.01.2016 13 or 01.01.2016 13:30
- * @return {Date} a naive (UTC) date
+ Parses ISO periods of the form PT1H or PT15M.
+ Returns duration in milliseconds.
  */
-export function localStringToDate(s) {
-    let d = new Date(0);
-    let mo, year, month, date;
-
-    if (s.indexOf('-') !== -1) {
-        // '2016-01-01T13:30'
-        // 0=2016-01-01T..., 1=2016, 2=01, 3=01, 4=T13:30, 5=13:30
-        mo = s.match(/^(\d+)-(\d+)-(\d+)(T(.*))?$/);
-        if (!mo) return new Date(NaN);
-
-        year = parseInt(mo[1]);
-        month = parseInt(mo[2]);
-        date = parseInt(mo[3])
-    } else if (s.indexOf('.') !== -1) {
-        // '01.01.2016 13:30'
-        // 0=01.01.2016 ..., 1=01, 2=01, 3=2016, 4= 13:30, 5=13:30"
-        mo = s.match(/^(\d+)\.(\d+)\.(\d+)(\s+(.*))?$/);
-        if (!mo) return new Date(NaN);
-        year = parseInt(mo[3]);
-        month = parseInt(mo[2]);
-        date = parseInt(mo[1])
-    } else {
-        return new Date(NaN)
+function parseFrequency(frequency) {
+    // 'T0H15M'.match(/^T((\d+)H)?((\d+)M)?$/)
+    // -> ["T0H15M", "0H", "0", "15M", "15"]
+    frequency = frequency.toUpperCase();
+    let m = frequency.match(/^T((\d+)H)?((\d+)M)?$/);
+    if (!m) {
+        console.log(`Invalid frequency ${frequency}`);
+        return {M: 1};
     }
-    d.setFullYear(year);
-    d.setMonth(month - 1);
-    d.setDate(date);
-    if (mo[5] !== new Date(NaN)) {
-        let timeParts = mo[5].split(':');
-        if (timeParts.length > 0) d.setHours(Number(timeParts[0]));
-        if (timeParts.length > 1) d.setMinutes(Number(timeParts[1]))
-    }
-    d.toJSON = function () {
-        return isoFormat(this, minFreq)
-    };
-    return d
+    return {H: parseInt(m[2]), M: parseInt(m[4])};
 }
-
-/**
- * Returns a date of the form 2017-08-13(T10(:56(:43)?)?)?
- */
-function isoFormat(d, frequency) {
-    frequency = frequency || secFreq;
-    let s = d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
-    if (frequency >= dayFreq) return s;
-    else return s + 'T' + timeFormat(d, frequency)
-}
-
-export const DateTimeIndex = {
-    create: function (startDate, frequency) {
-        if (typeof(startDate) === 'string') startDate = parseDate(startDate);
-        startDate = startDate.getTime();
-        return {
-            at: function (index) {
-                return new Date(startDate + index * frequency)
-            }
-        }
-    },
-    isoFormat: isoFormat,
-    deFormat: deFormat,
-    timeFormat: timeFormat,
-    hasFrequency: hasFrequency,
-    secFreq: secFreq,
-    minFreq: minFreq,
-    hourFreq: hourFreq,
-    dayFreq: dayFreq
-};
 
 /**
  * Parses a list of local date strings and returns a list of dates. This is only possible because we assert that
@@ -360,7 +241,7 @@ export const DateTimeIndex = {
  * @param {Array<string>} dateStrings
  * @returns {Date[]}
  */
-export function localDateStringToDate(dateStrings) {
+function localDateStringToDate(dateStrings) {
     let prevTime = undefined;
     return dateStrings.map(function (s) {
         let d = new Date(s);

@@ -1,9 +1,10 @@
-import {} from "./gridchip.js"
+import {} from "./gridchen.js"
 
 /**
  * @param {number} duration in seconds
  * @return {string}
  */
+
 /*function formatDuration(duration) {
     const units = [['seconds', 60], ['minutes', 60], ['hours', 24], ['days', 100000000]];
 
@@ -42,7 +43,7 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
             // Resolve reference. TODO: Report unresolved reference.
             childSchema = schemas[childSchema['$ref']];
         }
-        const value = obj?obj[key]:undefined;
+        const value = obj ? obj[key] : undefined;
         if (childSchema.type === 'object' && !childSchema.format) {
             bind(schemas, childSchema, value, childPointer, fieldset, onDataChanged);
         } else {
@@ -53,7 +54,7 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
             if (childSchema.type === 'boolean') {
                 input = document.createElement('input');
                 input.type = 'checkbox';
-                input.checked = value===undefined?false:value;
+                input.checked = value === undefined ? false : value;
             } else if (childSchema.enum) {
                 input = document.createElement('select');
                 childSchema.enum.forEach(function (optionName) {
@@ -62,7 +63,7 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
                     input.appendChild(option);
                 });
             } else if (childSchema.type === 'array') {
-                input = document.createElement('grid-chip');
+                input = document.createElement('grid-chen');
                 input.style.height = '100px';
                 let colSchemas;
                 let matrix = [];
@@ -72,7 +73,7 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
                         matrix = value;
                     }
                 } else if (childSchema.items.properties) {
-                    colSchemas = Object.keys(childSchema.items.properties).map(function(id) {
+                    colSchemas = Object.keys(childSchema.items.properties).map(function (id) {
                         const colSchema = childSchema.items.properties[id];
                         colSchema.title = colSchema.title || id;
                         colSchema._id = id;
@@ -80,7 +81,7 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
                     });
                     if (value !== undefined) {
                         // TODO: Use map().
-                        value.forEach(function(item) {
+                        value.forEach(function (item) {
                             matrix.push(colSchemas.map((schema) => item[schema._id]));
                         });
                     }
@@ -91,14 +92,14 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
                     }
                 }
 
-                colSchemas.forEach(function(schema) {
-                    schema.width = schema.title.length*12;
+                colSchemas.forEach(function (schema) {
+                    schema.width = schema.title.length * 12;
                     if (schema.type === 'object') schema.type = schema.format;
                 });
-                const callback = function() {
+                input.resetFromMatrix(colSchemas, matrix);
+                input.addEventListener('datachanged', function () {
                     onDataChanged(childPointer, matrix);
-                };
-                input.resetFromMatrix(colSchemas, matrix, callback)
+                });
             } else {
                 input = document.createElement('input');
 
@@ -106,7 +107,7 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
                     input.style.textAlign = 'right'
                 }
 
-                if ( value === undefined ) {
+                if (value === undefined) {
                     input.value = '';
                 } else if (childSchema.unit === '%') {
                     input.value = 100 * value;
@@ -117,7 +118,7 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
                 }
             }
 
-            input.disabled = childSchema.editable===undefined?false:!childSchema.editable;
+            input.disabled = childSchema.editable === undefined ? false : !childSchema.editable;
             input.style.width = '25ex';
 
             input.onchange = function () {
@@ -170,7 +171,7 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
  */
 export function disableButtons(form) {
     const buttons = form.querySelectorAll('button');
-    for (let i=0; i<buttons.length; i++) {
+    for (let i = 0; i < buttons.length; i++) {
         buttons[i].disabled = true;
     }
 }
@@ -191,7 +192,7 @@ export function busy(button) {
  */
 export function enableButtons(form) {
     const buttons = form.querySelectorAll('button');
-    for (let i=0; i<buttons.length; i++) {
+    for (let i = 0; i < buttons.length; i++) {
         /** @type {HTMLButtonElement} */
         const button = buttons.item(i);
         button.disabled = false;

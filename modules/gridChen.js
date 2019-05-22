@@ -237,7 +237,7 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
         total += schema.width + 2 * cellBorderWidth + 2 * cellPadding;
         columnEnds[index] = total;
         if (schema.type === 'number' || schema.type === 'integer') {
-            schema.converter = new NumberStringConverter(schema.fractionDigits || 0);
+            schema.converter = new NumberStringConverter(schema.fractionDigits || 2);
         } else if (schema.type === 'datetime') {
             schema.converter = new DateTimeStringConverter(schema.frequency || 'T1M');
         } else if (schema.type === 'datetimelocal') {
@@ -284,7 +284,9 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
             style.height = innerHeight;
             style.padding = cellPadding + 'px';
             style.border = '1px solid black';
+            style.overflow = 'hidden';
             header.textContent = schema.title;
+            header.title = schema.title;
             if (schema.sortDirection === 1) {
                 header.textContent += ' ↑';
             } else if (schema.sortDirection === -1) {
@@ -568,6 +570,10 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
             let emptyMatrix = Array(selection.row.sup - selection.row.min);
             emptyMatrix.fill(emptyRow);
             viewModel.onPaste(selection.row.min, selection.col.min, emptyMatrix);
+        } else if (evt.code === 'KeyQ' && evt.ctrlKey) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            viewModel.plot();
         } else if (evt.keyCode >= 32) {
             // TODO: move this to keypress because keyCode is deprecated.
             // focus on input element, which will then receive this keyboard event.

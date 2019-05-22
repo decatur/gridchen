@@ -1,6 +1,3 @@
-# Status
-:exclamation: This is alpha-ware: Do not use!
-
 # About
 Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience.
 Very modern (web components, es6 modules) with no dependencies.
@@ -13,7 +10,7 @@ Non-fancy but enterprise capable.
 <bantam-grid id="mybantam" style="height:200px;"></bantam-grid>
 
 <script type="module">
-    import {} from "./modules/gridchip.js"
+    import {} from "./modules/gridchen.js"
     const schemas = [{title: 'A', width: 150, type: 'date'},  {title: 'B', width: 100, type: 'number'}];
     const dataMatrix = [[new Date(), 1], [new Date(), 2], [new Date(), 3]];
     document.getElementById('mybantam').resetFromMatrix(schemas, dataMatrix);
@@ -26,10 +23,10 @@ github.io ...
 
 # Issues
 
-* Scrolling past first row must not be possible
-* Refresh sort info in header
-* It should not be possible to activate or select in multiple grids (-> onblur()).
-* On expand selection with Shift-Click, then clicked cell must not become active.
+* ! Editing the active cell must scroll it into view.
+* Using slider will blur grid.
+* Edit mode should show the **raw** data, not the formatted value.
+* Only honour first sortDirection!
 
 # TODO
 
@@ -142,6 +139,21 @@ This is more safe than contentEditable, where you have to prevent user from dire
 * HTMLInputElement matrix
     * Cons: Cannot have format mode.
     * Pros: Very HTML-ish
+    
+### cells: input vs span
+input pro:
+* semantically correct
+* more natural handling of clipboard events
+span pro:
+* allows rich formatting, for example links
+* easier handling of cell modes (FORMAT, EDIT, INPUT)
+
+### editable vs popup input
+editable pro
+* must not handle display, location and focus of input element
+popup input pro
+* semantically correct
+* no need to safeguard the integrity of the dom (user injects dom fragment via context menu->insert) 
 
 ## Event-Layout
 
@@ -151,11 +163,11 @@ TODO: Check if this is possible by setting tabIndex on span elements.
 Watch for multiple actions, for example onclick -> onclick -> ondblclick or onmousedown -> onclick. 
 
 ## Browser Support
-Chrome
+Tested only with Chrome Version 71.0
 
 # Test Plan
 
-Open http://localhost:63342/bantam/bantam.html
+Open http://localhost:63342/bantam/demo1.html
 -> a grid with one header and 1000 data rows is displayed.
 
 Change location hash to rowcount=10
@@ -175,6 +187,31 @@ With mouse-down/move/up select multiple cells
 
 Click any cell
 -> Selection is revoked
+
+Mouse-Wheel past the first row -> not possible
+
+Make a Click-Selection-Expand. -> The active cell should not change.
+
+Check trimming
+
+Edit Mode uses raw data
+
+Copy&Paste date must result in same value
+
+Grid looses focus -> no active cell, no selection
+
+Sorting does not change active cell nor selection
+
+Editing active cell when outside viewport is possible. The active cell must scroll into view.
+Clicking editor should move caret.
+Expanding selection (both mouse and keyboard) must not change active cell.
+In EDIT mode, Shift-Enter enters moves active cell up in ACTIVE mode.
+Escape must exist edit and input mode
+EDIT mode must show the **raw** data, not the formatted value.
+On load of the grid, no active cell or selection must show.
+Header must show sort direction, if any. Sort must toggle. Only one column must show sort direction.
+Bluring grid in EDIT mode must hide row menu, active cell and selection.
+Test all date converters
 
 ## Multiple Grids
 Check only one grid can have focused cell and selection.

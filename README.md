@@ -1,3 +1,5 @@
+# Alpha-version: Do not use! 
+
 # About
 Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience.
 Very modern (web components, es6 modules) with no dependencies.

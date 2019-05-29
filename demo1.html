@@ -25,42 +25,45 @@
 </div>
 
 <script type="module">
-    import {} from "./lunatic/gridchen.js"
+    import {} from "./modules/gridchen.js"
+    import {createRowMatrixView} from "./modules/DataViews.js"
 
     function createMyGrid(rowCount) {
         // Some sample data. Most likely this will come from the server via the Fetch API.
         let startDate = new Date('2017-01-01T00:00+01:00');
 
-        const schemas = [
-            {
-                title: 'DateTime', width: 200, type: 'datetime', frequency: 'T1M', sortDirection: 1,
-                simulate: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15)
-            },
-            {
-                title: 'Date', width: 200, type: 'date',
-                simulate: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15)
-            },
-            {
-                title: 'DateTimeLocal', width: 200, type: 'datetimelocal', frequency: 'T1M',
-                simulate: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15)
-            },
-            {title: 'Index', width: 50, type: 'number', fractionDigits: 0, simulate: (row, col) => row},
-            {title: 'Col A', width: 50, type: 'number', fractionDigits: 1, simulate: (row, col) => row},
-            {title: 'Col B', width: 100, type: 'number', fractionDigits: 2, simulate: (row, col) => row},
-            {title: 'Col C', width: 100, type: 'string', simulate: (row, col) => `${row}#${col}`}
-        ];
+        const schema = {
+            title: 'demo', columnSchemas: [
+                {
+                    title: 'DateTime', width: 200, type: 'datetime', frequency: 'T1M', sortDirection: 1,
+                    simulate: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15)
+                },
+                {
+                    title: 'Date', width: 200, type: 'date',
+                    simulate: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15)
+                },
+                {
+                    title: 'DateTimeLocal', width: 200, type: 'datetimelocal', frequency: 'T1M',
+                    simulate: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15)
+                },
+                {title: 'Index', width: 50, type: 'number', fractionDigits: 0, simulate: (row, col) => row},
+                {title: 'Col A', width: 50, type: 'number', fractionDigits: 1, simulate: (row, col) => row},
+                {title: 'Col B', width: 100, type: 'number', fractionDigits: 2, simulate: (row, col) => row},
+                {title: 'Col C', width: 100, type: 'string', simulate: (row, col) => `${row}#${col}`}
+            ]
+        };
 
-        function simulateData() {
-            let data = Array(rowCount);
+        function simulateRows() {
+            let rows = Array(rowCount);
             for (let i = 0; i < rowCount; i++) {
-                data[i] = schemas.map((schema, colIndex) => schema.simulate(i, colIndex));
+                rows[i] = schema.columnSchemas.map((schema, colIndex) => schema.simulate(i, colIndex));
             }
-            data[3] = undefined;
-            data[4][1] = undefined;
-            return data
+            rows[3] = undefined;
+            rows[4][1] = undefined;
+            return rows
         }
 
-        document.getElementById('mygrid').resetFromMatrix(schemas, simulateData());
+        document.getElementById('mygrid').resetFromView(schema, createRowMatrixView(schema, simulateRows()));
     }
 
     /**

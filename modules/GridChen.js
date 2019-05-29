@@ -5,7 +5,7 @@
  * See README.md
  */
 
-import {createSimpleControler} from "./matrix_view.js"
+//import {createRowMatrixView} from "./matrix_view.js"
 import {DateStringConverter, DateTimeStringConverter, DateTimeLocalStringConverter, NumberStringConverter} from "./converter.js"
 
 let logCounter = 0;
@@ -19,6 +19,9 @@ const console = {
     }
 };
 
+/**
+ * @implements {GridChen.IRectangle}
+ */
 export class Rectangle {
     /**
      * @param {GridChen.IInterval} row
@@ -31,8 +34,8 @@ export class Rectangle {
 
     /**
      * Intersect this rectangle with another rectangle.
-     * @param {Rectangle} other
-     * @returns {Rectangle}
+     * @param {GridChen.IRectangle} other
+     * @returns {GridChen.IRectangle}
      */
     intersect(other) {
         const row = intersectInterval(this.row, other.row);
@@ -76,11 +79,10 @@ class GridChen extends HTMLElement {
     }
 
     /**
-     * @param {Array<GridChen.ISchema>} schemas
-     * @param {Array<Array<number | string | Date | boolean>>} matrix
+     * @param {Array<GridChen.IGridSchema>} schema
+     * @param {Array<Array<number | string | Date | boolean>>} viewModel
      */
-    resetFromMatrix(schemas, matrix) {
-        const {dataSource, viewModel} = createSimpleControler(schemas, matrix);
+    resetFromView(schema, viewModel) {
         if (this.shadowRoot) {
             this.shadowRoot.removeChild(this.shadowRoot.firstChild);
         } else {
@@ -92,7 +94,7 @@ class GridChen extends HTMLElement {
         container.style.height = totalHeight + 'px';
         this.shadowRoot.appendChild(container);
         this.eventListeners = {'datachanged': () => null, 'activecellchanged': () => null};
-        Grid(container, schemas, dataSource, viewModel, this.eventListeners);
+        Grid(container, schema, viewModel, this.eventListeners);
         return this
     }
 
@@ -100,11 +102,6 @@ class GridChen extends HTMLElement {
         this.eventListeners[type] = listener;
         return this
     }
-
-    /*activeCell() {
-        return this._activeCell;
-    }*/
-
 
 }
 
@@ -211,11 +208,11 @@ const cellPadding = 3;
 
 /**
  * @param {HTMLElement} container
- * @param {GridChen.ISchema[]} schemas
- * @param dataSource
+ * @param {GridChen.IGridSchema} schema
  * @param viewModel
  */
-function Grid(container, schemas, dataSource, viewModel, eventListeners) {
+function Grid(container, schema, viewModel, eventListeners) {
+    const schemas = schema.columnSchemas;
     let totalHeight = parseInt(container.style.height);
 
     let styleSheet = document.createElement('style');
@@ -237,7 +234,7 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
         total += schema.width + 2 * cellBorderWidth + 2 * cellPadding;
         columnEnds[index] = total;
         if (schema.type === 'number' || schema.type === 'integer') {
-            schema.converter = new NumberStringConverter(schema.fractionDigits || 2);
+            schema.converter = new NumberStringConverter(schema.fractionDigits===undefined?2:schema.fractionDigits);
         } else if (schema.type === 'datetime') {
             schema.converter = new DateTimeStringConverter(schema.frequency || 'T1M');
         } else if (schema.type === 'datetimelocal') {
@@ -269,6 +266,10 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
     style.backgroundColor = 'khaki';
     container.appendChild(headerRow);
 
+    function refresh(_rowCount) {
+        rowCount = _rowCount;
+        setFirstRow(firstRow)
+    }
 
     refreshHeaders();
 
@@ -294,7 +295,7 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
             }
             header.onclick = function () {
                 // header.textContent = schema.title + ' ' + (header.textContent.substr(-1)==='↑'?'↓':'↑');
-                viewModel.onSort(index);
+                refresh(viewModel.sort(index));
             };
             headerRow.appendChild(header);
             left = columnEnds[index];
@@ -322,7 +323,7 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
     insertRowButton.title = "Insert Row Above";
     insertRowButton.textContent = '+';
     insertRowButton.onclick = function () {
-        viewModel.onRowInsert(activeCell.row - 1)
+        refresh(viewModel.insertRowBefore(activeCell.row - 1));
         //inputList[previousFocus.row][0].select()
     };
     rowMenu.appendChild(insertRowButton);
@@ -335,7 +336,7 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
     deleteRowButton.title = "Delete Row";
     deleteRowButton.textContent = '-';
     deleteRowButton.onclick = function () {
-        viewModel.onRowDelete(activeCell.row)
+        refresh(viewModel.deleteRow(activeCell.row))
         // inputList[previousFocus.row][0].select()
     };
     rowMenu.appendChild(deleteRowButton);
@@ -535,7 +536,7 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
                 {min: activeCell.row, sup: activeCell.row + 1},
                 {min: activeCell.col, sup: activeCell.col + 1}
             );
-            navigator.clipboard.writeText(dataSource.toClipboard(rect))
+            navigator.clipboard.writeText(viewModel.copy(rect, '\t'))
                 .then(() => {
                     console.log('Text copied to clipboard');
                 })
@@ -551,7 +552,7 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
                     console.log('Pasted content: ', text);
                     let matrix = tsvToMatrix(text);
                     if (matrix) {
-                        viewModel.onPaste(activeCell.row, activeCell.col, matrix);
+                        refresh(viewModel.paste(activeCell.row, activeCell.col, matrix));
                     }
                 })
                 .catch(err => {
@@ -569,7 +570,7 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
             emptyRow.fill(undefined);
             let emptyMatrix = Array(selection.row.sup - selection.row.min);
             emptyMatrix.fill(emptyRow);
-            viewModel.onPaste(selection.row.min, selection.col.min, emptyMatrix);
+            refresh(viewModel.paste(selection.row.min, selection.col.min, emptyMatrix));
         } else if (evt.code === 'KeyQ' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation();
@@ -663,7 +664,7 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
             } else {
                 value = schemas[colIndex].converter.fromString(value)
             }
-            viewModel.onCellChange(rowIndex, colIndex, value);
+            refresh(viewModel.setCell(rowIndex, colIndex, value));
             // Must be called AFTER model is updated.
             eventListeners['datachanged']();
         }
@@ -747,7 +748,7 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
             slider.setValue(firstRow)
         }
 
-        dataSource.setViewportRange(firstRow, firstRow + viewPortRowCount);
+        updateViewportRows(viewModel.getRows(firstRow, firstRow + viewPortRowCount));
         activeCell.move(activeCell.row, activeCell.col);
         selection.show();
     }
@@ -791,30 +792,23 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
         return span
     }
 
-    let params = {
-        setRowCount: function (_rowCount) {
-            rowCount = _rowCount;
-            console.log('rowCount: ' + rowCount);
-            setFirstRow(firstRow)
-        },
-        setRowData: function (matrix) {
-            // console.log('setRowData', rowData)
-            for (let index = 0; index < spanMatrix.length; index++) {
-                let inputRow = spanMatrix[index];
-                let row = matrix[firstRow + index];
-                for (let colIndex = 0; colIndex < colCount; colIndex++) {
-                    let input = inputRow[colIndex];
-                    let value = (row ? row[colIndex] : undefined);
-                    if (value === undefined) {
-                        value = '';
-                    } else {
-                        value = schemas[colIndex].converter.toString(value);
-                    }
-                    input.textContent = value;
+    function updateViewportRows(matrix) {
+        // console.log('setRowData', rowData)
+        for (let index = 0; index < spanMatrix.length; index++) {
+            let inputRow = spanMatrix[index];
+            let row = matrix[firstRow + index];
+            for (let colIndex = 0; colIndex < colCount; colIndex++) {
+                let input = inputRow[colIndex];
+                let value = (row ? row[colIndex] : undefined);
+                if (value === undefined) {
+                    value = '';
+                } else {
+                    value = schemas[colIndex].converter.toString(value);
                 }
+                input.textContent = value;
             }
         }
-    };
+    }
 
     for (let rowIndex = 0; rowIndex < spanMatrix.length; rowIndex++) {
         spanMatrix[rowIndex] = Array(colCount);
@@ -832,7 +826,8 @@ function Grid(container, schemas, dataSource, viewModel, eventListeners) {
     let selection = new Selection(repainter);
     //selection.set(0, 0);
 
-    dataSource.init(params);
+    firstRow = 0;
+    refresh(viewModel.rowCount());
     // Revoke action by setFirstRow(). TODO: Refactor.
     activeCell.hide();
     selection.hide();

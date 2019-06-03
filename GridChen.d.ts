@@ -24,6 +24,11 @@ declare module GridChen {
         columnSchemas: IColumnSchema[];
     }
 
+    export interface JSONSchema {
+        title: string;
+        items: Object | Object[];
+    }
+
     export interface IPosition {
         row: number;
         col: number;
@@ -46,12 +51,10 @@ declare module GridChen {
 
     export interface DataView {
         rowCount: () => number;
-        getRows: (firstRow: number, lastRow: number) => number[][];
         deleteRow: (rowIndex: number) => number;
+        getCell: (rowIndex: number, colIndex: number) => any;
         setCell: (rowIndex: number, colIndex: number, value: number) => number;
         insertRowBefore: (rowIndex: number) => number;
-        copy: (selection: IRectangle, sep: string) => string;
-        paste: (topRowIndex: number, topColIndex: number, matrix: number[][]) => number;
         sort: (colIndex: number) => number;
         plot: () => void;
     }

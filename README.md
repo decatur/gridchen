@@ -3,7 +3,6 @@
 # About
 Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience.
 Very modern (web components, es6 modules) with no dependencies.
-Non-fancy but enterprise capable.
 
 # Usage
 
@@ -29,6 +28,7 @@ github.io ...
 * Using slider will blur grid.
 * Edit mode should show the **raw** data, not the formatted value.
 * Only honour first sortDirection!
+* Handling of Infinity and NaN
 
 # TODO
 
@@ -214,6 +214,8 @@ On load of the grid, no active cell or selection must show.
 Header must show sort direction, if any. Sort must toggle. Only one column must show sort direction.
 Bluring grid in EDIT mode must hide row menu, active cell and selection.
 Test all date converters
+
+* WheelScroll with selected GridChen must not scroll any surrounding HTML element.
 
 ## Multiple Grids
 Check only one grid can have focused cell and selection.

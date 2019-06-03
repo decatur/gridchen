@@ -5,10 +5,12 @@
  * See README.md
  */
 
-//import {createRowMatrixView} from "./matrix_view.js"
-import {DateStringConverter, DateTimeStringConverter, DateTimeLocalStringConverter, NumberStringConverter} from "./converter.js"
+window.console.log('Executing GridChen ...');
+
+const numeric = new Set(['number', 'integer']);
 
 let logCounter = 0;
+// TODO: Rename to logger.
 const console = {
     assert: window.console.assert,
     log: function (a, b) {
@@ -76,25 +78,28 @@ function intersectInterval(i1, i2) {
 class GridChen extends HTMLElement {
     constructor() {
         super();
+        this.eventListeners = {'datachanged': () => null, 'activecellchanged': () => null, 'selectionchanged': () => null};
     }
 
     /**
-     * @param {Array<GridChen.IGridSchema>} schema
-     * @param {Array<Array<number | string | Date | boolean>>} viewModel
+     * @param {GridChen.DataView} viewModel
      */
-    resetFromView(schema, viewModel) {
+    resetFromView(viewModel) {
         if (this.shadowRoot) {
             this.shadowRoot.removeChild(this.shadowRoot.firstChild);
         } else {
             // First initialize creates shadow dom.
             this.attachShadow({mode: 'open'});
         }
-        let totalHeight = parseInt(this.style.height);
+        let totalHeight = parseInt(this.style.height || '100');  // Default value needed for unit testing.
         const container = document.createElement('div');
         container.style.height = totalHeight + 'px';
         this.shadowRoot.appendChild(container);
-        this.eventListeners = {'datachanged': () => null, 'activecellchanged': () => null};
-        Grid(container, schema, viewModel, this.eventListeners);
+        if (viewModel instanceof Error) {
+            container.innerText = String(viewModel);
+            return null
+        }
+        Grid(container, viewModel, this.eventListeners);
         return this
     }
 
@@ -154,13 +159,14 @@ class Slider {
 }
 
 class Selection extends Rectangle {
-    constructor(repainter) {
+    constructor(repainter, eventListeners) {
         super({min: 0, sup: 1}, {min: 0, sup: 1});
         /** @type {GridChen.IPosition} */
         this.initial = {row: 0, col: 0};
         /** @type {GridChen.IPosition} */
         this.head = {row: 0, col: 0}; // Cell opposite the initial.
         this.repainter = repainter;
+        this.eventListeners = eventListeners;
     }
 
     /**
@@ -180,6 +186,7 @@ class Selection extends Rectangle {
         this.head = {row: rowIndex, col: colIndex};
         this.row = {min: rowIndex, sup: 1 + rowIndex};
         this.col = {min: colIndex, sup: 1 + colIndex};
+        this.eventListeners['selectionchanged'](this);
     }
 
     expand(rowIndex, colIndex) {
@@ -198,6 +205,7 @@ class Selection extends Rectangle {
         };
 
         this.show();
+        this.eventListeners['selectionchanged'](this);
     }
 }
 
@@ -211,7 +219,8 @@ const cellPadding = 3;
  * @param {GridChen.IGridSchema} schema
  * @param viewModel
  */
-function Grid(container, schema, viewModel, eventListeners) {
+function Grid(container, viewModel, eventListeners) {
+    const schema = viewModel.schema;
     const schemas = schema.columnSchemas;
     let totalHeight = parseInt(container.style.height);
 
@@ -230,36 +239,15 @@ function Grid(container, schema, viewModel, eventListeners) {
     let total = 0;
     const columnEnds = [];
     schemas.forEach(function (schema, index) {
-        schema.width = Number(schema.width);
         total += schema.width + 2 * cellBorderWidth + 2 * cellPadding;
         columnEnds[index] = total;
-        if (schema.type === 'number' || schema.type === 'integer') {
-            schema.converter = new NumberStringConverter(schema.fractionDigits===undefined?2:schema.fractionDigits);
-        } else if (schema.type === 'datetime') {
-            schema.converter = new DateTimeStringConverter(schema.frequency || 'T1M');
-        } else if (schema.type === 'datetimelocal') {
-            schema.converter = new DateTimeLocalStringConverter(schema.frequency || 'T1M');
-        } else if (schema.type === 'date') {
-            schema.converter = new DateStringConverter();
-        } else if (schema.type === 'boolean') {
-            schema.converter = {
-                toString: (value) => String(value),
-                fromString: (value) => Boolean(value)
-            };
-        } else {
-            // string and others
-            schema.converter = {
-                toString: (value) => String(value),
-                fromString: (value) => value
-            };
-        }
     });
 
     const headerRow = document.createElement('div');
     let style = headerRow.style;
     style.position = 'relative';
     style.left = '20px';
-    style.width = columnEnds[columnEnds.length-1] + 'px';
+    style.width = columnEnds[columnEnds.length - 1] + 'px';
     style.height = rowHeight + 'px';
     style.textAlign = 'center';
     style.fontWeight = 'bold';
@@ -406,6 +394,10 @@ function Grid(container, schema, viewModel, eventListeners) {
         }
     }
 
+    /*cellParent.onclick = function (evt) {
+        console.log('onclick');
+    };*/
+
     cellParent.onmousedown = function (evt) {
         console.log('onmousedown');
         // But we do not want it to propagate as we want to avoid side effects.
@@ -467,6 +459,8 @@ function Grid(container, schema, viewModel, eventListeners) {
 
     cellParent.onmousewheel = function (_evt) {
         let evt = /** @type {WheelEvent} */ _evt;
+        evt.stopPropagation();
+        evt.preventDefault();  // Prevents scrolling of any surrounding HTML element.
         console.log(evt);
         // TODO: This is not MSE behaviour. MSE only scrolls and does not move the active cell.
         // TODO: Use evt.deltaMode
@@ -532,11 +526,7 @@ function Grid(container, schema, viewModel, eventListeners) {
         } else if (evt.code === 'KeyC' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation(); // Prevent text is copied from container.
-            const rect = selection || new Rectangle(
-                {min: activeCell.row, sup: activeCell.row + 1},
-                {min: activeCell.col, sup: activeCell.col + 1}
-            );
-            navigator.clipboard.writeText(viewModel.copy(rect, '\t'))
+            navigator.clipboard.writeText(selectionToTSV('\t'))
                 .then(() => {
                     console.log('Text copied to clipboard');
                 })
@@ -549,10 +539,10 @@ function Grid(container, schema, viewModel, eventListeners) {
             evt.stopPropagation(); // Prevent that text is pasted into editable container.
             navigator.clipboard.readText()
                 .then(text => {
-                    console.log('Pasted content: ', text);
+                    //console.log('Pasted content: ', text);
                     let matrix = tsvToMatrix(text);
                     if (matrix) {
-                        refresh(viewModel.paste(activeCell.row, activeCell.col, matrix));
+                        refresh(paste(activeCell.row, activeCell.col, matrix));
                     }
                 })
                 .catch(err => {
@@ -570,7 +560,7 @@ function Grid(container, schema, viewModel, eventListeners) {
             emptyRow.fill(undefined);
             let emptyMatrix = Array(selection.row.sup - selection.row.min);
             emptyMatrix.fill(emptyRow);
-            refresh(viewModel.paste(selection.row.min, selection.col.min, emptyMatrix));
+            refresh(paste(selection.row.min, selection.col.min, emptyMatrix));
         } else if (evt.code === 'KeyQ' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation();
@@ -647,7 +637,7 @@ function Grid(container, schema, viewModel, eventListeners) {
 
     let firstRow = 0;
     /** @type{number} */
-    let rowCount = undefined;
+    let rowCount = 0;
 
     function commit(focusContainer) {
         console.log('commit');
@@ -701,12 +691,12 @@ function Grid(container, schema, viewModel, eventListeners) {
             evt.preventDefault();
             evt.stopPropagation();
             commit();
-            navigateCell(evt, evt.shiftKey?-1:1, 0);
+            navigateCell(evt, evt.shiftKey ? -1 : 1, 0);
         } else if (evt.code === 'Tab') {
             evt.preventDefault();
             evt.stopPropagation();
             commit();
-            navigateCell(evt, 0, evt.shiftKey?-1:1);
+            navigateCell(evt, 0, evt.shiftKey ? -1 : 1);
         } else if (evt.code === 'Escape') {
             // Leave edit mode.
             evt.preventDefault();
@@ -748,7 +738,8 @@ function Grid(container, schema, viewModel, eventListeners) {
             slider.setValue(firstRow)
         }
 
-        updateViewportRows(viewModel.getRows(firstRow, firstRow + viewPortRowCount));
+        updateViewportRows(getSelection(
+            new Rectangle({min: firstRow, sup: firstRow + viewPortRowCount}, {min: 0, sup: colCount})));
         activeCell.move(activeCell.row, activeCell.col);
         selection.show();
     }
@@ -768,7 +759,7 @@ function Grid(container, schema, viewModel, eventListeners) {
         style.padding = cellPadding + 'px';
         style.backgroundColor = 'white';
 
-        if (type === 'number' || type === 'integer') {
+        if (numeric.has(type)) {
             span.className = 'number_column'
         }
 
@@ -792,11 +783,68 @@ function Grid(container, schema, viewModel, eventListeners) {
         return span
     }
 
+    function getSelection(selection) {
+        let matrix = Array(selection.row.sup - selection.row.min);
+        for (let i = 0, rowIndex = selection.row.min; rowIndex < selection.row.sup; i++, rowIndex++) {
+            matrix[i] = Array(selection.col.sup - selection.col.min);
+            if (rowIndex >= rowCount) continue;
+            for (let j = 0, colIndex = selection.col.min; colIndex < selection.col.sup; colIndex++, j++) {
+                matrix[i][j] = viewModel.getCell(rowIndex, colIndex);
+            }
+        }
+        return matrix
+    }
+
+    /**
+     * @param {Rectangle} selection
+     * @param {string} sep
+     * @returns {string}
+     */
+    function selectionToTSV(sep) {
+        const rowMatrix = getSelection(selection);
+        let tsvRows = Array(rowMatrix.length);
+        rowMatrix.forEach(function (row, i) {
+            tsvRows[i] = row.map(function (value, j) {
+                let schema = schemas[selection.col.min + j];
+                return value !== undefined ? schema.converter.toString(value) : undefined;
+            }).join(sep);  // Note that a=[undefined, 3].join(',') is ',3', which is what we want.
+        });
+        return tsvRows.join('\r\n')
+    }
+
+    /**
+     * @param {number} topRowIndex
+     * @param {number} topColIndex
+     * @param {Array<Array<string>>} matrix
+     * @returns {number}
+     */
+    function paste(topRowIndex, topColIndex, matrix) {
+        if (!matrix[0].length) {
+            alert('You have nothing to paste')
+        }
+
+        let rowIndex = topRowIndex;
+        let endRowIndex = rowIndex + matrix.length;
+
+        for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {
+            let colIndex = topColIndex;
+            let endColIndex = colIndex + matrix[0].length;
+            for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
+                let value = matrix[i][j];
+                if (value !== undefined) value = schemas[colIndex].converter.fromString(value);
+                viewModel.setCell(rowIndex, colIndex, value);
+            }
+        }
+
+        return viewModel.rowCount();
+    }
+
+
     function updateViewportRows(matrix) {
         // console.log('setRowData', rowData)
         for (let index = 0; index < spanMatrix.length; index++) {
             let inputRow = spanMatrix[index];
-            let row = matrix[firstRow + index];
+            let row = matrix[index];
             for (let colIndex = 0; colIndex < colCount; colIndex++) {
                 let input = inputRow[colIndex];
                 let value = (row ? row[colIndex] : undefined);
@@ -823,7 +871,7 @@ function Grid(container, schema, viewModel, eventListeners) {
     cellParent.appendChild(input);
 
     /** @type {Selection} */
-    let selection = new Selection(repainter);
+    let selection = new Selection(repainter, eventListeners);
     //selection.set(0, 0);
 
     firstRow = 0;
@@ -871,3 +919,4 @@ export function tsvToMatrix(text) {
 
     return matrix;
 }
+

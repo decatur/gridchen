@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<grid-chen id="mygrid" style="height:200px;"></grid-chen>
+
+<script type="module">
+    import {} from "../modules/GridChen.js"
+    const schemas = [{title: 'A', width: 150, type: 'date'},  {title: 'B', width: 100, type: 'number'}];
+    const matrix = [[new Date(), 1], [new Date(), 2], [new Date(), 3]];
+    document.getElementById('mygrid').resetFromMatrix(schemas, matrix, () => null);
+</script>

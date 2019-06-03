@@ -1,4 +1,4 @@
-import {} from "./gridchen.js"
+import {} from "./GridChen.js"
 
 /**
  * @param {number} duration in seconds
@@ -96,7 +96,7 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
                     schema.width = schema.title.length * 12;
                     if (schema.type === 'object') schema.type = schema.format;
                 });
-                input.resetFromMatrix(colSchemas, matrix);
+                input.resetFromMatrix({title: childSchema.title, columnSchemas: colSchemas}, matrix);
                 input.addEventListener('datachanged', function () {
                     onDataChanged(childPointer, matrix);
                 });
@@ -148,8 +148,8 @@ export function bind(schemas, schema, obj, pointer, containerElement, onDataChan
             label.appendChild(title);
             label.appendChild(input);
 
-            if (childSchema.comment) {
-                label.title = childSchema.comment;
+            if (childSchema.comment || childSchema.description) {
+                label.title = childSchema.comment || childSchema.description;
             }
 
             if (childSchema.unit) {

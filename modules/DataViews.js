@@ -1,14 +1,41 @@
 import {renderPlot} from "./plot.js"
+import {
+    DateStringConverter,
+    DateTimeLocalStringConverter,
+    DateTimeStringConverter,
+    NumberStringConverter
+} from "./converter.js";
 
-function numericCompare(a, b) {
+
+const numeric = new Set(['number', 'integer']);
+
+function range(count) {
+    return Array.from({length: count}, (_, i) => i);
+}
+
+/**
+ * Compare function for all supported data types, i.e. string, numeric, date types, boolean.
+ * undefined and NaN always compare as bigger.
+ * @param a
+ * @param b
+ * @returns {number}
+ */
+function compare(a, b) {
+    // Note that we have to handle undefined here because this is NOT the compareFct of Array.sort().
+    if (a < b) return -1;
+    if (a > b) return 1;
     if (a === undefined && b === undefined) return 0;
     if (a === undefined) return 1;
     if (b === undefined) return -1;
-    return a - b;
+    if (isNaN(a) && isNaN(b)) return 0;
+    if (isNaN(a)) return 1;  // isNaN also works for invalid dates.
+    if (isNaN(b)) return -1;
+    return 0;
 }
 
 function updateSortDirection(schemas, colIndex) {
-    let sortDirection = schemas[colIndex].sortDirection;
+    let schema = schemas[colIndex];
+    let sortDirection = schema.sortDirection;
     schemas.forEach((schema) => delete schema.sortDirection);
 
     if (sortDirection === undefined) {
@@ -17,23 +44,107 @@ function updateSortDirection(schemas, colIndex) {
         sortDirection *= -1;
     }
 
-    schemas[colIndex].sortDirection = sortDirection;
-    return sortDirection;
+    schema.sortDirection = sortDirection;
+    return [schema.type, sortDirection];
 }
+
+/**
+ * @param {GridChen.IColumnSchema[]} schemas
+ */
+function updateSchema(schemas) {
+    schemas.forEach(function (schema) {
+        schema.width = Number(schema.width);
+        if (numeric.has(schema.type)) {
+            schema.converter = new NumberStringConverter(schema.fractionDigits === undefined ? 2 : schema.fractionDigits);
+        } else if (schema.type === 'datetime') {
+            schema.converter = new DateTimeStringConverter(schema.frequency || 'T1M');
+        } else if (schema.type === 'datetimelocal') {
+            schema.converter = new DateTimeLocalStringConverter(schema.frequency || 'T1M');
+        } else if (schema.type === 'date') {
+            schema.converter = new DateStringConverter();
+        } else if (schema.type === 'boolean') {
+            schema.converter = {
+                toString: (value) => String(value),
+                fromString: (value) => Boolean(value)
+            };
+        } else {
+            // string and others
+            schema.converter = {
+                toString: (value) => String(value),
+                fromString: (value) => value
+            };
+        }
+    });
+}
+
+/**
+ * @param {GridChen.JSONSchema} schema
+ * @param {Array<Array<object>>} matrix
+ */
+export function createView(schema, matrix) {
+    try {
+        if (Array.isArray(schema.items.items)) {
+            const colSchema = {title: schema.title, columnSchemas: schema.items.items};
+            return createRowMatrixView(colSchema, matrix);
+        }
+    } catch (e) {
+        window.console.error(e);
+    }
+
+    try {
+        if (schema.items.type === 'object') {
+            const colSchema = {
+                title: schema.title,
+                columnSchemas: Object.values(schema.items.properties),
+                ids: Object.keys(schema.items.properties)
+            };
+            return createRowObjectsView(colSchema, matrix);
+        }
+    } catch (e) {
+        window.console.error(e);
+    }
+
+    try {
+        if (Array.isArray(schema.items)) {
+            const colSchema = {title: schema.title, columnSchemas: schema.items.map(item => item.items)};
+            return createColumnMatrixView(colSchema, matrix);
+        }
+    } catch (e) {
+        window.console.error(e);
+    }
+
+    try {
+        if (schema.type === 'object') {
+            const colSchema = {title: schema.title, columnSchemas: Object.values(schema.properties).map(item => item.items), ids:Object.keys(schema.properties)};
+            // Normalize missing columns (ragged columns are allowed).
+            const columns = colSchema.ids.map(id => matrix[id] || Array());
+            return createColumnMatrixView(colSchema, columns);
+        }
+    } catch (e) {
+        window.console.error(e);
+    }
+
+    return new Error('Invalid schema: ' + schema.title);
+}
+
 
 /**
  * @param {GridChen.IGridSchema} schema
  * @param {Array<object>} rows
+ * @returns {GridChen.DataView}
  */
 export function createRowMatrixView(schema, rows) {
     let schemas = schema.columnSchemas;
+    updateSchema(schemas);
 
     // Normalize missing rows (ragged rows are allowed).
-    rows = rows.map(row => row===undefined?Array():row);
+    /*rows.forEach(function (row, i) {
+        if (row === undefined) rows[i] = Array(schemas.length);
+    });*/
 
-    class RowMatrixView {
-
+    class View {
         constructor() {
+            this.schema = schema;
         }
 
         /**
@@ -44,15 +155,12 @@ export function createRowMatrixView(schema, rows) {
         }
 
         /**
-         * @param {number} firstRow
-         * @param {number} lastRow
+         * @param {GridChen.IInterval} rowsRange
+         * @param {number} colIndex
+         * @returns {any[]}
          */
-        getRows(firstRow, lastRow) {
-            let rowData = {};
-            for (let i = firstRow; i < Math.min(lastRow, rows.length); i++) {
-                rowData[i] = rows[i];
-            }
-            return rowData;
+        getColumnSlice(rowsRange, colIndex) {
+            return range(rowsRange.sup - rowsRange.min).map(i => rowsRange[rowsRange.min + i][colIndex]);
         }
 
         /**
@@ -67,13 +175,21 @@ export function createRowMatrixView(schema, rows) {
         /**
          * @param {number} rowIndex
          * @param {number} colIndex
+         * @returns {object}
+         */
+        getCell(rowIndex, colIndex) {
+            if (!rows[rowIndex]) return undefined;
+            return rows[rowIndex][colIndex];
+        }
+
+        /**
+         * @param {number} rowIndex
+         * @param {number} colIndex
          * @param value
          * @returns {number}
          */
         setCell(rowIndex, colIndex, value) {
-            if (rows[rowIndex] === undefined) {
-                rows[rowIndex] = Array(schemas.length);
-            }
+            if (!rows[rowIndex]) rows[rowIndex] = Array(schemas.length);
             rows[rowIndex][colIndex] = value;
             return rows.length;
         }
@@ -88,80 +204,12 @@ export function createRowMatrixView(schema, rows) {
         }
 
         /**
-         * @param {Rectangle} selection
-         */
-
-        /*delete(selection) {
-            data.splice(selection.row.min, selection.row.sup - selection.row.min);
-            return data.length;
-        }
-
-        onClear() {
-            data.length = 0;
-            return data.length;
-        }*/
-
-        /**
-         * @param {Rectangle} selection
-         * @param {string} sep
-         * @returns {string}
-         */
-        copy(selection, sep) {
-            const schemas = schema.columnSchemas;
-            let tsvRows = Array(selection.row.sup - selection.row.min);
-            for (let i = 0, rowIndex = selection.row.min; rowIndex < selection.row.sup; i++, rowIndex++) {
-                tsvRows[i] = Array(selection.col.sup - selection.col.min);
-                let row = rows[rowIndex];
-
-                for (let j = 0, colIndex = selection.col.min; colIndex < selection.col.sup; colIndex++, j++) {
-                    let schema = schemas[colIndex];
-                    let value = row[colIndex];
-                    if (value !== undefined) {
-                        value = schema.converter.toString(value);
-                    }
-                    tsvRows[i][j] = value;
-                }
-                // Note that a=[undefined, 3].join(',') is ',3', which is what we want.
-                tsvRows[i] = tsvRows[i].join(sep)
-            }
-            return tsvRows.join('\r\n')
-        }
-
-        /**
-         * @param {number} topRowIndex
-         * @param {number} topColIndex
-         * @param matrix
-         * @returns {number}
-         */
-        paste(topRowIndex, topColIndex, matrix) {
-            if (!matrix[0].length) {
-                alert('You have nothing to paste')
-            }
-
-            let rowIndex = topRowIndex;
-            let endRowIndex = rowIndex + matrix.length;
-
-            for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {
-                let row = rows[rowIndex];
-                let colIndex = topColIndex;
-                let endColIndex = colIndex + matrix[0].length;
-                for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
-                    let value = matrix[i][j];
-                    if (value !== undefined) value = schemas[colIndex].converter.fromString(value);
-                    row[colIndex] = value;
-                }
-            }
-
-            return rows.length;
-        }
-
-        /**
          * @param {number} colIndex
          * @returns {number}
          */
         sort(colIndex) {
-            let sortDirection = updateSortDirection(schemas, colIndex);
-            rows.sort((row1, row2) => numericCompare(row1[colIndex], row2[colIndex]) * sortDirection);
+            let [type, sortDirection] = updateSortDirection(schemas, colIndex);
+            rows.sort((row1, row2) => compare(row1[colIndex], row2[colIndex]) * sortDirection);
             return rows.length;
         }
 
@@ -170,7 +218,92 @@ export function createRowMatrixView(schema, rows) {
         }
     }
 
-    return new RowMatrixView();
+    return new View();
+}
+
+/**
+ * @param {GridChen.IGridSchema} schema
+ * @param {Array<object>} rows
+ * @returns {GridChen.DataView}
+ */
+export function createRowObjectsView(schema, rows) {
+    const schemas = schema.columnSchemas;
+    const ids = schema.ids;
+    updateSchema(schemas);
+
+    // Normalize missing rows (ragged rows are allowed).
+    /*rows.forEach(function (row, i) {
+        if (row === undefined) rows[i] = {};
+    });*/
+
+    class View {
+        constructor() {
+            this.schema = schema;
+        }
+
+        /**
+         * @returns {number}
+         */
+        rowCount() {
+            return rows.length
+        }
+
+        /**
+         * @param {number} rowIndex
+         * @returns {number}
+         */
+        deleteRow(rowIndex) {
+            rows.splice(rowIndex, 1);
+            return rows.length;
+        }
+
+        /**
+         * @param {number} rowIndex
+         * @param {number} colIndex
+         * @returns {object}
+         */
+        getCell(rowIndex, colIndex) {
+            if (!rows[rowIndex]) return undefined;
+            return rows[rowIndex][ids[colIndex]];
+        }
+
+        /**
+         * @param {number} rowIndex
+         * @param {number} colIndex
+         * @param value
+         * @returns {number}
+         */
+        setCell(rowIndex, colIndex, value) {
+            if (!rows[rowIndex]) rows[rowIndex] = {};
+            rows[rowIndex][ids[colIndex]] = value;
+            return rows.length;
+        }
+
+        /**
+         * @param {number} rowIndex
+         * @returns {number}
+         */
+        insertRowBefore(rowIndex) {
+            rows.splice(rowIndex + 1, 0, {});
+            return rows.length;
+        }
+
+        /**
+         * @param {number} colIndex
+         * @returns {number}
+         */
+        sort(colIndex) {
+            let [type, sortDirection] = updateSortDirection(schemas, colIndex);
+            rows.sort((row1, row2) => compare(row1[ids[colIndex]], row2[ids[colIndex]]) * sortDirection);
+            return rows.length;
+        }
+
+        plot() {
+            renderPlot(schema, rows);
+        }
+    }
+
+    return new View();
 }
 
 /**
@@ -179,9 +312,12 @@ export function createRowMatrixView(schema, rows) {
  */
 export function createColumnMatrixView(schema, columns) {
     let schemas = schema.columnSchemas;
+    updateSchema(schemas);
 
     // Normalize missing columns (ragged columns are allowed).
-    columns = columns.map(column => column===undefined?Array():column);
+    /*columns.forEach(function (column, j) {
+        if (column === undefined) columns[j] = Array();
+    });*/
 
     function getRowCount() {
         return columns.reduce((length, column) => Math.max(length, column.length), 0);
@@ -190,9 +326,9 @@ export function createColumnMatrixView(schema, columns) {
     /**
      * @extends {GridChen.DataView}
      */
-    class ColumnMatrixView {
-
+    class View {
         constructor() {
+            this.schema = schema;
         }
 
         /**
@@ -203,33 +339,23 @@ export function createColumnMatrixView(schema, columns) {
         }
 
         /**
-         * @param {number} firstRow1
-         * @param {number} lastRow
-         */
-        getRows(firstRow, lastRow) {
-            let rowData = {};
-            for (let i = firstRow; i < lastRow; i++) {
-                rowData[i] = Array(columns.length);
-            }
-
-            columns.forEach(function(column, j) {
-                 for (let i = firstRow; i < Math.min(lastRow, column.length); i++) {
-                    rowData[i][j] = column[i];
-                }
-            });
-
-            return rowData;
-        }
-
-        /**
          * @param {number} rowIndex
          * @returns {number}
          */
         deleteRow(rowIndex) {
-            columns.forEach(function(column, j) {
+            columns.forEach(function (column, j) {
                 column.splice(rowIndex, 1);
             });
             return getRowCount();
+        }
+
+        /**
+         * @param {number} rowIndex
+         * @param {number} colIndex
+         * @returns {object}
+         */
+        getCell(rowIndex, colIndex) {
+            return columns[colIndex][rowIndex];
         }
 
         /**
@@ -239,12 +365,8 @@ export function createColumnMatrixView(schema, columns) {
          * @returns {number}
          */
         setCell(rowIndex, colIndex, value) {
-            const rowCount = getRowCount();
-            if (columns[colIndex] === undefined) {
-                columns[colIndex] = Array(rowCount);
-            }
             columns[colIndex][rowIndex] = value;
-            return rowCount;
+            return getRowCount();
         }
 
         /**
@@ -252,61 +374,10 @@ export function createColumnMatrixView(schema, columns) {
          * @returns {number}
          */
         insertRowBefore(rowIndex) {
-            columns.forEach(function(column) {
+            columns.forEach(function (column) {
                 column.splice(rowIndex + 1, 0, undefined);
             });
             return getRowCount();
-        }
-
-        /**
-         * @param {GridChen.IRectangle} selection
-         * @param {string} sep
-         * @returns {string}
-         */
-        copy(selection, sep) {
-            const schemas = schema.columnSchemas;
-            let tsvRows = Array(selection.row.sup - selection.row.min);
-            for (let i = 0, rowIndex = selection.row.min; rowIndex < selection.row.sup; i++, rowIndex++) {
-                tsvRows[i] = Array(selection.col.sup - selection.col.min);
-                for (let j = 0, colIndex = selection.col.min; colIndex < selection.col.sup; colIndex++, j++) {
-                    let schema = schemas[colIndex];
-                    let value = columns[colIndex][rowIndex];
-                    if (value !== undefined) {
-                        value = schema.converter.toString(value);
-                    }
-                    tsvRows[i][j] = value;
-                }
-                // Note that a=[undefined, 3].join(',') is ',3', which is what we want.
-                tsvRows[i] = tsvRows[i].join(sep)
-            }
-            return tsvRows.join('\r\n')
-        }
-
-        /**
-         * @param {number} topRowIndex
-         * @param {number} topColIndex
-         * @param matrix
-         * @returns {number}
-         */
-        paste(topRowIndex, topColIndex, matrix) {
-            if (!matrix[0].length) {
-                alert('You have nothing to paste')
-            }
-
-            let rowIndex = topRowIndex;
-            let endRowIndex = rowIndex + matrix.length;
-
-            for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {
-                let colIndex = topColIndex;
-                let endColIndex = colIndex + matrix[0].length;
-                for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
-                    let value = matrix[i][j];
-                    if (value !== undefined) value = schemas[colIndex].converter.fromString(value);
-                    columns[colIndex][rowIndex] = value;
-                }
-            }
-
-            return columns.length;
         }
 
         /**
@@ -314,20 +385,19 @@ export function createColumnMatrixView(schema, columns) {
          * @returns {number}
          */
         sort(colIndex) {
-            let sortDirection = updateSortDirection(schemas, colIndex);
+            let [type, sortDirection] = updateSortDirection(schemas, colIndex);
             const indexes = columns[colIndex].map((value, rowIndex) => [value, rowIndex]);
 
-            indexes.sort((a, b) => numericCompare(a[0], b[0])*sortDirection);
+            indexes.sort((a, b) => compare(a[0], b[0]) * sortDirection);
 
-            const sortedColumns = Array(columns.length);
-            columns.forEach(function(column, j) {
-                sortedColumns[j] = Array();
-                indexes.forEach(function(index, i) {
-                    sortedColumns[j][i] = column[index[1]];
-                })
+            columns.forEach(function (column, j) {
+                const sortedColumn = Array();
+                indexes.forEach(function (index, i) {
+                    sortedColumn[i] = column[index[1]];
+                });
+                columns[j] = sortedColumn;
             });
 
-            columns = sortedColumns;
             return getRowCount();
         }
 
@@ -336,6 +406,6 @@ export function createColumnMatrixView(schema, columns) {
         }
     }
 
-    return new ColumnMatrixView();
-
+    return new View();
 }
+

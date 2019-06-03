@@ -17,7 +17,7 @@ export class NumberStringConverter {
         this.nf = Intl.NumberFormat(locale, {minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits});
         let testNumber = this.nf.format(1000.5); // 1.000,50 in de-DE
         this.thousandSep = testNumber[1];
-        this.decimalSep = testNumber[5];
+        this.decimalSep = testNumber[5];  // Will be undefined for fractionDigits=0
     }
 
     toString(n) {
@@ -43,7 +43,7 @@ export class NumberStringConverter {
  */
 export class DateTimeStringConverter {
     /**
-     * @param {string} frequency
+     * @param {string?} frequency
      */
     constructor(frequency) {
         this.frequency = parseFrequency(frequency || 'T1M');

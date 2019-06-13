@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>module name</title>
+</head>
+<body>
+
+<p>Open JavaScript console for details</p>
+
+</body>
+
+<script type="module">
+    const match = window.location.search.match(/module=([^&]+)/);
+    loadModule(match[1]);
+
+    function loadModule(module) {
+        document.title = module;
+        import(`./${module}.js`)
+            .then(() => null)
+            .catch(e => alert(e));
+    }
+
+</script>
+</html>

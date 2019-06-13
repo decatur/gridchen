@@ -25,10 +25,11 @@ github.io ...
 # Issues
 
 * ! Editing the active cell must scroll it into view.
+* Paste must select pasted region (pasted region differs from selection if selection cannot be tiled by source)
 * Using slider will blur grid.
 * Edit mode should show the **raw** data, not the formatted value.
 * Only honour first sortDirection!
-* Handling of Infinity and NaN
+* Handling of Infinity and NaN (#NV in de-de)
 
 # TODO
 
@@ -114,7 +115,7 @@ Very lightweight but fast web component with strict MS-Excel adherence to user e
 Non-fancy but enterprise capable, time series.
 
 ## Language
-es6 (modules, etc). No Typescript to keep it simple.
+es7 (modules, promises, async). No Typescript to keep it simple.
 
 Default action (focus, tabbing), CSS 
 
@@ -216,6 +217,7 @@ Bluring grid in EDIT mode must hide row menu, active cell and selection.
 Test all date converters
 
 * WheelScroll with selected GridChen must not scroll any surrounding HTML element.
+If paste target selection is multiple of source, then tile target with source, otherwise just paste source
 
 ## Multiple Grids
 Check only one grid can have focused cell and selection.

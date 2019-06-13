@@ -1,50 +1,56 @@
-import {describe, assertEqual} from './utils.js'
+import {test, assert} from './utils.js'
 import {DateTimeStringConverter, DateStringConverter, DateTimeLocalStringConverter, NumberStringConverter} from "../modules/converter.js";
 
-describe('DateTimeStringConverter', () => {
+test('DateTimeStringConverter', () => {
     let converter = new DateTimeStringConverter();
     let d = new Date('2019-10-27T01:00+02:00');
+    assert.equal('2019-10-27T01:00+02', converter.toString(d));
+    assert.equal('2019-10-27T01:00+02:00', converter.toString('2019-10-27T01:00+02:00'));
+    assert.equal('2019-10-27T01:00+02:00', converter.toString(new String('2019-10-27T01:00+02:00')));
+
     let s = converter.toString(d);
-    assertEqual(d, converter.fromString(s));
+    test('fromString o toString is the identity', () => assert.equal(d, converter.fromString(s)));
 });
 
-describe('DateStringConverter', () => {
+test('DateStringConverter', () => {
     let converter = new DateStringConverter();
     let d = new Date(Date.UTC(2019,9,27));
-    assertEqual(d, converter.fromString('2019-10-27'));
-    let s = converter.toString(d);
-    assertEqual('2019-10-27', s);
+    assert.equal(d, converter.fromString('2019-10-27'));
+    assert.equal('2019-10-27', converter.toString(d));
+    assert.equal('2019-10-27', converter.toString('2019-10-27'));
+    assert.equal('2019-10-27', converter.toString(new String('2019-10-27')));
 
     converter = new DateStringConverter('de');
-    assertEqual(d, converter.fromString('27.10.2019'));
+    assert.equal(d, converter.fromString('27.10.2019'));
     converter = new DateStringConverter('en');
-    assertEqual(d, converter.fromString('10/27/2019'));
+    assert.equal(d, converter.fromString('10/27/2019'));
 });
 
-describe('DateTimeLocalStringConverter', () => {
+test('DateTimeLocalStringConverter', () => {
     let converter = new DateTimeLocalStringConverter();
     let d = new Date(Date.UTC(2019,9,27, 2));
-    assertEqual(d, converter.fromString('2019-10-27T02:00'));
-    assertEqual(d, converter.fromString('2019-10-27 02:00'));
-    let s = converter.toString(d);
-    assertEqual('2019-10-27 02:00', s);
+    assert.equal(d, converter.fromString(new String('2019-10-27T02:00')));
+    assert.equal(d, converter.fromString('2019-10-27 02:00'));
+    assert.equal('2019-10-27 02:00', converter.toString(d));
+    assert.equal('2019-10-27 02:00', converter.toString('2019-10-27 02:00'));
+    assert.equal('2019-10-27 02:00', converter.toString(new String('2019-10-27 02:00')));
 
     converter = new DateTimeLocalStringConverter(undefined, 'de');
-    assertEqual(d, converter.fromString('27.10.2019 02:00'));
-    assertEqual(d, converter.fromString('27.10.2019, 02:00'));
-    assertEqual(d, converter.fromString('27.10.2019T02:00'));
+    assert.equal(d, converter.fromString('27.10.2019 02:00'));
+    assert.equal(d, converter.fromString('27.10.2019, 02:00'));
+    assert.equal(d, converter.fromString('27.10.2019T02:00'));
     converter = new DateTimeLocalStringConverter(undefined, 'en');
-    assertEqual(d, converter.fromString('10/27/2019 02:00'));
+    assert.equal(d, converter.fromString('10/27/2019 02:00'));
     converter = new DateTimeLocalStringConverter(undefined, 'en-US');
-    assertEqual(d, converter.fromString('10/27/2019 02:00'));
+    assert.equal(d, converter.fromString('10/27/2019 02:00'));
 
-    assertEqual(new Date(NaN), converter.fromString('10/27/2019@02:00'));
-    assertEqual(new Date(NaN), converter.fromString('10/27/foo 02:00'));
+    assert.equal(new Date(NaN), converter.fromString('10/27/2019@02:00'));
+    assert.equal(new Date(NaN), converter.fromString('10/27/foo 02:00'));
 });
 
-describe('NumberStringConverter', () => {
+test('NumberStringConverter', () => {
     let converter = new NumberStringConverter(2);
     // This will work in any locale.
-    assertEqual(3.14, converter.fromString(converter.toString(Math.PI)));
+    assert.equal(3.14, converter.fromString(converter.toString(Math.PI)));
 });
 

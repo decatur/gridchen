@@ -1,68 +1,62 @@
-/*window.onerror = function (e) {
-    htmlLog(String(window.event.error));
-};*/
 
-let currentDiv = document.createElement('div');
-document.body.appendChild(currentDiv);
+let errCount = 0;
 
-function htmlLog(msg) {
+export function log(msg) {
     console.log(msg);
     const div = document.createElement('div');
     div.style.marginLeft = '1em';
     div.textContent = msg;
-    currentDiv.appendChild(div);
-    currentDiv = div;
+    document.body.appendChild(div);
+    return div;
 }
 
-function errLog(err) {
+function err(container, err) {
     console.log(err);
     const div = document.createElement('div');
+    div.style.marginLeft = '1em';
+    div.style.backgroundColor = '#faa';
     div.textContent = String(err);
-    currentDiv.appendChild(div);
+    container.appendChild(div);
+    errCount++;
 }
 
-export function assertEqual(a, b) {
-    function log(aString, bString) {
-        console.log('Expected ' + aString);
-        console.log('Actual ' + bString);
-        throw Error('assertEqual failed');
+export async function test(msg, asyncFct) {
+    const div = log(msg);
+    try {
+        await asyncFct();
+    } catch(e) {
+        console.log(e);
+        err(div, e);
     }
+}
+
+function error(a, b) {
+    console.log('Expected ' + a);
+    console.log('Actual ' + b);
+    throw Error('assertEqual failed');
+}
+
+function stringify(o) {
+    return JSON.stringify(o, function(key, value) { return typeof value === 'number' && isNaN(value)?'NaN':value; })
+}
+
+function assertEqual(a, b) {
 
     if (a instanceof Date || b instanceof Date) {
         if (isNaN(a.getTime()) && isNaN(b.getTime())) {
             // pass
         } else if (a.getTime() !== b.getTime()) {
-            log(a, b);
+            error(a, b);
         }
-    } else if (typeof a === 'object') {
-        if (JSON.stringify(a) !== JSON.stringify(b)) {
-            log(JSON.stringify(a), JSON.stringify(b));
+    } else if (typeof a === 'object' || typeof b === 'object') {
+        if (stringify(a) !== stringify(b)) {
+            error(stringify(a), stringify(b));
         }
     } else {
         if (a !== b) {
-            log(a, b);
+            error(a, b);
         }
     }
-}
-
-export function describe(description, fct) {
-    htmlLog(description);
-    try {
-        fct();
-    } catch (e) {
-        errLog(e);
-    }
-    currentDiv = currentDiv.parentElement;
-}
-
-export function it(description, fct) {
-    htmlLog(description);
-    try {
-        fct();
-    } catch (e) {
-        errLog(e);
-    }
-    currentDiv = currentDiv.parentElement;
 }
 
 export const assert = {

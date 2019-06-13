@@ -1,19 +1,20 @@
-import {describe, it, assert} from './utils.js'
+import {test, assert} from './utils.js'
 import '../modules/GridChen.js'
 import {createColumnMatrixView, createRowMatrixView} from "../modules/DataViews.js";
+import {NumberStringConverter} from "../modules/converter.js";
 
-let clipboardText;
-navigator.clipboard.writeText = function (text) {
-    clipboardText = text;
-    return new Promise(resolve => null);
-};
+const decimalSep = new NumberStringConverter(1).decimalSep;
 
-function dispatchMouseDown(gc) {
-    gc.shadowRoot.querySelector('.GRID').dispatchEvent(new MouseEvent('mousedown'));
+function getGridElement(gc) {
+    return gc.shadowRoot.querySelector('.GRID');
 }
 
-function dispatchKey(gc, keyboardEvent) {
-    gc.shadowRoot.firstElementChild.dispatchEvent(keyboardEvent);
+function dispatchMouseDown(gc) {
+    getGridElement(gc).dispatchEvent(new MouseEvent('mousedown'));
+}
+
+function dispatchKey(gc, eventInitDict) {
+    gc.shadowRoot.firstElementChild.dispatchEvent(new KeyboardEvent('keydown', eventInitDict));
 }
 
 const schema = {
@@ -21,45 +22,40 @@ const schema = {
     columnSchemas: [{title: 'number', type: 'number', width: 0}, {title: 'string', type: 'string', width: 0}]
 };
 
-describe('Selection', () => {
+test('Selection', () => {
     const gc = new (customElements.get('grid-chen'))();
 
-    //gc.addEventListener('activecellchanged', activecellchanged);
     let evt;
-    gc.addEventListener('selectionchanged', function (_evt) {
+    gc.setEventListener('selectionchanged', function (_evt) {
         evt = _evt;
     });
 
-    describe('ColumnMatrix', () => {
-        gc.resetFromView(createColumnMatrixView(schema, [[0], ['a']]));
+    test('ColumnMatrix', () => {
+        gc.resetFromView(createColumnMatrixView(schema, [[new Number(0)], ['a']]));
+        test('ViewportText', () =>
+            assert.equal(`0${decimalSep}00a`, getGridElement(gc).textContent)
+        );
+
         dispatchMouseDown(gc);
-        dispatchKey(gc, new KeyboardEvent('keydown', {code: 'ArrowRight', shiftKey: true}));
-        it('should expand selection', () => {
+        dispatchKey(gc, {code: 'ArrowRight', shiftKey: true});
+        test('should expand selection', () => {
             assert.equal({min: 0, sup: 1}, evt.row);
             assert.equal({min: 0, sup: 2}, evt.col);
         });
     });
 
-    describe('RowMatrix', () => {
+    test('RowMatrix', () => {
         gc.resetFromView(createRowMatrixView(schema, [[0, 'a']]));
+        test('ViewportText', () =>
+            assert.equal(`0${decimalSep}00a`, getGridElement(gc).textContent)
+        );
+
         dispatchMouseDown(gc);
-        dispatchKey(gc, new KeyboardEvent('keydown', {code: 'ArrowRight', shiftKey: true}));
-        it('should expand selection', () => {
+        dispatchKey(gc,{code: 'ArrowRight', shiftKey: true});
+        test('should expand selection', () => {
             assert.equal({min: 0, sup: 1}, evt.row);
             assert.equal({min: 0, sup: 2}, evt.col);
         });
     });
 });
 
-describe('Clipboard', () => {
-    const gc = new (customElements.get('grid-chen'))();
-    gc.resetFromView(createColumnMatrixView(schema, [[0, 1], ['a', 'b']]));
-    dispatchMouseDown(gc);
-    dispatchKey(gc, new KeyboardEvent('keydown', {code: 'ArrowRight', shiftKey: true}));
-    dispatchKey(gc, new KeyboardEvent('keydown', {code: 'ArrowDown', shiftKey: true}));
-    dispatchKey(gc, new KeyboardEvent('keydown', {code: 'KeyC', ctrlKey: true}));
-
-    it('should copy cells (0,0) to (1,1) to clipboard', () => {
-        assert.equal('0,00\ta\r\n1,00\tb', clipboardText);
-    });
-});

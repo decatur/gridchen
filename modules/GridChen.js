@@ -78,7 +78,12 @@ function intersectInterval(i1, i2) {
 class GridChen extends HTMLElement {
     constructor() {
         super();
-        this.eventListeners = {'datachanged': () => null, 'activecellchanged': () => null, 'selectionchanged': () => null};
+        this.eventListeners = {
+            'datachanged': () => null,
+            'activecellchanged': () => null,
+            'selectionchanged': () => null,
+            'paste': () => null
+        };
     }
 
     /**
@@ -103,7 +108,7 @@ class GridChen extends HTMLElement {
         return this
     }
 
-    addEventListener(type, listener) {
+    setEventListener(type, listener) {
         this.eventListeners[type] = listener;
         return this
     }
@@ -486,7 +491,7 @@ function Grid(container, viewModel, eventListeners) {
     };
 
     container.onkeydown = function (evt) {
-        console.log(evt);
+        console.log('Key ' + evt.code);
         if (activeCell.mode === 'edit') throw Error();
         // Note 1: All handlers call both preventDefault() and stopPropagation().
         //         The reason is documented in the handler code.
@@ -542,7 +547,8 @@ function Grid(container, viewModel, eventListeners) {
                     //console.log('Pasted content: ', text);
                     let matrix = tsvToMatrix(text);
                     if (matrix) {
-                        refresh(paste(activeCell.row, activeCell.col, matrix));
+                        refresh(paste(matrix));
+                        eventListeners['paste']();
                     }
                 })
                 .catch(err => {
@@ -560,7 +566,7 @@ function Grid(container, viewModel, eventListeners) {
             emptyRow.fill(undefined);
             let emptyMatrix = Array(selection.row.sup - selection.row.min);
             emptyMatrix.fill(emptyRow);
-            refresh(paste(selection.row.min, selection.col.min, emptyMatrix));
+            refresh(paste(emptyMatrix));
         } else if (evt.code === 'KeyQ' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation();
@@ -818,21 +824,45 @@ function Grid(container, viewModel, eventListeners) {
      * @param {Array<Array<string>>} matrix
      * @returns {number}
      */
-    function paste(topRowIndex, topColIndex, matrix) {
-        if (!matrix[0].length) {
-            alert('You have nothing to paste')
-        }
+    function pasteSingle(topRowIndex, topColIndex, matrix) {
 
         let rowIndex = topRowIndex;
         let endRowIndex = rowIndex + matrix.length;
+        let endColIndex = Math.min(schemas.length, topColIndex + matrix[0].length);
 
         for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {
             let colIndex = topColIndex;
-            let endColIndex = colIndex + matrix[0].length;
+
             for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
                 let value = matrix[i][j];
                 if (value !== undefined) value = schemas[colIndex].converter.fromString(value);
                 viewModel.setCell(rowIndex, colIndex, value);
+            }
+        }
+    }
+
+    /**
+     * If paste target selection is multiple of source row matrix, then tile target with source,
+     * otherwise just paste source
+     * @@param {Array<Array<string>>} matrix
+     */
+    function paste(matrix) {
+        if (!matrix[0].length) {
+            alert('You have nothing to paste')
+        }
+        const sourceRows = matrix.length;
+        const sourceColumns = matrix[0].length;
+        const targetRows = selection.row.sup - selection.row.min;
+        const targetColumns = selection.col.sup - selection.col.min;
+        if (targetRows % sourceRows || targetColumns % sourceColumns) {
+            pasteSingle(selection.row.min, selection.col.min, matrix);
+            // TODO: Reshape selection
+        } else {
+            // Tile target with source.
+            for (let i=0; i<Math.trunc(targetRows / sourceRows); i++) {
+               for (let j=0; j<Math.trunc(targetColumns / sourceColumns); j++) {
+                    pasteSingle(selection.row.min + i*sourceRows, selection.col.min + j*sourceColumns, matrix);
+                }
             }
         }
 

@@ -2,19 +2,54 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>GridChen Unit Tests</title>
+    <title>module name</title>
+    <link id="favicon" rel="shortcut icon" type="image/png" href="yellow.png">
 </head>
 <body>
 
-<h1 id="status">Open JavaScript console for details</h1>
+<p>
+    Open <a id="singletest" href="">this single test</a>
+</p>
 
 </body>
 
 <script type="module">
-    import "./test_GridChen.js"
-    import "./test_Converter.js"
-    import "./test_Rectangle.js"
-    import "./test_tsvToMatrix.js"
-    import "./test_DataViews.js"
+    /*
+     * ### Test Execution Design
+     * 0. No dependencies.
+     * 1. Test modules are loaded and executed complete independent of each other.
+     * 2. In generated iframes access to the clipboard is restricted. So we use a new browser window, not an iframe.
+     * 3. We rely on the given browser functionality such as 'Close Other Tabs'
+     */
+
+    import {getErrorCount} from './asyncutils.js'
+
+    const modules = ['test_Gridchen', "test_Converter", "test_Rectangle", "test_tsvToMatrix", "test_DataViews"];
+    const match = window.location.search.match(/module=([^&]+)/);
+    loadModule(match ? match[1] : modules[0]);
+
+    function loadModule(module) {
+        document.title = module;
+        document.getElementById('singletest').href = 'unittest.html?module=' + module;
+        import(`./${module}.js`)
+            .then(function () {
+                window.setTimeout(
+                    function () {
+                        const color = getErrorCount() ? 'red' : 'green';
+                        document.getElementById('favicon').setAttribute('href', `${color}.png`);
+                        nextModule(module)
+                    }, 1000
+                );
+            })
+            .catch(e => alert(e));
+    }
+
+    function nextModule(module) {
+        const nextIndex = 1 + modules.indexOf(module);
+        if (nextIndex === 0 || nextIndex >= modules.length) return;
+        window.open(window.location.pathname + '?module=' + modules[nextIndex]);
+    }
+
+
 </script>
 </html>

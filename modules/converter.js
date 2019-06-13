@@ -55,7 +55,7 @@ export class DateTimeStringConverter {
      * @returns {string}
      */
     toString(d) {
-        if (typeof  d === 'string') return d;  // TODO: Is this the right way, or should we be strict?
+        if (d.constructor == String) return d;
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
         let s = pad(d.getFullYear()) + '-' + pad(1 + d.getMonth()) + '-' + pad(d.getDate());
@@ -145,7 +145,7 @@ export class DateTimeLocalStringConverter {
      * @returns {string}
      */
     toString(d) {
-        if (typeof  d === 'string') return d;  // TODO: Is this the right way, or should we be strict?
+        if (d.constructor == String) return d;  // Note that typeof  d === 'string' fails for object strings.
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
         let s = pad(d.getUTCFullYear()) + '-' + pad(1 + d.getUTCMonth()) + '-' + pad(d.getUTCDate());
@@ -192,7 +192,7 @@ export class DateStringConverter {
      * @returns {string}
      */
     toString(d) {
-        if (typeof  d === 'string') return d;  // TODO: Is this the right way, or should we be strict?
+        if (d.constructor == String) return d;
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
         return pad(d.getUTCFullYear()) + '-' + pad(1 + d.getUTCMonth()) + '-' + pad(d.getUTCDate());

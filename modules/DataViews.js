@@ -142,7 +142,7 @@ export function createRowMatrixView(schema, rows) {
         if (row === undefined) rows[i] = Array(schemas.length);
     });*/
 
-    class View {
+    class RowMatrixView {
         constructor() {
             this.schema = schema;
         }
@@ -218,7 +218,7 @@ export function createRowMatrixView(schema, rows) {
         }
     }
 
-    return new View();
+    return new RowMatrixView();
 }
 
 /**
@@ -236,7 +236,7 @@ export function createRowObjectsView(schema, rows) {
         if (row === undefined) rows[i] = {};
     });*/
 
-    class View {
+    class RowObjectsView {
         constructor() {
             this.schema = schema;
         }
@@ -303,7 +303,7 @@ export function createRowObjectsView(schema, rows) {
         }
     }
 
-    return new View();
+    return new RowObjectsView();
 }
 
 /**
@@ -326,7 +326,7 @@ export function createColumnMatrixView(schema, columns) {
     /**
      * @extends {GridChen.DataView}
      */
-    class View {
+    class ColumnMatrixView {
         constructor() {
             this.schema = schema;
         }
@@ -406,6 +406,6 @@ export function createColumnMatrixView(schema, columns) {
         }
     }
 
-    return new View();
+    return new ColumnMatrixView();
 }
 

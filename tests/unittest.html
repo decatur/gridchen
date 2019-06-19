@@ -16,7 +16,7 @@
 
     function loadModule(module) {
         document.title = module;
-        import(`./${module}.js`)
+        import(`./test_${module}.js`)
             .then(() => null)
             .catch(e => alert(e));
     }

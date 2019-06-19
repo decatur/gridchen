@@ -22,16 +22,16 @@
      * 3. We rely on the given browser functionality such as 'Close Other Tabs'
      */
 
-    import {getErrorCount} from './asyncutils.js'
+    import {getErrorCount} from './utils.js'
 
-    const modules = ['test_Gridchen', "test_Converter", "test_Rectangle", "test_tsvToMatrix", "test_DataViews"];
+    const modules = ['Gridchen', 'Clipboard', "Converter", "Rectangle", "tsvToMatrix", "DataViews"];
     const match = window.location.search.match(/module=([^&]+)/);
     loadModule(match ? match[1] : modules[0]);
 
     function loadModule(module) {
         document.title = module;
         document.getElementById('singletest').href = 'unittest.html?module=' + module;
-        import(`./${module}.js`)
+        import(`./test_${module}.js`)
             .then(function () {
                 window.setTimeout(
                     function () {

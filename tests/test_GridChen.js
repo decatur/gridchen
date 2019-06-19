@@ -17,10 +17,52 @@ function dispatchKey(gc, eventInitDict) {
     gc.shadowRoot.firstElementChild.dispatchEvent(new KeyboardEvent('keydown', eventInitDict));
 }
 
+function dispatch(gc, typeArg, eventInitDict) {
+    gc.shadowRoot.firstElementChild.dispatchEvent(new KeyboardEvent(typeArg, eventInitDict));
+}
+
 const schema = {
     title: 'test',
     columnSchemas: [{title: 'number', type: 'number', width: 0}, {title: 'string', type: 'string', width: 0}]
 };
+
+test('Activate Cell', async function () {
+    const gc = new GridChen();
+    const rows = [
+        [0, 'a'],
+        [NaN, 'b']
+    ];
+    const view = createRowMatrixView(schema, rows);
+    gc.resetFromView(view);
+    dispatchMouseDown(gc);
+    const r = gc.getActiveCell();
+    assert.equal([0, 0, 1, 1], [r.top, r.left, r.rows, r.columns]);
+
+});
+
+test('Edit Cell', async function () {
+    const gc = new GridChen();
+    const rows = [
+        [0, 'a'],
+        [NaN, 'b']
+    ];
+    const view = createRowMatrixView(schema, rows);
+    gc.resetFromView(view);
+    dispatchMouseDown(gc);
+    dispatchKey(gc, {key:"2"});
+    // TODO: How to dispatchEvent a keypress event to input?
+    gc.shadowRoot.getElementById('input').value = ' 123 ';
+    dispatchKey(gc, {code: 'Tab'});
+    dispatchKey(gc, {key:" "});
+    gc.shadowRoot.getElementById('input').value = ' abc ';
+    dispatchKey(gc, {code: 'Enter'});
+
+    assert.equal([
+        [123, 'abc'],
+        [NaN, 'b']
+    ], rows);
+
+});
 
 test('expand selection with keys', async function () {
     const gc = new GridChen();
@@ -41,7 +83,7 @@ test('expand selection with keys', async function () {
 });
 
 test('Selection', () => {
-    const gc = new (customElements.get('grid-chen'))();
+    const gc = new GridChen();
 
     let evt;
     gc.setEventListener('selectionchanged', function (_evt) {
@@ -74,6 +116,22 @@ test('Selection', () => {
             assert.equal({min: 0, sup: 1}, evt.row);
             assert.equal({min: 0, sup: 2}, evt.col);
         });
+    });
+
+    test('Delete Selected Rows', () => {
+        const rows = [[0, 'a'], [1, 'b']];
+        gc.resetFromView(createRowMatrixView(schema, rows));
+        dispatchMouseDown(gc);
+        dispatchKey(gc, {code: 'ArrowRight', shiftKey: true});
+
+        // Delete first row
+        gc.shadowRoot.getElementById('delete').click();
+        assert.equal([[1, 'b']], rows);
+
+        // Delete remaining row.
+        gc.shadowRoot.getElementById('delete').click();
+        assert.equal([], rows);
+
     });
 });
 

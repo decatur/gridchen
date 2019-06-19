@@ -9,6 +9,10 @@ window.console.log('Executing GridChen ...');
 
 const numeric = new Set(['number', 'integer']);
 
+function range(count) {
+    return Array.from({length: count}, (_, i) => i);
+}
+
 let logCounter = 0;
 // TODO: Rename to logger.
 const console = {
@@ -122,7 +126,7 @@ export class GridChen extends HTMLElement {
      * @returns {GridChen.Range}
      */
     getRange(top, left, rows, columns) {
-        return this.grid.range(top, left, rows, columns);
+        return this.grid.getRange(top, left, rows, columns);
     }
 
     /**
@@ -132,6 +136,12 @@ export class GridChen extends HTMLElement {
         return this.grid.getSelection();
     }
 
+    /**
+     * @returns {GridChen.Range}
+     */
+    getActiveCell() {
+        return this.grid.getActiveCell();
+    }
 }
 
 customElements.define('grid-chen', GridChen);
@@ -341,15 +351,19 @@ function Grid(container, viewModel, eventListeners) {
     rowMenu.appendChild(insertRowButton);
 
     let deleteRowButton = document.createElement('button');
+    deleteRowButton.id = 'delete';
     deleteRowButton.type = 'button';
     deleteRowButton.style.position = 'absolute';
     deleteRowButton.style.padding = '0';
     deleteRowButton.type = 'button';
-    deleteRowButton.title = "Delete Row";
+    deleteRowButton.title = "Delete Selected Rows";
     deleteRowButton.textContent = '-';
     deleteRowButton.onclick = function () {
-        refresh(viewModel.deleteRow(activeCell.row))
-        // inputList[previousFocus.row][0].select()
+        let rowCount = 0;
+        range(selection.row.sup - selection.row.min).forEach(function() {
+            rowCount = viewModel.deleteRow(selection.row.min);
+        });
+        refresh(rowCount);
     };
     rowMenu.appendChild(deleteRowButton);
     body.appendChild(rowMenu);
@@ -366,6 +380,7 @@ function Grid(container, viewModel, eventListeners) {
     container.tabIndex = 0;
 
     const input = /** @type{HTMLInputElement} */ document.createElement('input');
+    input.id = 'input';
     input.style.position = 'absolute';
     input.style.display = 'none';
     input.style.height = innerHeight + 'px';
@@ -590,8 +605,7 @@ function Grid(container, viewModel, eventListeners) {
             evt.preventDefault();
             evt.stopPropagation();
             viewModel.plot();
-        } else if (evt.keyCode >= 32) {
-            // TODO: move this to keypress because keyCode is deprecated.
+        } else if (evt.key.length == 1) {
             // focus on input element, which will then receive this keyboard event.
             const style = activeCell.input.style;
             const spanStyle = activeCell.span.style;
@@ -948,6 +962,12 @@ function Grid(container, viewModel, eventListeners) {
         /**
          * @returns {Range}
          */
+        getActiveCell() {
+            return new Range(activeCell.row, activeCell.col, 1, 1);
+        },
+        /**
+         * @returns {Range}
+         */
         getSelection() {
             return new Range(selection.row.min, selection.col.min,
                 selection.row.sup - selection.row.min, selection.col.sup - selection.col.min);
@@ -959,7 +979,7 @@ function Grid(container, viewModel, eventListeners) {
          * @param {number} columns
          * @returns {Range}
          */
-        range(top, left, rows, columns) {
+        getRange(top, left, rows, columns) {
             return new Range(top, left, rows, columns);
         }
     };

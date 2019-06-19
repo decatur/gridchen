@@ -42,6 +42,15 @@ declare module GridChen {
         sup: number;
     }
 
+    export interface Range {
+        top: number;
+        left: number;
+        rows: number;
+        columns: number;
+        select: () => undefined;
+        values: () => any[][];
+    }
+
     export interface IRectangle {
         row: IInterval;
         col: IInterval;

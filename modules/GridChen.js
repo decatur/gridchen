@@ -75,7 +75,8 @@ function intersectInterval(i1, i2) {
     return {min, sup};
 }
 
-class GridChen extends HTMLElement {
+// We export for testability.
+export class GridChen extends HTMLElement {
     constructor() {
         super();
         this.eventListeners = {
@@ -104,13 +105,31 @@ class GridChen extends HTMLElement {
             container.innerText = String(viewModel);
             return null
         }
-        Grid(container, viewModel, this.eventListeners);
+        this.grid = Grid(container, viewModel, this.eventListeners);
         return this
     }
 
     setEventListener(type, listener) {
         this.eventListeners[type] = listener;
         return this
+    }
+
+    /**
+     * @param {number} top
+     * @param {number} left
+     * @param {number} rows
+     * @param {number} columns
+     * @returns {GridChen.Range}
+     */
+    getRange(top, left, rows, columns) {
+        return this.grid.range(top, left, rows, columns);
+    }
+
+    /**
+     * @returns {GridChen.Range}
+     */
+    getSelection() {
+        return this.grid.getSelection();
     }
 
 }
@@ -859,9 +878,9 @@ function Grid(container, viewModel, eventListeners) {
             // TODO: Reshape selection
         } else {
             // Tile target with source.
-            for (let i=0; i<Math.trunc(targetRows / sourceRows); i++) {
-               for (let j=0; j<Math.trunc(targetColumns / sourceColumns); j++) {
-                    pasteSingle(selection.row.min + i*sourceRows, selection.col.min + j*sourceColumns, matrix);
+            for (let i = 0; i < Math.trunc(targetRows / sourceRows); i++) {
+                for (let j = 0; j < Math.trunc(targetColumns / sourceColumns); j++) {
+                    pasteSingle(selection.row.min + i * sourceRows, selection.col.min + j * sourceColumns, matrix);
                 }
             }
         }
@@ -910,7 +929,40 @@ function Grid(container, viewModel, eventListeners) {
     activeCell.hide();
     selection.hide();
 
-    return activeCell;
+    class Range {
+        constructor(top, left, rows, columns) {
+            this.top = top;
+            this.left = left;
+            this.rows = rows;
+            this.columns = columns;
+        }
+
+        select() {
+            activeCell.move(this.top, this.left);
+            selection.set(this.top, this.left);
+            selection.expand(this.top + this.rows - 1, this.left + this.columns - 1);
+        }
+    }
+
+    return {
+        /**
+         * @returns {Range}
+         */
+        getSelection() {
+            return new Range(selection.row.min, selection.col.min,
+                selection.row.sup - selection.row.min, selection.col.sup - selection.col.min);
+        },
+        /**
+         * @param {number} top
+         * @param {number} left
+         * @param {number} rows
+         * @param {number} columns
+         * @returns {Range}
+         */
+        range(top, left, rows, columns) {
+            return new Range(top, left, rows, columns);
+        }
+    };
 }
 
 /**

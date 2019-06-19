@@ -1,5 +1,5 @@
 import {test, assert} from './utils.js'
-import '../modules/GridChen.js'
+import {GridChen} from '../modules/GridChen.js'
 import {createColumnMatrixView, createRowMatrixView} from "../modules/DataViews.js";
 import {NumberStringConverter} from "../modules/converter.js";
 
@@ -21,6 +21,24 @@ const schema = {
     title: 'test',
     columnSchemas: [{title: 'number', type: 'number', width: 0}, {title: 'string', type: 'string', width: 0}]
 };
+
+test('expand selection with keys', async function () {
+    const gc = new GridChen();
+    const rows = [
+        [0, 'a'],
+        [NaN, 'b']
+    ];
+    const view = createRowMatrixView(schema, rows);
+    gc.resetFromView(view);
+
+    gc.getRange(0, 0, 1, 1).select();
+    let sel = gc.getSelection();
+    assert.equal([0, 0, 1, 1], [sel.top, sel.left, sel.rows, sel.columns]);
+    dispatchKey(gc, {code: 'ArrowRight', shiftKey: true});
+    dispatchKey(gc, {code: 'ArrowDown', shiftKey: true});
+    sel = gc.getSelection();
+    assert.equal([0, 0, 2, 2], [sel.top, sel.left, sel.rows, sel.columns]);
+});
 
 test('Selection', () => {
     const gc = new (customElements.get('grid-chen'))();
@@ -51,7 +69,7 @@ test('Selection', () => {
         );
 
         dispatchMouseDown(gc);
-        dispatchKey(gc,{code: 'ArrowRight', shiftKey: true});
+        dispatchKey(gc, {code: 'ArrowRight', shiftKey: true});
         test('should expand selection', () => {
             assert.equal({min: 0, sup: 1}, evt.row);
             assert.equal({min: 0, sup: 2}, evt.col);

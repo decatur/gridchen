@@ -1,6 +1,10 @@
 
 let errCount = 0;
 
+export function getErrorCount() {
+    return errCount;
+}
+
 export function log(msg) {
     console.log(msg);
     const div = document.createElement('div');

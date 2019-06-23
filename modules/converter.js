@@ -15,15 +15,21 @@ export class NumberStringConverter {
      */
     constructor(fractionDigits, locale) {
         this.nf = Intl.NumberFormat(locale, {minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits});
+        // Default for maximumFractionDigits is 3.
+        this.nf1 = Intl.NumberFormat(locale, {maximumFractionDigits: 10});
         let testNumber = this.nf.format(1000.5); // 1.000,50 in de-DE
         this.thousandSep = testNumber[1];
         this.decimalSep = testNumber[5];  // Will be undefined for fractionDigits=0
     }
 
     toString(n) {
-        // Note that in IE11 nf.format("") -> 0
         if (n === undefined) return '';
         return this.nf.format(n)
+    }
+
+    toEditable(n) {
+        if (n === undefined) return '';
+        return this.nf1.format(n)
     }
 
     /**
@@ -68,6 +74,10 @@ export class DateTimeStringConverter {
         let dh = d.getHours() - d.getUTCHours();
         if (dh < 0) dh += 24;
         return s + '+' + String(dh).padStart(2, '0');
+    }
+
+    toEditable(d) {
+        return this.toString(d);
     }
 
     /**
@@ -159,6 +169,10 @@ export class DateTimeLocalStringConverter {
         return s;
     }
 
+    toEditable(d) {
+        return this.toString(d);
+    }
+
     /**
      * Parses any valid date-time format, but iso format is preferred.
      * @param {string} s
@@ -196,6 +210,10 @@ export class DateStringConverter {
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
         return pad(d.getUTCFullYear()) + '-' + pad(1 + d.getUTCMonth()) + '-' + pad(d.getUTCDate());
+    }
+
+    toEditable(d) {
+        return this.toString(d);
     }
 
     /**

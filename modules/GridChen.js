@@ -39,6 +39,7 @@ export class Rectangle {
     }
 
     /**
+     * TODO: Implement on Range.
      * Intersect this rectangle with another rectangle.
      * @param {GridChen.IRectangle} other
      * @returns {GridChen.IRectangle}
@@ -386,8 +387,9 @@ function Grid(container, viewModel, eventListeners) {
     input.style.height = innerHeight + 'px';
     input.style.padding = cellPadding + 'px';
     /** @type {{span?:{HTMLSpanElement}, input:{HTMLInputElement}, row:number, col:number, mode:string}} */
-    let activeCell = {
-        span: undefined, input: input, row: 0, col: 0, mode: 'active',
+    const activeCell = {
+        span: undefined,
+        input: input, row: 0, col: 0, mode: 'active',
         hide: function () {
             if (this.span) this.span.style.backgroundColor = 'white'; //removeProperty('background-color');
             rowMenu.style.display = 'none';
@@ -406,6 +408,25 @@ function Grid(container, viewModel, eventListeners) {
             this.row = rowIndex;
             this.show();
             eventListeners['activecellchanged'](this);
+        },
+        setMode: function(mode) {
+            this.mode = mode;
+            if (this.row < firstRow) {
+                // scroll into view
+                setFirstRow(this.row)
+            }
+
+            const spanStyle = this.span.style;
+            spanStyle.display = 'none';
+            const style = this.input.style;
+            style.top = spanStyle.top;
+            style.left = spanStyle.left;
+            style.width = spanStyle.width;
+            style.display = 'inline-block';
+
+            // focus on input element, which will then receive this keyboard event.
+            // Note: focus after display!
+            this.input.focus();
         }
     };
 
@@ -414,7 +435,7 @@ function Grid(container, viewModel, eventListeners) {
      * @param {string?} backgroundColor
      * @param {Rectangle} rectangle
      */
-    function repainter(backgroundColor, rectangle) {
+    function repaintRectangle(backgroundColor, rectangle) {
         let r = rectangle.shift(-firstRow, 0);
         let rr = r.intersect(new Rectangle({min: 0, sup: viewPortRowCount}, {min: 0, sup: colCount}));
         if (!rr) return;
@@ -432,10 +453,6 @@ function Grid(container, viewModel, eventListeners) {
             }
         }
     }
-
-    /*cellParent.onclick = function (evt) {
-        console.log('onclick');
-    };*/
 
     cellParent.onmousedown = function (evt) {
         console.log('onmousedown');
@@ -605,17 +622,8 @@ function Grid(container, viewModel, eventListeners) {
             evt.preventDefault();
             evt.stopPropagation();
             viewModel.plot();
-        } else if (evt.key.length == 1) {
-            // focus on input element, which will then receive this keyboard event.
-            const style = activeCell.input.style;
-            const spanStyle = activeCell.span.style;
-            style.top = spanStyle.top;
-            style.left = spanStyle.left;
-            style.width = spanStyle.width;
-            spanStyle.display = 'none';
-            style.display = 'inline-block';
-            activeCell.input.focus();
-            activeCell.mode = 'input';
+        } else if (evt.key.length === 1) {
+            activeCell.setMode('input');
         }
     };
 
@@ -804,17 +812,15 @@ function Grid(container, viewModel, eventListeners) {
 
         span.addEventListener('dblclick', function () {
             console.log('ondblclick');
-            // Switch to EDIT mode.
-            const style = activeCell.input.style;
-            const spanStyle = activeCell.span.style;
-            style.top = spanStyle.top;
-            style.left = spanStyle.left;
-            style.width = spanStyle.width;
-            spanStyle.display = 'none';
-            style.display = 'inline-block';
-            activeCell.input.focus();
-            activeCell.mode = 'edit';
-            activeCell.input.value = activeCell.span.textContent;
+            activeCell.setMode('edit');
+            // activeCell.input.value = activeCell.span.textContent;
+            let value = viewModel.getCell(vpRowIndex + firstRow, colIndex);
+            if ( value === undefined ) {
+                value = '';
+            } else {
+                value = schemas[colIndex].converter.toEditable(value);
+            }
+            activeCell.input.value = value;
         });
 
         cellParent.appendChild(span);
@@ -835,7 +841,6 @@ function Grid(container, viewModel, eventListeners) {
     }
 
     /**
-     * @param {Rectangle} selection
      * @param {string} sep
      * @returns {string}
      */
@@ -934,7 +939,7 @@ function Grid(container, viewModel, eventListeners) {
     cellParent.appendChild(input);
 
     /** @type {Selection} */
-    let selection = new Selection(repainter, eventListeners);
+    let selection = new Selection(repaintRectangle, eventListeners);
     //selection.set(0, 0);
 
     firstRow = 0;

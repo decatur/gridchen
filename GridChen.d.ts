@@ -7,6 +7,7 @@ declare module GridChen {
     export interface StringConverter {
         fromString: (a: string) => (number | Date | string | boolean);
         toString: (a: (number | Date | string | boolean)) => string;
+        toEditable: (a: (number | Date | string | boolean)) => string;
     }
 
     export interface IColumnSchema {

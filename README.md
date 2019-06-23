@@ -24,10 +24,8 @@ github.io ...
 
 # Issues
 
-* ! Editing the active cell must scroll it into view.
 * Paste must select pasted region (pasted region differs from selection if selection cannot be tiled by source)
 * Using slider will blur grid.
-* Edit mode should show the **raw** data, not the formatted value.
 * Only honour first sortDirection!
 * Handling of Infinity and NaN (#NV in de-de)
 
@@ -191,13 +189,16 @@ With mouse-down/move/up select multiple cells
 Click any cell
 -> Selection is revoked
 
+Scroll active cell out of view, then create input -> active cell scrolls into view.
+Note: Currently we only support dblclick to enter edit mode. So it it not possible to enter edit mode on a out of view cell.
+
 Mouse-Wheel past the first row -> not possible
 
 Make a Click-Selection-Expand. -> The active cell should not change.
 
 Check trimming
 
-Edit Mode uses raw data
+Edit Mode shows raw data
 
 Copy&Paste date must result in same value
 

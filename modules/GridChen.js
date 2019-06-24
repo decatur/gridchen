@@ -120,20 +120,20 @@ export class GridChen extends HTMLElement {
     }
 
     /**
-     * @param {number} top
-     * @param {number} left
-     * @param {number} rows
-     * @param {number} columns
+     * @param {number} rowIndex
+     * @param {number} columnIndex
+     * @param {number} rowCount
+     * @param {number} columnCount
      * @returns {GridChen.Range}
      */
-    getRange(top, left, rows, columns) {
-        return this.grid.getRange(top, left, rows, columns);
+    getRangeByIndexes(rowIndex, columnIndex, rowCount, columnCount) {
+        return this.grid.getRange(rowIndex, columnIndex, rowCount, columnCount);
     }
 
     /**
      * @returns {GridChen.Range}
      */
-    getSelection() {
+    getSelectedRange() {
         return this.grid.getSelection();
     }
 
@@ -164,7 +164,7 @@ class Slider {
         style.display = 'inline-block';
         //this.element.style.marginLeft = '10px'
         style.height = container.style.height;
-        style.left = left;
+        style.columnIndex = left;
         style.width = '20px';
         this.element.min = 0;
 
@@ -298,7 +298,7 @@ function Grid(container, viewModel, eventListeners) {
     const headerRow = document.createElement('div');
     let style = headerRow.style;
     style.position = 'relative';
-    style.left = '20px';
+    style.columnIndex = '20px';
     style.width = columnEnds[columnEnds.length - 1] + 'px';
     style.height = rowHeight + 'px';
     style.textAlign = 'center';
@@ -320,7 +320,7 @@ function Grid(container, viewModel, eventListeners) {
             const header = document.createElement('span');
             const style = header.style;
             style.position = 'absolute';
-            style.left = left + 'px';
+            style.columnIndex = left + 'px';
             style.width = schema.width + 'px';
             style.height = innerHeight;
             style.padding = cellPadding + 'px';
@@ -358,7 +358,7 @@ function Grid(container, viewModel, eventListeners) {
     let insertRowButton = document.createElement('button');
     insertRowButton.type = 'button';
     insertRowButton.style.position = 'absolute';
-    insertRowButton.style.top = '-20px';
+    insertRowButton.style.rowIndex = '-20px';
     insertRowButton.style.padding = '0';
     insertRowButton.title = "Insert Row Above";
     insertRowButton.textContent = '+';
@@ -413,7 +413,7 @@ function Grid(container, viewModel, eventListeners) {
         },
         show: function () {
             if (this.span) this.span.style.backgroundColor = 'mistyrose';
-            rowMenu.style.top = this.span.offsetTop + 'px';
+            rowMenu.style.rowIndex = this.span.offsetTop + 'px';
             rowMenu.style.display = 'block';
         },
         move: function (rowIndex, colIndex) {
@@ -436,8 +436,8 @@ function Grid(container, viewModel, eventListeners) {
             const spanStyle = this.span.style;
             spanStyle.display = 'none';
             const style = this.input.style;
-            style.top = spanStyle.top;
-            style.left = spanStyle.left;
+            style.rowIndex = spanStyle.top;
+            style.columnIndex = spanStyle.left;
             style.width = spanStyle.width;
             style.display = 'inline-block';
 
@@ -814,8 +814,8 @@ function Grid(container, viewModel, eventListeners) {
         let style = span.style;
         spanMatrix[vpRowIndex][colIndex] = span;
         style.position = 'absolute';
-        style.top = (vpRowIndex * rowHeight) + 'px';
-        style.left = (colIndex ? columnEnds[colIndex - 1] : 0) + 'px';
+        style.rowIndex = (vpRowIndex * rowHeight) + 'px';
+        style.columnIndex = (colIndex ? columnEnds[colIndex - 1] : 0) + 'px';
         style.width = schemas[colIndex].width + 'px';
         style.height = innerHeight;
         style.overflow = 'hidden';
@@ -966,17 +966,17 @@ function Grid(container, viewModel, eventListeners) {
     selection.hide();
 
     class Range {
-        constructor(top, left, rows, columns) {
-            this.top = top;
-            this.left = left;
-            this.rows = rows;
-            this.columns = columns;
+        constructor(rowIndex, columnIndex, rowCount, columnCount) {
+            this.rowIndex = rowIndex;
+            this.columnIndex = columnIndex;
+            this.rowCount = rowCount;
+            this.columnCount = columnCount;
         }
 
         select() {
-            activeCell.move(this.top, this.left);
-            selection.set(this.top, this.left);
-            selection.expand(this.top + this.rows - 1, this.left + this.columns - 1);
+            activeCell.move(this.rowIndex, this.columnIndex);
+            selection.set(this.rowIndex, this.columnIndex);
+            selection.expand(this.rowIndex + this.rowCount - 1, this.columnIndex + this.columnCount - 1);
         }
     }
 
@@ -995,14 +995,14 @@ function Grid(container, viewModel, eventListeners) {
                 selection.row.sup - selection.row.min, selection.col.sup - selection.col.min);
         },
         /**
-         * @param {number} top
-         * @param {number} left
-         * @param {number} rows
-         * @param {number} columns
+         * @param {number} rowIndex
+         * @param {number} columnIndex
+         * @param {number} rowCount
+         * @param {number} columnCount
          * @returns {Range}
          */
-        getRange(top, left, rows, columns) {
-            return new Range(top, left, rows, columns);
+        getRange(rowIndex, columnIndex, rowCount, columnCount) {
+            return new Range(rowIndex, columnIndex, rowCount, columnCount);
         }
     };
 }

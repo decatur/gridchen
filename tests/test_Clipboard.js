@@ -28,7 +28,7 @@ gc.resetFromView(view);
 (async function () {
 
     await test('copy', async function () {
-        gc.getRange(0, 0, 2, 2).select();
+        gc.getRangeByIndexes(0, 0, 2, 2).select();
         dispatchKey(gc, {code: 'KeyC', ctrlKey: true});
         const text = await navigator.clipboard.readText();
         log('should copy cells (0,0) ... (1,1) to clipboard');
@@ -53,7 +53,7 @@ gc.resetFromView(view);
             assert.equal([[3, 'c'],[3, 'c'],[NaN, 'b']], rows);
         }));
 
-        gc.getRange(0, 0, 2, 2).select();
+        gc.getRangeByIndexes(0, 0, 2, 2).select();
         dispatchKey(gc, {code: 'KeyV', ctrlKey: true});
     });
 
@@ -64,7 +64,7 @@ gc.resetFromView(view);
             assert.equal([[3, '3'],[3, 'c'],[NaN, 'b']], rows);
         }));
 
-        gc.getRange(0, 1, 1, 2).select();
+        gc.getRangeByIndexes(0, 1, 1, 2).select();
         dispatchKey(gc, {code: 'KeyV', ctrlKey: true});
     });
 

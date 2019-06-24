@@ -163,8 +163,12 @@ TODO: Check if this is possible by setting tabIndex on span elements.
 
 Watch for multiple actions, for example onclick -> onclick -> ondblclick or onmousedown -> onclick. 
 
-## Browser Support
+# Browser Support
 Tested only with Chrome Version 71.0
+
+# API Design
+We use the JavaScript API for Office if possible, for example 
+[Excel.Range](https://docs.microsoft.com/en-us/javascript/api/excel/excel.range).
 
 # Test Plan
 

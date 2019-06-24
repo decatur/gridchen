@@ -44,11 +44,13 @@ declare module GridChen {
     }
 
     export interface Range {
-        top: number;
-        left: number;
-        rows: number;
-        columns: number;
+        rowIndex: number;
+        columnIndex: number;
+        rowCount: number;
+        columnCount: number;
+        // Selects this range.
         select: () => undefined;
+        // Returns the live values of the range as an array of rows.
         values: () => any[][];
     }
 

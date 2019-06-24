@@ -29,15 +29,17 @@ export async function test(msg, asyncFct) {
     try {
         await asyncFct();
     } catch(e) {
-        console.log(e);
+        // console.log(e);
         err(div, e);
     }
 }
 
 function error(a, b) {
+    const err = Error('assertEqual failed');
+    console.error(err);
     console.log('Expected ' + a);
     console.log('Actual ' + b);
-    throw Error('assertEqual failed');
+    throw err;
 }
 
 function stringify(o) {

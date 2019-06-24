@@ -36,7 +36,7 @@ test('Activate Cell', async function () {
     gc.resetFromView(view);
     dispatchMouseDown(gc);
     const r = gc.getActiveCell();
-    assert.equal([0, 0, 1, 1], [r.top, r.left, r.rows, r.columns]);
+    assert.equal([0, 0, 1, 1], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
 
 });
 
@@ -73,13 +73,13 @@ test('expand selection with keys', async function () {
     const view = createRowMatrixView(schema, rows);
     gc.resetFromView(view);
 
-    gc.getRange(0, 0, 1, 1).select();
-    let sel = gc.getSelection();
-    assert.equal([0, 0, 1, 1], [sel.top, sel.left, sel.rows, sel.columns]);
+    gc.getRangeByIndexes(0, 0, 1, 1).select();
+    let r = gc.getSelectedRange();
+    assert.equal([0, 0, 1, 1], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
     dispatchKey(gc, {code: 'ArrowRight', shiftKey: true});
     dispatchKey(gc, {code: 'ArrowDown', shiftKey: true});
-    sel = gc.getSelection();
-    assert.equal([0, 0, 2, 2], [sel.top, sel.left, sel.rows, sel.columns]);
+    r = gc.getSelectedRange();
+    assert.equal([0, 0, 2, 2], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
 });
 
 test('Selection', () => {

@@ -116,7 +116,7 @@ export function createView(schema, matrix) {
     try {
         if (schema.type === 'object') {
             const colSchema = {title: schema.title, columnSchemas: Object.values(schema.properties).map(item => item.items), ids:Object.keys(schema.properties)};
-            // Normalize missing columns (ragged columns are allowed).
+            // Normalize missing columnCount (ragged columnCount are allowed).
             const columns = colSchema.ids.map(id => matrix[id] || Array());
             return createColumnMatrixView(colSchema, columns);
         }
@@ -137,9 +137,9 @@ export function createRowMatrixView(schema, rows) {
     let schemas = schema.columnSchemas;
     updateSchema(schemas);
 
-    // Normalize missing rows (ragged rows are allowed).
-    /*rows.forEach(function (row, i) {
-        if (row === undefined) rows[i] = Array(schemas.length);
+    // Normalize missing rowCount (ragged rowCount are allowed).
+    /*rowCount.forEach(function (row, i) {
+        if (row === undefined) rowCount[i] = Array(schemas.length);
     });*/
 
     class RowMatrixView {
@@ -231,9 +231,9 @@ export function createRowObjectsView(schema, rows) {
     const ids = schema.ids;
     updateSchema(schemas);
 
-    // Normalize missing rows (ragged rows are allowed).
-    /*rows.forEach(function (row, i) {
-        if (row === undefined) rows[i] = {};
+    // Normalize missing rowCount (ragged rowCount are allowed).
+    /*rowCount.forEach(function (row, i) {
+        if (row === undefined) rowCount[i] = {};
     });*/
 
     class RowObjectsView {
@@ -314,9 +314,9 @@ export function createColumnMatrixView(schema, columns) {
     let schemas = schema.columnSchemas;
     updateSchema(schemas);
 
-    // Normalize missing columns (ragged columns are allowed).
-    /*columns.forEach(function (column, j) {
-        if (column === undefined) columns[j] = Array();
+    // Normalize missing columnCount (ragged columnCount are allowed).
+    /*columnCount.forEach(function (column, j) {
+        if (column === undefined) columnCount[j] = Array();
     });*/
 
     function getRowCount() {

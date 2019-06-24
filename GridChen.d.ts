@@ -1,8 +1,4 @@
 declare module GridChen {
-    export interface ISelection {
-        readonly min: {rowIndex: number, colIndex: number};
-        readonly max: {rowIndex: number, colIndex: number};
-    }
 
     export interface StringConverter {
         fromString: (a: string) => (number | Date | string | boolean);
@@ -27,20 +23,9 @@ declare module GridChen {
 
     export interface JSONSchema {
         title: string;
+        type: string;
+        properties?: Object;
         items: Object | Object[];
-    }
-
-    export interface IPosition {
-        row: number;
-        col: number;
-    }
-
-    /**
-     * Right open interval.
-     */
-    export interface IInterval {
-        min: number;
-        sup: number;
     }
 
     export interface Range {
@@ -53,13 +38,6 @@ declare module GridChen {
         // Returns the live values of the range as an array of rows.
         values: () => any[][];
     }
-
-    export interface IRectangle {
-        row: IInterval;
-        col: IInterval;
-    }
-
-    export type onDataChangeCallback = () => null;
 
     export interface DataView {
         rowCount: () => number;

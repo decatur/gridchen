@@ -65,12 +65,14 @@ function updateSchema(schemas) {
         } else if (schema.type === 'boolean') {
             schema.converter = {
                 toString: (value) => String(value),
-                fromString: (value) => Boolean(value)
+                fromString: (value) => Boolean(value),
+                toEditable: (value) => String(value)
             };
         } else {
             // string and others
             schema.converter = {
                 toString: (value) => String(value),
+                toEditable: (value) => String(value),
                 fromString: (value) => value
             };
         }
@@ -155,9 +157,9 @@ export function createRowMatrixView(schema, rows) {
         }
 
         /**
-         * @param {GridChen.IInterval} rowsRange
+         * @param {IInterval} rowsRange
          * @param {number} colIndex
-         * @returns {any[]}
+         * @returns {?[]}
          */
         getColumnSlice(rowsRange, colIndex) {
             return range(rowsRange.sup - rowsRange.min).map(i => rowsRange[rowsRange.min + i][colIndex]);
@@ -343,7 +345,7 @@ export function createColumnMatrixView(schema, columns) {
          * @returns {number}
          */
         deleteRow(rowIndex) {
-            columns.forEach(function (column, j) {
+            columns.forEach(function (column) {
                 column.splice(rowIndex, 1);
             });
             return getRowCount();

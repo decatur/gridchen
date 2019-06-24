@@ -5,6 +5,16 @@
  * See README.md
  */
 
+
+/** @typedef {{row: number, col:number}} */
+let IPosition;
+
+/**
+ * Right open interval.
+ * @typedef {{min: number, sup:number}}
+ */
+let IInterval;
+
 window.console.log('Executing GridChen ...');
 
 const numeric = new Set(['number', 'integer']);
@@ -25,13 +35,10 @@ const console = {
     }
 };
 
-/**
- * @implements {GridChen.IRectangle}
- */
 export class Rectangle {
     /**
-     * @param {GridChen.IInterval} row
-     * @param {GridChen.IInterval} col
+     * @param {IInterval} row
+     * @param {IInterval} col
      */
     constructor(row, col) {
         this.row = row;
@@ -41,8 +48,8 @@ export class Rectangle {
     /**
      * TODO: Implement on Range.
      * Intersect this rectangle with another rectangle.
-     * @param {GridChen.IRectangle} other
-     * @returns {GridChen.IRectangle}
+     * @param {Rectangle} other
+     * @returns {Rectangle}
      */
     intersect(other) {
         const row = intersectInterval(this.row, other.row);
@@ -67,9 +74,9 @@ export class Rectangle {
 }
 
 /**
- * @param {GridChen.IInterval} i1
- * @param {GridChen.IInterval} i2
- * @returns {GridChen.IInterval}
+ * @param {IInterval} i1
+ * @param {IInterval} i2
+ * @returns {IInterval}
  */
 function intersectInterval(i1, i2) {
     const min = Math.max(i1.min, i2.min);
@@ -87,7 +94,7 @@ export class GridChen extends HTMLElement {
         this.eventListeners = {
             'datachanged': () => null,
             'activecellchanged': () => null,
-            'selectionchanged': () => null,
+            'selectionChanged': () => null,
             'paste': () => null
         };
     }
@@ -164,9 +171,9 @@ class Slider {
         style.display = 'inline-block';
         //this.element.style.marginLeft = '10px'
         style.height = container.style.height;
-        style.columnIndex = left;
+        style.left = left;
         style.width = '20px';
-        this.element.min = 0;
+        this.element.min = '0';
 
         container.parentElement.appendChild(this.element);
         // When this.element gains focus, container.parentElement.parentElement will loose is, so re-focus.
@@ -182,14 +189,14 @@ class Slider {
      */
     setMax(max) {
         console.assert(max > 0, `Invalid max slider value: ${max}`);
-        this.element.max = max;
+        this.element.max = String(max);
     }
 
     /**
      * @param {number} value
      */
     setValue(value) {
-        this.element.value = this.element.max - value;
+        this.element.value = String(Number(this.element.max) - value);
     }
 }
 
@@ -197,18 +204,16 @@ class Slider {
 /**
  * @param {number} row
  * @param {number} col
- * @returns {GridChen.IPosition}
+ * @returns {IPosition}
  */
 function pos(row, col) {
-    return /** @type {GridChen.IPosition} */ {row: row, col: col}
+    return {row: row, col: col}
 }
 
 class Selection extends Rectangle {
     constructor(repainter, eventListeners) {
         super({min: 0, sup: 1}, {min: 0, sup: 1});
-        /** @type {GridChen.IPosition} */
         this.initial = pos(0, 0);
-        /** @type {GridChen.IPosition} */
         this.head = pos(0, 0); // Cell opposite the initial.
         this.repainter = repainter;
         this.eventListeners = eventListeners;
@@ -235,7 +240,7 @@ class Selection extends Rectangle {
         this.head = {row: rowIndex, col: colIndex};
         this.row = {min: rowIndex, sup: 1 + rowIndex};
         this.col = {min: colIndex, sup: 1 + colIndex};
-        this.eventListeners['selectionchanged'](this);
+        this.eventListeners['selectionChanged'](this);
     }
 
     /**
@@ -258,7 +263,7 @@ class Selection extends Rectangle {
         };
 
         this.show();
-        this.eventListeners['selectionchanged'](this);
+        this.eventListeners['selectionChanged'](this);
     }
 }
 
@@ -270,6 +275,7 @@ const cellPadding = 3;
 /**
  * @param {HTMLElement} container
  * @param viewModel
+ * @param {Array<function()>} eventListeners
  */
 function Grid(container, viewModel, eventListeners) {
     const schema = viewModel.schema;
@@ -298,7 +304,7 @@ function Grid(container, viewModel, eventListeners) {
     const headerRow = document.createElement('div');
     let style = headerRow.style;
     style.position = 'relative';
-    style.columnIndex = '20px';
+    style.left = '20px';
     style.width = columnEnds[columnEnds.length - 1] + 'px';
     style.height = rowHeight + 'px';
     style.textAlign = 'center';
@@ -320,7 +326,7 @@ function Grid(container, viewModel, eventListeners) {
             const header = document.createElement('span');
             const style = header.style;
             style.position = 'absolute';
-            style.columnIndex = left + 'px';
+            style.left = left + 'px';
             style.width = schema.width + 'px';
             style.height = innerHeight;
             style.padding = cellPadding + 'px';
@@ -358,7 +364,7 @@ function Grid(container, viewModel, eventListeners) {
     let insertRowButton = document.createElement('button');
     insertRowButton.type = 'button';
     insertRowButton.style.position = 'absolute';
-    insertRowButton.style.rowIndex = '-20px';
+    insertRowButton.style.top = '-20px';
     insertRowButton.style.padding = '0';
     insertRowButton.title = "Insert Row Above";
     insertRowButton.textContent = '+';
@@ -413,7 +419,7 @@ function Grid(container, viewModel, eventListeners) {
         },
         show: function () {
             if (this.span) this.span.style.backgroundColor = 'mistyrose';
-            rowMenu.style.rowIndex = this.span.offsetTop + 'px';
+            rowMenu.style.top = this.span.offsetTop + 'px';
             rowMenu.style.display = 'block';
         },
         move: function (rowIndex, colIndex) {
@@ -436,8 +442,8 @@ function Grid(container, viewModel, eventListeners) {
             const spanStyle = this.span.style;
             spanStyle.display = 'none';
             const style = this.input.style;
-            style.rowIndex = spanStyle.top;
-            style.columnIndex = spanStyle.left;
+            style.top = spanStyle.top;
+            style.left = spanStyle.left;
             style.width = spanStyle.width;
             style.display = 'inline-block';
 
@@ -537,9 +543,9 @@ function Grid(container, viewModel, eventListeners) {
         console.log(evt);
         // TODO: This is not MSE behaviour. MSE only scrolls and does not move the active cell.
         // TODO: Use evt.deltaMode
-        let newFrirstRow = firstRow + 3 * Math.sign(-evt.wheelDeltaY);
-        if (newFrirstRow >= 0) {
-            setFirstRow(newFrirstRow);
+        let newFirstRow = firstRow + 3 * Math.sign(-evt.deltaY);
+        if (newFirstRow >= 0) {
+            setFirstRow(newFirstRow);
         }
     };
 
@@ -814,8 +820,8 @@ function Grid(container, viewModel, eventListeners) {
         let style = span.style;
         spanMatrix[vpRowIndex][colIndex] = span;
         style.position = 'absolute';
-        style.rowIndex = (vpRowIndex * rowHeight) + 'px';
-        style.columnIndex = (colIndex ? columnEnds[colIndex - 1] : 0) + 'px';
+        style.top = (vpRowIndex * rowHeight) + 'px';
+        style.left = (colIndex ? columnEnds[colIndex - 1] : 0) + 'px';
         style.width = schemas[colIndex].width + 'px';
         style.height = innerHeight;
         style.overflow = 'hidden';

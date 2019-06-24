@@ -193,13 +193,23 @@ class Slider {
     }
 }
 
+
+/**
+ * @param {number} row
+ * @param {number} col
+ * @returns {GridChen.IPosition}
+ */
+function pos(row, col) {
+    return /** @type {GridChen.IPosition} */ {row: row, col: col}
+}
+
 class Selection extends Rectangle {
     constructor(repainter, eventListeners) {
         super({min: 0, sup: 1}, {min: 0, sup: 1});
         /** @type {GridChen.IPosition} */
-        this.initial = {row: 0, col: 0};
+        this.initial = pos(0, 0);
         /** @type {GridChen.IPosition} */
-        this.head = {row: 0, col: 0}; // Cell opposite the initial.
+        this.head = pos(0, 0); // Cell opposite the initial.
         this.repainter = repainter;
         this.eventListeners = eventListeners;
     }
@@ -214,6 +224,10 @@ class Selection extends Rectangle {
         this.repainter(undefined, this);
     }
 
+    /**
+     * @param {number} rowIndex
+     * @param {number} colIndex
+     */
     set(rowIndex, colIndex) {
         console.log('Selection.set');
         this.hide(); // TODO: Why?
@@ -224,6 +238,10 @@ class Selection extends Rectangle {
         this.eventListeners['selectionchanged'](this);
     }
 
+    /**
+     * @param {number} rowIndex
+     * @param {number} colIndex
+     */
     expand(rowIndex, colIndex) {
         console.log('Selection.expand');
         this.hide();
@@ -251,7 +269,6 @@ const cellPadding = 3;
 
 /**
  * @param {HTMLElement} container
- * @param {GridChen.IGridSchema} schema
  * @param viewModel
  */
 function Grid(container, viewModel, eventListeners) {

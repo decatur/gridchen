@@ -65,7 +65,7 @@ function updateSchema(schemas) {
         } else if (schema.type === 'boolean') {
             schema.converter = {
                 toString: (value) => String(value),
-                fromString: (value) => Boolean(value),
+                fromString: (value) => ['true', '1'].indexOf(value.toLowerCase()) >= 0,
                 toEditable: (value) => String(value)
             };
         } else {

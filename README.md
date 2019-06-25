@@ -32,24 +32,24 @@ github.io ...
 
 # Issues
 
+* Action 1) Edit cell 2) Click on slider: Active cell does not return to active.
 * Paste must select pasted region (pasted region differs from selection if selection cannot be tiled by source)
 * Using slider will blur grid.
 * Only honour first sortDirection!
 * Handling of Infinity and NaN (#NV in de-de)
+* Do not prevent zoom via Ctrl-MouseWheel (which is Excel behaviour)?
 
 # TODO
 
-* Support string, datetime-local, numeric, boolean and enum
+* Support enum via select or datalist
 * Show 1 empty row at end (Slider issue)
-* Mark overflows, see https://stackoverflow.com/questions/9333379/check-if-an-elements-content-is-overflowing.
-  Offer tool tips
+* Mark overflows, see https://stackoverflow.com/questions/9333379/check-if-an-elements-content-is-overflowing and offer tool tips
 * Avoid refreshing complete viewport on cell change
 * Use onkeypress for text entry.
-* document.activeElement
+* Use document.activeElement instead of activeCell.span?
 * Write more unit tests
-* Only instantiate Selection once?
-* Test in Firefox
-* Zoom?
+* Test Firefox
+
 
 # Alternatives
 * [SlickGrid](https://github.com/mleibman/SlickGrid)

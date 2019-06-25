@@ -45,7 +45,8 @@
                     {title: 'Index', width: 50, type: 'number', fractionDigits: 0},
                     {title: 'Col A', width: 50, type: 'number', fractionDigits: 1},
                     {title: 'Col B', width: 100, type: 'number', fractionDigits: 2},
-                    {title: 'Col C', width: 100, type: 'string'}
+                    {title: 'Col C', width: 100, type: 'string'},
+                    {title: 'Boolean', width: 100, type: 'boolean'}
                 ]
             }
         };
@@ -60,7 +61,8 @@
             Index: (row) => row,
             'Col A': (row) => row,
             'Col B': (row) => row,
-            'Col C': (row) => `row ${row}`
+            'Col C': (row) => `row ${row}`,
+            Boolean: (row) => row % 2 === 0
         };
 
 

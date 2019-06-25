@@ -540,10 +540,9 @@ function Grid(container, viewModel, eventListeners) {
         let evt = /** @type {WheelEvent} */ _evt;
         evt.stopPropagation();
         evt.preventDefault();  // Prevents scrolling of any surrounding HTML element.
-        console.log(evt);
-        // TODO: This is not MSE behaviour. MSE only scrolls and does not move the active cell.
+        console.log(JSON.stringify(evt));
         // TODO: Use evt.deltaMode
-        let newFirstRow = firstRow + 3 * Math.sign(-evt.deltaY);
+        let newFirstRow = firstRow + 3 * Math.sign(evt.deltaY);
         if (newFirstRow >= 0) {
             setFirstRow(newFirstRow);
         }

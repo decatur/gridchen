@@ -8,13 +8,21 @@ Very modern (web components, es6 modules) with no dependencies.
 
 ```HTML
 <!DOCTYPE html>
-<bantam-grid id="mybantam" style="height:200px;"></bantam-grid>
+<grid-chen id="my-grid" style="height:200px;"></grid-chen>
 
 <script type="module">
-    import {} from "./modules/gridchen.js"
-    const schemas = [{title: 'A', width: 150, type: 'date'},  {title: 'B', width: 100, type: 'number'}];
-    const dataMatrix = [[new Date(), 1], [new Date(), 2], [new Date(), 3]];
-    document.getElementById('mybantam').resetFromMatrix(schemas, dataMatrix);
+    import "./modules/GridChen.js"
+    import {createRowMatrixView} from "./modules/DataViews.js"
+
+    const schema = {
+        title: 'Readme',
+        columnSchemas: [
+            {title: 'A', width: 150, type: 'date'},
+            {title: 'B', width: 100, type: 'number'}
+        ]
+    };
+    const matrix = [[new Date(), 1], [new Date(), 2], [new Date(), 3]];
+    document.getElementById('my-grid').resetFromView(createRowMatrixView(schema, matrix));
 </script>
 ```
 
@@ -195,6 +203,8 @@ Click any cell
 
 Scroll active cell out of view, then create input -> active cell scrolls into view.
 Note: Currently we only support dblclick to enter edit mode. So it it not possible to enter edit mode on a out of view cell.
+
+Pull mouse-wheel -> scroll down; Push -> scroll up
 
 Mouse-Wheel past the first row -> not possible
 

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<grid-chen id="my-grid" style="height:200px;"></grid-chen>
+
+<script type="module">
+    import "./modules/GridChen.js"
+    import {createRowMatrixView} from "./modules/DataViews.js"
+
+    const schema = {
+        title: 'Readme',
+        columnSchemas: [
+            {title: 'A', width: 150, type: 'date'},
+            {title: 'B', width: 100, type: 'number'}
+        ]
+    };
+    const matrix = [[new Date(), 1], [new Date(), 2], [new Date(), 3]];
+    document.getElementById('my-grid').resetFromView(createRowMatrixView(schema, matrix));
+</script>

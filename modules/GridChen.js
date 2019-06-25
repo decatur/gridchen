@@ -541,7 +541,9 @@ function Grid(container, viewModel, eventListeners) {
         evt.stopPropagation();
         evt.preventDefault();  // Prevents scrolling of any surrounding HTML element.
         console.log(JSON.stringify(evt));
-        // TODO: Use evt.deltaMode
+        console.assert(evt.deltaMode === 0);  // We only support Chrome. FireFox will have evt.deltaMode = 1.
+        // TODO: Chrome seems to always give evt.deltaY +-150 pixels. Why?
+        // Excel scrolls about 3 lines per wheel tick.
         let newFirstRow = firstRow + 3 * Math.sign(evt.deltaY);
         if (newFirstRow >= 0) {
             setFirstRow(newFirstRow);

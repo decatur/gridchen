@@ -301,6 +301,13 @@ function Grid(container, viewModel, eventListeners) {
         columnEnds[index] = total;
     });
 
+    // Only honour first columns sortDirection.
+    schemas
+        .filter(schema => Math.abs(schema.sortDirection) === 1)
+        .slice(1).forEach(function(schema) {
+            delete schema.sortDirection;
+        });
+
     const headerRow = document.createElement('div');
     let style = headerRow.style;
     style.position = 'relative';
@@ -538,6 +545,8 @@ function Grid(container, viewModel, eventListeners) {
 
     cellParent.onmousewheel = function (_evt) {
         let evt = /** @type {WheelEvent} */ _evt;
+        // Do not disable zoom. Both Excel and Browsers zoom on ctrl-wheel.
+        if (evt.ctrlKey) return;
         evt.stopPropagation();
         evt.preventDefault();  // Prevents scrolling of any surrounding HTML element.
         console.log(JSON.stringify(evt));

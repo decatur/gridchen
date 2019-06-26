@@ -34,12 +34,12 @@ See https://decatur.github.io/GridChen/#rowcount=1000
 
 * Action 1) Edit cell 2) Click on slider: Active cell does not return to active.
 * Paste must select pasted region (pasted region differs from selection if selection cannot be tiled by source)
-* Using slider will blur grid.
-* Only honour first sortDirection!
+* Using slider must not blur grid.
 * Handling of Infinity and NaN (#NV in de-de)
-* Do not prevent zoom via Ctrl-MouseWheel (which is Excel behaviour)?
+* Create concept of invalid input (should raw data reflect input value or should input be coerced to valid data type?).
+  Excel honors and stores the original input, valid or not. 
 
-# TODO
+# TODOs
 
 * Support enum via select or datalist
 * Show 1 empty row at end (Slider issue)
@@ -180,59 +180,71 @@ We use the JavaScript API for Office if possible, for example
 
 # Test Plan
 
-Open http://localhost:63342/bantam/demo1.html
+1. Open http://localhost:63342/GridChen/demo1.html
 -> a grid with one header and 1000 data rows is displayed.
 
-Change location hash to rowcount=10
+2. Change location hash to rowcount=10
 -> a grid with one header and 10 data rows is displayed
 
-Click any cell
+3. Click any cell
 -> Cell is active
 
-Type 123`Enter`
+4. Type 123`Enter`
 -> Cell contains value 123
 
-DoubleClick cell and replace 2 by 4 then `Enter`
+1. DoubleClick cell and replace 2 by 4 then `Enter`
 -> Cell contains value 143
 
-With mouse-down/move/up select multiple cells 
+1. With mouse-down/move/up select multiple cells 
 -> Selection is highlighted
 
-Click any cell
+1. Click any cell
 -> Selection is revoked
 
-Scroll active cell out of view, then create input -> active cell scrolls into view.
+1. Scroll active cell out of view, then create input -> active cell scrolls into view.
 Note: Currently we only support dblclick to enter edit mode. So it it not possible to enter edit mode on a out of view cell.
 
-Pull mouse-wheel -> scroll down; Push -> scroll up
+1. Pull mouse-wheel -> scroll down; Push -> scroll up
 
-Mouse-Wheel past the first row -> not possible
+1. Mouse-Wheel past the first row -> not possible
 
-Make a Click-Selection-Expand. -> The active cell should not change.
+1. Make a Click-Selection-Expand. -> The active cell should not change.
 
-Check trimming
+1. Check trimming
 
-Edit Mode shows raw data
+1. Edit Mode shows raw data: Edit a numerical cell with a value with more digits than displayed -> All digits are shown.
 
-Copy&Paste date must result in same value
+1. Copy&Paste date must result in same value
 
-Grid looses focus -> no active cell, no selection
+1. Grid looses focus -> no active cell, no selection
 
-Sorting does not change active cell nor selection
+1. Sorting does not change active cell nor selection
 
-Editing active cell when outside viewport is possible. The active cell must scroll into view.
-Clicking editor should move caret.
-Expanding selection (both mouse and keyboard) must not change active cell.
-In EDIT mode, Shift-Enter enters moves active cell up in ACTIVE mode.
-Escape must exist edit and input mode
-EDIT mode must show the **raw** data, not the formatted value.
-On load of the grid, no active cell or selection must show.
-Header must show sort direction, if any. Sort must toggle. Only one column must show sort direction.
-Bluring grid in EDIT mode must hide row menu, active cell and selection.
-Test all date converters
+1. Editing active cell when outside viewport is possible -> The active cell must scroll into view.
 
-* WheelScroll with selected GridChen must not scroll any surrounding HTML element.
-If paste target selection is multiple of source, then tile target with source, otherwise just paste source
+1. Clicking editor should move caret.
+
+1. Expanding selection (both mouse and keyboard) must not change active cell.
+
+1. In EDIT mode, Shift-Enter enters moves active cell up in ACTIVE mode.
+
+1. Escape must exist edit and input mode
+
+1. EDIT mode must show the **raw** data, not the formatted value.
+
+1. On load of the grid, no active cell or selection must show.
+
+1. Header must show sort direction, if any. 
+
+1. Sort must toggle. Only one column must show sort direction.
+
+1. Bluring grid in EDIT mode must hide row menu, active cell and selection.
+
+1.  WheelScroll with selected GridChen must not scroll any surrounding HTML element.
+
+1. Ctrl-WheelScroll must zoom (default behaviour)
+
+1. If paste target selection is multiple of source, then tile target with source, otherwise just paste source
 
 ## Multiple Grids
 Check only one grid can have focused cell and selection.

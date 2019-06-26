@@ -1,4 +1,3 @@
-import {renderPlot} from "./plot.js"
 import {
     DateStringConverter,
     DateTimeLocalStringConverter,

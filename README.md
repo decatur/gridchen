@@ -22,10 +22,6 @@ See https://decatur.github.io/GridChen/#rowcount=1000
 </script>
 ```
 
-# Demo
-
-github.io ...
-
 # Issues
 
 * Paste must select pasted region (pasted region differs from selection if selection cannot be tiled by source)

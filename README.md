@@ -1,8 +1,12 @@
-# Alpha-version: Do not use! 
+# :no_entry: Alpha-version
 
 # About
 Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience.
 Very modern (web components, es6 modules) with no dependencies.
+
+# Demo
+
+See https://decatur.github.io/GridChen/#rowcount=1000
 
 # Usage
 
@@ -25,10 +29,6 @@ Very modern (web components, es6 modules) with no dependencies.
     document.getElementById('my-grid').resetFromView(createRowMatrixView(schema, matrix));
 </script>
 ```
-
-# Demo
-
-github.io ...
 
 # Issues
 

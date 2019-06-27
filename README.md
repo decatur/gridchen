@@ -32,7 +32,6 @@ See https://decatur.github.io/GridChen/#rowcount=1000
 
 # Issues
 
-* Action 1) Edit cell 2) Click on slider: Active cell does not return to active.
 * Paste must select pasted region (pasted region differs from selection if selection cannot be tiled by source)
 * Using slider must not blur grid.
 * Handling of Infinity and NaN (#NV in de-de)
@@ -213,6 +212,10 @@ Note: Currently we only support dblclick to enter edit mode. So it it not possib
 1. Check trimming
 
 1. Edit Mode shows raw data: Edit a numerical cell with a value with more digits than displayed -> All digits are shown.
+
+1. Edit cell and click other cell -> Edited cell must return to display mode.
+
+1. Same for clicking slider or clicking outside of GridChen component.
 
 1. Copy&Paste date must result in same value
 

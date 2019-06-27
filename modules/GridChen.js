@@ -419,7 +419,7 @@ function Grid(container, viewModel, eventListeners) {
     /** @type {{span?:{HTMLSpanElement}, input:{HTMLInputElement}, row:number, col:number, mode:string}} */
     const activeCell = {
         span: undefined,
-        input: input, row: 0, col: 0, mode: 'active',
+        input: input, row: 0, col: 0, mode: 'display',
         hide: function () {
             if (this.span) this.span.style.backgroundColor = 'white'; //removeProperty('background-color');
             rowMenu.style.display = 'none';
@@ -440,6 +440,7 @@ function Grid(container, viewModel, eventListeners) {
             eventListeners['activecellchanged'](this);
         },
         setMode: function(mode) {
+            console.assert(mode === 'edit' || mode === 'input');
             this.mode = mode;
             if (this.row < firstRow) {
                 // scroll into view
@@ -719,15 +720,16 @@ function Grid(container, viewModel, eventListeners) {
     /** @type{number} */
     let rowCount = 0;
 
-    function commit(focusContainer) {
+    function commit() {
         console.log('commit');
         activeCell.span.style.display = 'inline-block';
 
         if (activeCell.mode === 'input' || activeCell.mode === 'edit') {
             const rowIndex = activeCell.row;
             const colIndex = activeCell.col;
-            let value = activeCell.input.value.trim();
-            activeCell.input.value = '';
+            let value = input.value.trim();
+            input.value = '';
+            input.style.display = 'none';
             // activeCell.span.textContent = value;
             if (value === '') {
                 value = undefined;
@@ -739,23 +741,19 @@ function Grid(container, viewModel, eventListeners) {
             eventListeners['datachanged']();
         }
 
-        activeCell.mode = 'active';
-        if (focusContainer !== false) {
-            container.focus();
-        }
+        activeCell.mode = 'display';
+        container.focus();
     }
 
     input.addEventListener('blur', function (evt) {
         console.log('input.onblur');
+        commit();
 
         if (!container.contains(evt.relatedTarget)) {
-            commit(false);
+            container.blur();
             activeCell.hide();
             selection.hide();
         }
-
-        // This will NOT implicitly trigger input.onblur because that is just happening. For this reason we do it here!
-        input.style.display = 'none';
     });
 
     /**

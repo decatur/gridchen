@@ -826,9 +826,17 @@ function Grid(container, viewModel, eventListeners) {
     function createCell(vpRowIndex, colIndex) {
         const schema = schemas[colIndex];
         const type = schema.type;
-        let span = document.createElement(schema.format === 'uri'?'a':'span');
-        let style = span.style;
-        spanMatrix[vpRowIndex][colIndex] = span;
+        /** @type {HTMLElement} */
+        let elem;
+        if (schema.format === 'uri') {
+            elem = document.createElement('a');
+            elem.target = '_blank';
+        } else {
+            elem = document.createElement('span');
+        }
+
+        let style = elem.style;
+        spanMatrix[vpRowIndex][colIndex] = elem;
         style.position = 'absolute';
         style.top = (vpRowIndex * rowHeight) + 'px';
         style.left = (colIndex ? columnEnds[colIndex - 1] : 0) + 'px';
@@ -843,10 +851,10 @@ function Grid(container, viewModel, eventListeners) {
         style.backgroundColor = 'white';
 
         if (numeric.has(type)) {
-            span.className = 'number_column'
+            elem.className = 'number_column'
         }
 
-        span.addEventListener('dblclick', function () {
+        elem.addEventListener('dblclick', function () {
             console.log('ondblclick');
             activeCell.setMode('edit');
             // activeCell.input.value = activeCell.span.textContent;
@@ -859,9 +867,9 @@ function Grid(container, viewModel, eventListeners) {
             activeCell.input.value = value;
         });
 
-        cellParent.appendChild(span);
+        cellParent.appendChild(elem);
 
-        return span
+        return elem
     }
 
     function getSelection(selection) {

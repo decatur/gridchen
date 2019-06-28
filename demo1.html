@@ -46,7 +46,8 @@
                     {title: 'Col A', width: 50, type: 'number', fractionDigits: 1},
                     {title: 'Col B', width: 100, type: 'number', fractionDigits: 2},
                     {title: 'Col C', width: 100, type: 'string'},
-                    {title: 'Boolean', width: 100, type: 'boolean'}
+                    {title: 'Boolean', width: 100, type: 'boolean'},
+                    {title: 'Uri', width: 100, type: 'string', format: 'uri'}
                 ]
             }
         };
@@ -62,9 +63,9 @@
             'Col A': (row) => row,
             'Col B': (row) => row,
             'Col C': (row) => `row ${row}`,
-            Boolean: (row) => row % 2 === 0
+            Boolean: (row) => row % 2 === 0,
+            Uri: (row) => `http://foo.bar/${row}`
         };
-
 
         function simulateRows() {
             let rows = range(rowCount).map(i => schema.items.items.map((schema) => simulate[schema.title](i)));

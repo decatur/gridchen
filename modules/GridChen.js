@@ -790,6 +790,7 @@ function Grid(container, viewModel, eventListeners) {
 
 
     let viewPortRowCount = Math.floor(viewPortHeight / rowHeight);
+    /** @type {Array<Array<HTMLElement>>} */
     let spanMatrix = Array(viewPortRowCount);
     let pageIncrement = Math.max(1, viewPortRowCount);
 
@@ -823,8 +824,9 @@ function Grid(container, viewModel, eventListeners) {
     }
 
     function createCell(vpRowIndex, colIndex) {
-        let type = schemas[colIndex].type;
-        let span = document.createElement('span');
+        const schema = schemas[colIndex];
+        const type = schema.type;
+        let span = document.createElement(schema.format === 'uri'?'a':'span');
         let style = span.style;
         spanMatrix[vpRowIndex][colIndex] = span;
         style.position = 'absolute';
@@ -833,6 +835,9 @@ function Grid(container, viewModel, eventListeners) {
         style.width = schemas[colIndex].width + 'px';
         style.height = innerHeight;
         style.overflow = 'hidden';
+        style.whiteSpace = 'nowrap';
+        style.overflow = 'hidden';
+        style.textOverflow = 'ellipsis';
         style.border = '1px solid black';
         style.padding = cellPadding + 'px';
         style.backgroundColor = 'white';
@@ -938,21 +943,24 @@ function Grid(container, viewModel, eventListeners) {
         return viewModel.rowCount();
     }
 
-
     function updateViewportRows(matrix) {
         // console.log('setRowData', rowData)
         for (let index = 0; index < spanMatrix.length; index++) {
-            let inputRow = spanMatrix[index];
+            let elemRow = spanMatrix[index];
             let row = matrix[index];
             for (let colIndex = 0; colIndex < colCount; colIndex++) {
-                let input = inputRow[colIndex];
+                let elem = elemRow[colIndex];
                 let value = (row ? row[colIndex] : undefined);
                 if (value === undefined) {
                     value = '';
                 } else {
                     value = schemas[colIndex].converter.toString(value);
                 }
-                input.textContent = value;
+
+                elem.textContent = value;
+                if (elem.tagName === 'A') {
+                    elem.href = value;
+                }
             }
         }
     }

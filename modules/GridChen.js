@@ -656,9 +656,17 @@ function Grid(container, viewModel, eventListeners) {
             evt.preventDefault();
             evt.stopPropagation();
             viewModel.plot();
-        } else if (evt.key.length === 1) {
-            activeCell.setMode('input');
+        } else if (evt.code === 'F10' && evt.shiftKey) {
+            // Both Web and Excel binding of context menu.
+            evt.preventDefault();
+            evt.stopPropagation();
+            alert(1);
         }
+    };
+
+    container.onkeypress = function (evt) {
+        console.log('keypress ' + evt.code);
+        activeCell.setMode('input');
     };
 
     function navigateCell(evt, rowOffset, colOffset) {

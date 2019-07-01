@@ -13,10 +13,6 @@ function dispatchMouseDown(gc) {
     getGridElement(gc).dispatchEvent(new MouseEvent('mousedown'));
 }
 
-function dispatchKey(gc, eventInitDict) {
-    gc.shadowRoot.firstElementChild.dispatchEvent(new KeyboardEvent('keydown', eventInitDict));
-}
-
 function dispatch(gc, typeArg, eventInitDict) {
     gc.shadowRoot.firstElementChild.dispatchEvent(new KeyboardEvent(typeArg, eventInitDict));
 }
@@ -49,13 +45,13 @@ test('Edit Cell', async function () {
     const view = createRowMatrixView(schema, rows);
     gc.resetFromView(view);
     dispatchMouseDown(gc);
-    dispatchKey(gc, {key:"2"});
+    dispatch(gc, 'keypress', {key:"2"});
     // TODO: How to dispatchEvent a keypress event to input?
-    gc.shadowRoot.getElementById('input').value = ' 123 ';
-    dispatchKey(gc, {code: 'Tab'});
-    dispatchKey(gc, {key:" "});
-    gc.shadowRoot.getElementById('input').value = ' abc ';
-    dispatchKey(gc, {code: 'Enter'});
+    gc.shadowRoot.getElementById('editor').value = ' 123 ';
+    dispatch(gc, 'keydown', {code: 'Tab'});
+    dispatch(gc, 'keypress', {key:" "});
+    gc.shadowRoot.getElementById('editor').value = ' abc ';
+    dispatch(gc, 'keydown', {code: 'Enter'});
 
     assert.equal([
         [123, 'abc'],
@@ -76,8 +72,8 @@ test('expand selection with keys', async function () {
     gc.getRangeByIndexes(0, 0, 1, 1).select();
     let r = gc.getSelectedRange();
     assert.equal([0, 0, 1, 1], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
-    dispatchKey(gc, {code: 'ArrowRight', shiftKey: true});
-    dispatchKey(gc, {code: 'ArrowDown', shiftKey: true});
+    dispatch(gc, 'keydown',{code: 'ArrowRight', shiftKey: true});
+    dispatch(gc, 'keydown', {code: 'ArrowDown', shiftKey: true});
     r = gc.getSelectedRange();
     assert.equal([0, 0, 2, 2], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
 });
@@ -86,7 +82,7 @@ test('Selection', () => {
     const gc = new GridChen();
 
     let evt;
-    gc.setEventListener('selectionchanged', function (_evt) {
+    gc.setEventListener('selectionChanged', function (_evt) {
         evt = _evt;
     });
 
@@ -97,7 +93,7 @@ test('Selection', () => {
         );
 
         dispatchMouseDown(gc);
-        dispatchKey(gc, {code: 'ArrowRight', shiftKey: true});
+        dispatch(gc, 'keydown',{code: 'ArrowRight', shiftKey: true});
         test('should expand selection', () => {
             assert.equal({min: 0, sup: 1}, evt.row);
             assert.equal({min: 0, sup: 2}, evt.col);
@@ -111,7 +107,7 @@ test('Selection', () => {
         );
 
         dispatchMouseDown(gc);
-        dispatchKey(gc, {code: 'ArrowRight', shiftKey: true});
+        dispatch(gc, 'keydown', {code: 'ArrowRight', shiftKey: true});
         test('should expand selection', () => {
             assert.equal({min: 0, sup: 1}, evt.row);
             assert.equal({min: 0, sup: 2}, evt.col);
@@ -122,7 +118,7 @@ test('Selection', () => {
         const rows = [[0, 'a'], [1, 'b']];
         gc.resetFromView(createRowMatrixView(schema, rows));
         dispatchMouseDown(gc);
-        dispatchKey(gc, {code: 'ArrowRight', shiftKey: true});
+        dispatch(gc, 'keydown', {code: 'ArrowRight', shiftKey: true});
 
         // Delete first row
         gc.shadowRoot.getElementById('delete').click();
@@ -132,6 +128,12 @@ test('Selection', () => {
         gc.shadowRoot.getElementById('delete').click();
         assert.equal([], rows);
 
+    });
+
+    test('View is error', () => {
+        const error = new Error('FooBar');
+        gc.resetFromView(error);
+        assert.equal(String(error), gc.shadowRoot.firstElementChild.textContent);
     });
 });
 

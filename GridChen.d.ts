@@ -8,6 +8,7 @@ declare module GridChen {
 
     export interface IColumnSchema {
         type: string;
+        format?: string;
         title: string;
         width: number;
         fractionDigits?: number;

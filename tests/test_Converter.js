@@ -44,8 +44,8 @@ test('DateTimeLocalStringConverter', () => {
     converter = new DateTimeLocalStringConverter(undefined, 'en-US');
     assert.equal(d, converter.fromString('10/27/2019 02:00'));
 
-    assert.equal(new Date(NaN), converter.fromString('10/27/2019@02:00'));
-    assert.equal(new Date(NaN), converter.fromString('10/27/foo 02:00'));
+    assert.equal('10/27/2019@02:00', converter.fromString('10/27/2019@02:00'));
+    assert.equal('10/27/foo 02:00', converter.fromString('10/27/foo 02:00'));
 });
 
 test('NumberStringConverter', () => {

@@ -52,19 +52,34 @@ function updateSortDirection(schemas, colIndex) {
  */
 function updateSchema(schemas) {
     schemas.forEach(function (schema) {
-        schema.width = Number(schema.width);
+        schema.width = Number(schema.width || 100);
         if (numeric.has(schema.type)) {
-            schema.converter = new NumberStringConverter(schema.fractionDigits === undefined ? 2 : schema.fractionDigits);
-        } else if (schema.type === 'datetime') {
+            let fractionDigits = 2;
+            if (schema.fractionDigits !== undefined) {
+                fractionDigits = schema.fractionDigits;
+            } else if (schema.type === 'integer') {
+                fractionDigits = 0;
+            }
+            schema.converter = new NumberStringConverter(fractionDigits);
+        } else if (schema.format === 'datetime') {
             schema.converter = new DateTimeStringConverter(schema.frequency || 'T1M');
-        } else if (schema.type === 'datetimelocal') {
+        } else if (schema.format === 'datetimelocal') {
             schema.converter = new DateTimeLocalStringConverter(schema.frequency || 'T1M');
-        } else if (schema.type === 'date') {
+        } else if (schema.format === 'date') {
             schema.converter = new DateStringConverter();
         } else if (schema.type === 'boolean') {
             schema.converter = {
                 toString: (value) => String(value),
-                fromString: (value) => ['true', '1'].indexOf(value.toLowerCase()) >= 0,
+                fromString: function(value) {
+                    value = value.trim();
+                    if (['true', 'wahr', '1', 'y'].indexOf(value.toLowerCase()) >= 0) {
+                        return true
+                    }
+                    if (['false', 'falsch', '0', 'n'].indexOf(value.toLowerCase()) >= 0) {
+                        return false
+                    }
+                    return value;
+                },
                 toEditable: (value) => String(value)
             };
         } else {
@@ -83,51 +98,35 @@ function updateSchema(schemas) {
  * @param {Array<Array<object>>} matrix
  */
 export function createView(schema, matrix) {
-    try {
-        if (Array.isArray(schema.items.items)) {
-            const colSchema = {title: schema.title, columnSchemas: schema.items.items};
-            return createRowMatrixView(colSchema, matrix);
-        }
-    } catch (e) {
-        window.console.error(e);
+
+    if (schema.items && Array.isArray(schema.items.items)) {
+        const colSchema = {title: schema.title, columnSchemas: schema.items.items};
+        return createRowMatrixView(colSchema, matrix);
     }
 
-    try {
-        if (schema.items.type === 'object') {
-            const colSchema = {
-                title: schema.title,
-                columnSchemas: Object.values(schema.items.properties),
-                ids: Object.keys(schema.items.properties)
-            };
-            return createRowObjectsView(colSchema, matrix);
-        }
-    } catch (e) {
-        window.console.error(e);
+    if (schema.items && schema.items.type === 'object') {
+        const colSchema = {
+            title: schema.title,
+            columnSchemas: Object.values(schema.items.properties),
+            ids: Object.keys(schema.items.properties)
+        };
+        return createRowObjectsView(colSchema, matrix);
     }
 
-    try {
-        if (Array.isArray(schema.items)) {
-            const colSchema = {title: schema.title, columnSchemas: schema.items.map(item => item.items)};
-            return createColumnMatrixView(colSchema, matrix);
-        }
-    } catch (e) {
-        window.console.error(e);
+    if (Array.isArray(schema.items)) {
+        const colSchema = {title: schema.title, columnSchemas: schema.items.map(item => item.items)};
+        return createColumnMatrixView(colSchema, matrix);
     }
 
-    try {
-        if (schema.type === 'object') {
-            const colSchema = {title: schema.title, columnSchemas: Object.values(schema.properties).map(item => item.items), ids:Object.keys(schema.properties)};
-            // Normalize missing columnCount (ragged columnCount are allowed).
-            const columns = colSchema.ids.map(id => matrix[id] || Array());
-            return createColumnMatrixView(colSchema, columns);
-        }
-    } catch (e) {
-        window.console.error(e);
+    if (schema.type === 'object') {
+        const colSchema = {title: schema.title, columnSchemas: Object.values(schema.properties).map(item => item.items), ids:Object.keys(schema.properties)};
+        // Normalize missing columnCount (ragged columnCount are allowed).
+        const columns = colSchema.ids.map(id => matrix[id] || Array());
+        return createColumnMatrixView(colSchema, columns);
     }
 
     return new Error('Invalid schema: ' + schema.title);
 }
-
 
 /**
  * @param {GridChen.IGridSchema} schema

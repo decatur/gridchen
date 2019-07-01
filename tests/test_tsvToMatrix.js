@@ -2,16 +2,31 @@ import {test, assert} from './utils.js'
 import {tsvToMatrix} from '../modules/GridChen.js'
 
 test('tsvToMatrix', () => {
-    let matrix = tsvToMatrix("1\t2\r\n3\t4\r\n");
-    assert.equal(matrix, [['1', '2'], ['3', '4']]);
+    let rows = tsvToMatrix("1\t2\r\n3\t4\r\n");
+    assert.equal([['1', '2'], ['3', '4']], rows);
 
-    matrix = tsvToMatrix("1\t2\r\n3\t\r\n");
-    assert.equal(matrix, [['1', '2'], ['3', '']]);
+    rows = tsvToMatrix("1\t2\r\n3\t\r\n");
+    assert.equal([['1', '2'], ['3', '']], rows);
 
-    matrix = tsvToMatrix("1\t2\r\n3\t");
-    assert.equal(matrix, [['1', '2'], ['3', '']]);
+    rows = tsvToMatrix("1\t2\r\n3\t");
+    assert.equal([['1', '2'], ['3', '']], rows);
 
-    matrix = tsvToMatrix("\r\n");
-    assert.equal(matrix, [['']]);
+    rows = tsvToMatrix("\r\n");
+    assert.equal([['']], rows);
+
+    rows = tsvToMatrix('1	"foo\r\nbar"\r\n2	3');
+    assert.equal([['1', 'foo\r\nbar'], ['2', '3']], rows);
+
+    rows = tsvToMatrix('1	"foo\r\nbar"\r\n2	3\n');
+    assert.equal([['1', 'foo\r\nbar'], ['2', '3']], rows);
+
+    rows = tsvToMatrix('1	"foo\r\nbar"\r\n2	"3"""\n');
+    assert.equal([['1', 'foo\r\nbar'], ['2', '3"']], rows);
+
+    rows = tsvToMatrix('1	"foo\r\nbar"\r\n2	"3"""');
+    assert.equal([['1', 'foo\r\nbar'], ['2', '3"']], rows);
+
+    rows = tsvToMatrix('1	"foo\r\nbar"\r\n"2"	"3"""');
+    assert.equal([['1', 'foo\r\nbar'], ['2', '3"']], rows);
 });
 

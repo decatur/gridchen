@@ -2,17 +2,17 @@
 
 # About
 Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience.
-Very modern (web components, es6 modules) with no dependencies.
+Very modern (web components, es6 modules) with **no** dependencies.
 
-# Demo
+# Demos
 
-See https://decatur.github.io/GridChen/#rowcount=1000
+See https://decatur.github.io/GridChen
 
 # Usage
 
 ```HTML
 <!DOCTYPE html>
-<grid-chen id="my-grid" style="height:200px;"></grid-chen>
+<grid-chen></grid-chen>
 
 <script type="module">
     import "./modules/GridChen.js"
@@ -21,12 +21,13 @@ See https://decatur.github.io/GridChen/#rowcount=1000
     const schema = {
         title: 'Readme',
         columnSchemas: [
-            {title: 'A', width: 150, type: 'date'},
-            {title: 'B', width: 100, type: 'number'}
+            {title: 'A', type: 'string', format:'date'},
+            {title: 'B', type: 'number'}
         ]
     };
-    const matrix = [[new Date(), 1], [new Date(), 2], [new Date(), 3]];
-    document.getElementById('my-grid').resetFromView(createRowMatrixView(schema, matrix));
+    const rows = [[new Date('2019'), 1], [new Date('2020'), 2], [new Date('2021'), 3]];
+    document.querySelector('grid-chen').resetFromView(createRowMatrixView(schema, rows));
+</script>
 </script>
 ```
 
@@ -35,8 +36,11 @@ See https://decatur.github.io/GridChen/#rowcount=1000
 * Paste must select pasted region (pasted region differs from selection if selection cannot be tiled by source)
 * Using slider must not blur grid.
 * Handling of Infinity and NaN (#NV in de-de)
-* Create concept of invalid input (should raw data reflect input value or should input be coerced to valid data type?).
-  Excel honors and stores the original input, valid or not. 
+* Type violation of cell value must align left. 
+* Empty URI cell must not contain a link.
+* URIs with display text are not supported.
+* Ctrl+X (cut) must be implemented.
+* Shift+F10 must work
 
 # TODOs
 
@@ -60,6 +64,37 @@ See https://decatur.github.io/GridChen/#rowcount=1000
 
 We try to mimic MSE as close as possible.
 
+## Keyboard Shortcuts
+
+See also [Keyboard shortcuts in Excel](https://support.office.com/en-us/article/keyboard-shortcuts-in-excel-1798d9d5-842a-42b8-9c99-9b7213f0040f)
+
+|Key            |               Action               |
+|---------------|------------------------------------|
+Arrows          | Move active cell up/down/left/right (not in edit mode)
+Tab             | Move active cell right
+Enter           | Move active cell down
+Shift + Enter   | Move active cell up
+Shift+Tab       | Move active cell left
+SHIFT + Arrows  | Select a range of cells
+Alt + Enter     | In edit mode, insert newline
+Page Down       | Move one page down
+Page Up         | Move one page up
+Ctrl+A          | Select the entire grid
+ESC             | Cancel edit or input mode
+Delete          | Remove selected cells contents
+Ctrl+C          | Copy selected cells to clipboard
+Ctrl+V          | Paste clipboard into selected cells
+Ctrl+X          | Cut
+F2              | Enter edit mode; In input or edit mode, toggle between input and edit.
+Shift+F10       | Display context menu (GridChen politely does not alter the right mouse click or oncontextmenu event)
+Backspace       | In input or edit mode, deletes one character to the left
+Delete          | In input or edit mode, deletes one character to the right
+End             | In input or edit mode, move to the end of the text
+Home            | In input or edit mode, move to the beginning of the text
+
+## Invalid Cell Values
+The input value is honored and stored, even if it does not comply with the schema.
+  
 ## Inactive cell
 The content is displayed according the formatter.
 
@@ -174,8 +209,11 @@ Watch for multiple actions, for example onclick -> onclick -> ondblclick or onmo
 Tested only with Chrome Version 71.0
 
 # API Design
-We use the JavaScript API for Office if possible, for example 
+
+We tries to emulate the structure of the JavaScript API for Office, for example 
 [Excel.Range](https://docs.microsoft.com/en-us/javascript/api/excel/excel.range).
+
+
 
 # Test Plan
 

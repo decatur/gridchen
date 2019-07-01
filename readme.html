@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<grid-chen id="my-grid" style="height:200px;"></grid-chen>
+<grid-chen></grid-chen>
 
 <script type="module">
     import "./modules/GridChen.js"
@@ -8,10 +8,10 @@
     const schema = {
         title: 'Readme',
         columnSchemas: [
-            {title: 'A', width: 150, type: 'date'},
-            {title: 'B', width: 100, type: 'number'}
+            {title: 'A', type: 'string', format:'date'},
+            {title: 'B', type: 'number'}
         ]
     };
-    const matrix = [[new Date(), 1], [new Date(), 2], [new Date(), 3]];
-    document.getElementById('my-grid').resetFromView(createRowMatrixView(schema, matrix));
+    const rows = [[new Date('2019'), 1], [new Date('2020'), 2], [new Date('2021'), 3]];
+    document.querySelector('grid-chen').resetFromView(createRowMatrixView(schema, rows));
 </script>

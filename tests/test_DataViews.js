@@ -1,5 +1,5 @@
 import {test, assert} from './utils.js'
-import {createRowMatrixView, createColumnMatrixView} from '../modules/DataViews.js'
+import {createView, createRowMatrixView, createColumnMatrixView} from '../modules/DataViews.js'
 
 const schema = {
     title: 'test',
@@ -37,3 +37,9 @@ test('ColumnMatrixView', () => {
     });
 
 });
+
+test('Test Invalid Schema', () => {
+    const view = createView({title: 'FooBar', items: {}}, []);
+    assert.equal('Invalid schema: FooBar', view.message);
+});
+

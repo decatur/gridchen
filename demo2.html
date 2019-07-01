@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
-    <title>GridChen Demo</title>
+    <title>Default Schema Types</title>
 
     <style>
         body {
@@ -10,112 +10,118 @@
             margin: 2em;
             background-color: aliceblue;
         }
+
+        pre {
+            display:inline-block;
+            vertical-align: top;
+            background-color: floralwhite;
+            margin: 0em;
+            margin-right: 2em;
+            padding: 1em;
+        }
     </style>
 </head>
 <body>
 
-<h1>Two Simple Grids</h1>
-
-<p>
-    You can change row count via location hash.
-</p>
+<h1>Default Schema Types</h1>
 
 <div>
-    <grid-chen id="mygrid1" style="display:inline-block;height:400px;"></grid-chen>
-    <grid-chen id="mygrid2" style="display:inline-block;height:400px;"></grid-chen>
-    <grid-chen id="mygrid3" style="display:inline-block;height:400px;"></grid-chen>
-    <grid-chen id="mygrid4" style="display:inline-block;height:400px;"></grid-chen>
-    <grid-chen id="mygrid5" style="display:inline-block;height:400px;"></grid-chen>
+    <h2></h2>
+    <pre class="schema"></pre>
+    <pre class="data"></pre>
+    <grid-chen style="display: inline-block; height: 200px;"></grid-chen>
 </div>
 
 <script type="module">
     import {} from "./modules/GridChen.js"
     import {createView} from "./modules/DataViews.js"
 
-    // Some sample data. Most likely this will come from the server throw an async request.
-    let startDate = new Date('2017-01-01T00:00+01:00');
-    const simulate = {
-        DateTime: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15),
-        Height: (row) => row,
-        Weight: (row) => 2 * row
-    };
+    const template = document.getElementsByTagName('div')[0];
+    Array.from({length: 3}).forEach(() => document.body.appendChild(template.cloneNode(true)));
 
-    const rowMatrixSchema = {
-        title: 'rowMatrix',
-        type: 'array',
-        items: {
+    function createGrid(schema, data) {
+        const container = document.evaluate('//h2[not(text())]', document).iterateNext().parentElement;
+        container.querySelector('h2').textContent = schema.title;
+        container.querySelector('.schema').textContent = JSON.stringify(schema, null, 4);
+        container.querySelector('.data').textContent = JSON.stringify(data, null, 4);
+        container.querySelector('grid-chen').resetFromView(createView(schema, data));
+    }
+
+    const dates = [new Date("2016-12-31T23:00Z"), new Date("2016-12-31T23:15Z"), new Date("2016-12-31T23:30Z")];
+
+    createGrid(
+        {
+            title: 'Array of Row Arrays',
             type: 'array',
-            items: [  // tuple schema
-                {title: 'DateTime', width: 200, type: 'datetime', frequency: 'T1M', sortDirection: 1},
-                {title: 'Height', width: 100, type: 'number'},
-                {title: 'Weight', width: 100, type: 'number'}
-            ]
-        }
-    };
-    const rowMatrix = [
-        ["2016-12-31T23:00:00.000Z", 0, 0],
-        ["2016-12-31T23:15:00.000Z", 1, 2],
-        ["2016-12-31T23:30:00.000Z", 2, 4
-        ]];
-    document.getElementById('mygrid1').resetFromView(createView(rowMatrixSchema, rowMatrix));
-
-    const rowObjectsSchema = {
-        title: 'rowObjects',
-        type: 'array',
-        items: {
-            type: 'object',
-            properties: {  // tuple schema
-                datetime: {title: 'DateTime', width: 200, type: 'datetime', frequency: 'T1M', sortDirection: 1},
-                height: {title: 'Height', width: 100, type: 'number'},
-                weight: {title: 'Weight', width: 100, type: 'number'}
+            items: {
+                type: 'array',
+                items: [  // tuple schema
+                    {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'},
+                    {title: 'Age', width: 100, type: 'number'},
+                    {title: 'Weight', width: 100, type: 'number'}
+                ]
             }
-        }
-    };
-    const rows = [
-        {datetime: "2016-12-31T23:00:00.000Z", height: 0, weight: 0},
-        {datetime: "2016-12-31T23:15:00.000Z", height: 1, weight: 2},
-        {datetime: "2016-12-31T23:30:00.000Z", height: 2, weight: 4}
-    ];
-    document.getElementById('mygrid2').resetFromView(createView(rowObjectsSchema, rows));
-
-    const colMatrixSchema = {
-        title: 'colMatrix',
-        type: 'array',
-        items: [ // tuple schema
-            {
-                type: 'array',
-                items: {title: 'DateTime', width: 200, type: 'datetime', frequency: 'T1M', sortDirection: 1}
-            },
-            {type: 'array', items: {title: 'Height', width: 100, type: 'number'}},
-            {type: 'array', items: {title: 'Weight', width: 100, type: 'number'}}
+        },
+        [
+            [dates[0], 0, 0],
+            [dates[1], 1, 2],
+            [dates[2], 2, 4]
         ]
-    };
-    const colMatrix = [
-        ["2016-12-31T23:00:00.000Z", "2016-12-31T23:15:00.000Z", "2016-12-31T23:30:00.000Z"],
-        [0, 1, 2],
-        [0, 2, 4]];
-    document.getElementById('mygrid3').resetFromView(createView(colMatrixSchema, colMatrix));
+    );
 
-    const colObjectsSchema = {
-        title: 'colObjects',
-        type: 'object',
-        properties: { // tuple schema
-            datetime: {
-                type: 'array',
-                items: {title: 'DateTime', width: 200, type: 'datetime', frequency: 'T1M', sortDirection: 1}
-            },
-            weight: {type: 'array', items: {title: 'Height', width: 100, type: 'number'}},
-            height: {type: 'array', items: {title: 'Weight', width: 100, type: 'number'}}
+    createGrid(
+        {
+            title: 'Array of Row Objects',
+            type: 'array',
+            items: {
+                type: 'object',
+                properties: {
+                    timestamp: {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'},
+                    age: {title: 'Age', width: 100, type: 'number'},
+                    weight: {title: 'Weight', width: 100, type: 'number'}
+                }
+            }
+        },
+        [
+            {timestamp: dates[0], age: 0, weight: 0},
+            {timestamp: dates[1], age: 1, weight: 2},
+            {timestamp: dates[2], age: 2, weight: 4}
+        ]
+    );
+
+    createGrid(
+        {
+            title: 'Array of Column Arrays',
+            type: 'array',
+            items: [ // tuple schema
+                {type: 'array', items: {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'}},
+                {type: 'array', items: {title: 'Age', width: 100, type: 'number'}},
+                {type: 'array', items: {title: 'Weight', width: 100, type: 'number'}}
+            ]
+        },
+        [
+            dates,
+            [0, 1, 2],
+            [0, 2, 4]
+        ]
+    );
+
+    createGrid(
+        {
+            title: 'Array of Column Objects',
+            type: 'object',
+            properties: {
+                timestamp: {type: 'array', items: {title: 'TimeStamp', type: 'string', format: 'datetime', width: 200}},
+                weight: {type: 'array', items: {title: 'Age', width: 100, type: 'number'}},
+                age: {type: 'array', items: {title: 'Weight', width: 100, type: 'number'}}
+            }
+        },
+        {
+            timestamp: dates,
+            weight: [0, 1, 2],
+            age: [0, 2, 4]
         }
-    };
-    const columns = {
-        datetime: ["2016-12-31T23:00:00.000Z", "2016-12-31T23:15:00.000Z", "2016-12-31T23:30:00.000Z"],
-        weight: [0, 1, 2],
-        height: [0, 2, 4]
-    };
-    document.getElementById('mygrid4').resetFromView(createView(colObjectsSchema, columns));
-
-    document.getElementById('mygrid5').resetFromView(createView({title: 'Invalid Schema', items: {}}, []));
+    );
 
 </script>
 </body>

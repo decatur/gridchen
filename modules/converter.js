@@ -23,13 +23,13 @@ export class NumberStringConverter {
     }
 
     toString(n) {
+        if (n.constructor === String) return String(n);
         if (n === undefined) return '';
         return this.nf.format(n)
     }
 
     toEditable(n) {
-        if (n === undefined) return '';
-        return this.nf1.format(n)
+        return this.toString(n)
     }
 
     /**
@@ -40,7 +40,8 @@ export class NumberStringConverter {
         if (!s) return undefined;
         let parts = s.split(this.decimalSep);
         parts[0] = parts[0].split(this.thousandSep).join('');
-        return Number(parts.join('.'))
+        const n = Number(parts.join('.'));
+        return isNaN(n)?s:n;
     }
 }
 
@@ -61,7 +62,7 @@ export class DateTimeStringConverter {
      * @returns {string}
      */
     toString(d) {
-        if (d.constructor === String) return d;
+        if (d.constructor === String) return String(d);
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
         let s = pad(d.getFullYear()) + '-' + pad(1 + d.getMonth()) + '-' + pad(d.getDate());
@@ -86,11 +87,15 @@ export class DateTimeStringConverter {
      * @returns {Date}
      */
     fromString(s) {
+        s = s.trim();
         const offsetSign = s.substr(-3, 1);
+        let d;
         if (s.includes('T') && (offsetSign === '+' || offsetSign === '-')) {
-            s += ':00';
+            d = new Date(s + ':00');
+        } else {
+            d = new Date(s);
         }
-        return new Date(s);
+        return isNaN(d.getTime())?s:d;
     }
 }
 
@@ -155,7 +160,7 @@ export class DateTimeLocalStringConverter {
      * @returns {string}
      */
     toString(d) {
-        if (d.constructor === String) return d;  // Note that typeof  d === 'string' fails for object strings.
+        if (d.constructor === String) return String(d);  // Note that typeof  d === 'string' fails for object strings.
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
         let s = pad(d.getUTCFullYear()) + '-' + pad(1 + d.getUTCMonth()) + '-' + pad(d.getUTCDate());
@@ -179,11 +184,17 @@ export class DateTimeLocalStringConverter {
      * @returns {Date}
      */
     fromString(s) {
-        if (this.dateSeparator && s.indexOf(this.dateSeparator) !== -1) return this.parser(s);
-        // Note that new Date('2019-10-27').toISOString() -> 2019-10-27T00:00:00Z
-        // But new Date('2019-10-27T00:00').toISOString() -> 2019-10-26T22:00:00Z
-        // Therefore always specify zulu zone.
-        return new Date(s + 'Z');
+        s = s.trim();
+        let d;
+        if (this.dateSeparator && s.indexOf(this.dateSeparator) !== -1) {
+            d = this.parser(s);
+        } else {
+            // Note that new Date('2019-10-27').toISOString() -> 2019-10-27T00:00:00Z
+            // But new Date('2019-10-27T00:00').toISOString() -> 2019-10-26T22:00:00Z
+            // Therefore always specify zulu zone.
+            d = new Date(s + 'Z');
+        }
+        return isNaN(d.getTime())?s:d;
     }
 }
 
@@ -206,7 +217,7 @@ export class DateStringConverter {
      * @returns {string}
      */
     toString(d) {
-        if (d.constructor === String) return d;
+        if (d.constructor === String) return String(d);
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
         return pad(d.getUTCFullYear()) + '-' + pad(1 + d.getUTCMonth()) + '-' + pad(d.getUTCDate());
@@ -221,8 +232,14 @@ export class DateStringConverter {
      * @returns {Date}
      */
     fromString(s) {
-        if (this.dateSeparator && s.indexOf(this.dateSeparator) !== -1) return this.parser(s);
-        return new Date(s + 'Z');
+        s = s.trim();
+        let d;
+        if (this.dateSeparator && s.indexOf(this.dateSeparator) !== -1) {
+            d = this.parser(s);
+        } else {
+            d = new Date(s + 'Z');
+        }
+        return isNaN(d.getTime())?s:d;
     }
 }
 

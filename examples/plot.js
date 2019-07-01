@@ -1,5 +1,5 @@
 /**
- * Alt+F1: creates an embedded chart of the data in the current range.
+ * Alt+F1: creates an modal chart of the data.
  */
 
 const Plotly = window.Plotly;

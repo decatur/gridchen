@@ -48,13 +48,13 @@ function stringify(o) {
 
 function assertEqual(a, b) {
 
-    if (a instanceof Date || b instanceof Date) {
+    if (a instanceof Date && b instanceof Date) {
         if (isNaN(a.getTime()) && isNaN(b.getTime())) {
             // pass
         } else if (a.getTime() !== b.getTime()) {
             error(a, b);
         }
-    } else if (typeof a === 'object' || typeof b === 'object') {
+    } else if (typeof a === 'object' && typeof b === 'object') {
         if (stringify(a) !== stringify(b)) {
             error(stringify(a), stringify(b));
         }

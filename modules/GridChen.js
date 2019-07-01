@@ -5,7 +5,6 @@
  * See README.md
  */
 
-
 /** @typedef {{row: number, col:number}} */
 let IPosition;
 
@@ -92,8 +91,8 @@ export class GridChen extends HTMLElement {
     constructor() {
         super();
         this.eventListeners = {
-            'datachanged': () => null,
-            'activecellchanged': () => null,
+            'dataChanged': () => null,
+            'activeCellChanged': () => null,
             'selectionChanged': () => null,
             'paste': () => null
         };
@@ -109,7 +108,7 @@ export class GridChen extends HTMLElement {
             // First initialize creates shadow dom.
             this.attachShadow({mode: 'open'});
         }
-        let totalHeight = parseInt(this.style.height || '100');  // Default value needed for unit testing.
+        let totalHeight = this.clientHeight || 100;  // Default value needed for unit testing.
         const container = document.createElement('div');
         container.style.height = totalHeight + 'px';
         this.shadowRoot.appendChild(container);
@@ -122,7 +121,11 @@ export class GridChen extends HTMLElement {
     }
 
     setEventListener(type, listener) {
-        this.eventListeners[type] = listener;
+        const filteredKeys = Object.keys(this.eventListeners).filter(key => key.toLowerCase() === type.toLowerCase());
+        if (!filteredKeys) {
+            throw new Error('Invalid listener type: ' + type);
+        }
+        this.eventListeners[filteredKeys[0]] = listener;
         return this
     }
 
@@ -284,10 +287,10 @@ function Grid(container, viewModel, eventListeners) {
 
     let styleSheet = document.createElement('style');
     styleSheet.textContent = `
-        .GRID input {
+        .GRID textarea {
             background-color: transparent; border: {cellBorderWidth}px solid black; padding: {cellPadding}px;
         }
-        .GRID .number_column { text-align: right; }
+        .GRID .non_string { text-align: right; }
     `;
     container.appendChild(styleSheet);
 
@@ -410,16 +413,17 @@ function Grid(container, viewModel, eventListeners) {
     cellParent.style.marginLeft = '20px';
     container.tabIndex = 0;
 
-    const input = /** @type{HTMLInputElement} */ document.createElement('input');
-    input.id = 'input';
-    input.style.position = 'absolute';
-    input.style.display = 'none';
-    input.style.height = innerHeight + 'px';
-    input.style.padding = cellPadding + 'px';
-    /** @type {{span?:{HTMLSpanElement}, input:{HTMLInputElement}, row:number, col:number, mode:string}} */
+    /** @type{HTMLTextAreaElement} */
+    const editor = /** @type{HTMLTextAreaElement} */ document.createElement('textarea');
+    editor.id = 'editor';
+    editor.style.position = 'absolute';
+    editor.style.display = 'none';
+    editor.style.height = innerHeight;
+    editor.style.padding = cellPadding + 'px';
+    /** @type {{span?:{HTMLSpanElement}, editor:{HTMLInputElement}, row:number, col:number, mode:string}} */
     const activeCell = {
         span: undefined,
-        input: input, row: 0, col: 0, mode: 'display',
+        editor: editor, row: 0, col: 0, mode: 'display',
         hide: function () {
             if (this.span) this.span.style.backgroundColor = 'white'; //removeProperty('background-color');
             rowMenu.style.display = 'none';
@@ -437,11 +441,9 @@ function Grid(container, viewModel, eventListeners) {
             this.col = colIndex;
             this.row = rowIndex;
             this.show();
-            eventListeners['activecellchanged'](this);
+            eventListeners['activeCellChanged'](this);
         },
-        setMode: function(mode) {
-            console.assert(mode === 'edit' || mode === 'input');
-            this.mode = mode;
+       enterMode: function() {
             if (this.row < firstRow) {
                 // scroll into view
                 setFirstRow(this.row)
@@ -449,15 +451,31 @@ function Grid(container, viewModel, eventListeners) {
 
             const spanStyle = this.span.style;
             spanStyle.display = 'none';
-            const style = this.input.style;
+            const style = this.editor.style;
             style.top = spanStyle.top;
             style.left = spanStyle.left;
-            style.width = spanStyle.width;
+            style.width = (parseInt(spanStyle.width) + 20) + 'px';  // Account for the resize handle, which is about 20px
+            editor.style.height = innerHeight;
             style.display = 'inline-block';
 
             // focus on input element, which will then receive this keyboard event.
             // Note: focus after display!
-            this.input.focus();
+            this.editor.focus();
+        },
+        enterInputMode: function() {
+            this.mode = 'input';
+            this.enterMode();
+        },
+        enterEditMode: function() {
+            this.mode = 'edit';
+            this.enterMode();
+            let value = viewModel.getCell(this.row, this.col);
+            if ( value === undefined ) {
+                value = '';
+            } else {
+                value = schemas[this.col].converter.toEditable(value);
+            }
+            editor.value = value;
         }
     };
 
@@ -545,13 +563,15 @@ function Grid(container, viewModel, eventListeners) {
     };
 
     cellParent.onmousewheel = function (_evt) {
+        console.log('onmousewheel');
+
         let evt = /** @type {WheelEvent} */ _evt;
         // Do not disable zoom. Both Excel and Browsers zoom on ctrl-wheel.
         if (evt.ctrlKey) return;
         evt.stopPropagation();
         evt.preventDefault();  // Prevents scrolling of any surrounding HTML element.
-        console.log(JSON.stringify(evt));
-        console.assert(evt.deltaMode === 0);  // We only support Chrome. FireFox will have evt.deltaMode = 1.
+
+        console.assert(evt.deltaMode === evt.DOM_DELTA_PIXEL);  // We only support Chrome. FireFox will have evt.deltaMode = 1.
         // TODO: Chrome seems to always give evt.deltaY +-150 pixels. Why?
         // Excel scrolls about 3 lines per wheel tick.
         let newFirstRow = firstRow + 3 * Math.sign(evt.deltaY);
@@ -576,8 +596,8 @@ function Grid(container, viewModel, eventListeners) {
     };
 
     container.onkeydown = function (evt) {
-        console.log('Key ' + evt.code);
-        if (activeCell.mode === 'edit') throw Error();
+        console.log('container.onkeydown ' + evt.code);
+        //if (activeCell.mode === 'edit') throw Error();
         // Note 1: All handlers call both preventDefault() and stopPropagation().
         //         The reason is documented in the handler code.
         // Note 2: For responsiveness, make sure this code is executed fast.
@@ -616,7 +636,7 @@ function Grid(container, viewModel, eventListeners) {
         } else if (evt.code === 'KeyC' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation(); // Prevent text is copied from container.
-            navigator.clipboard.writeText(selectionToTSV('\t'))
+            window.navigator.clipboard.writeText(selectionToTSV('\t'))
                 .then(() => {
                     console.log('Text copied to clipboard');
                 })
@@ -627,7 +647,7 @@ function Grid(container, viewModel, eventListeners) {
         } else if (evt.code === 'KeyV' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation(); // Prevent that text is pasted into editable container.
-            navigator.clipboard.readText()
+            window.navigator.clipboard.readText()
                 .then(text => {
                     //console.log('Pasted content: ', text);
                     let matrix = tsvToMatrix(text);
@@ -661,18 +681,24 @@ function Grid(container, viewModel, eventListeners) {
             evt.preventDefault();
             evt.stopPropagation();
             alert(1);
+        } else if (evt.code === 'F2') {
+            evt.preventDefault();
+            evt.stopPropagation();
+            activeCell.enterEditMode();
         }
     };
 
     container.onkeypress = function (evt) {
         console.log('keypress ' + evt.code);
-        activeCell.setMode('input');
+        if (activeCell.mode === 'display') {
+            activeCell.enterInputMode();
+        }
     };
 
     function navigateCell(evt, rowOffset, colOffset) {
         console.log('navigateCell');
 
-        if (activeCell.mode === 'input' || activeCell.mode === 'edit') {
+        if (activeCell.mode !== 'display') {
             commit();
         }
 
@@ -732,29 +758,30 @@ function Grid(container, viewModel, eventListeners) {
         console.log('commit');
         activeCell.span.style.display = 'inline-block';
 
-        if (activeCell.mode === 'input' || activeCell.mode === 'edit') {
+        if (activeCell.mode !== 'display') {
             const rowIndex = activeCell.row;
             const colIndex = activeCell.col;
-            let value = input.value.trim();
-            input.value = '';
-            input.style.display = 'none';
+            let value = editor.value.trim();
+            editor.value = '';
+            editor.style.display = 'none';
             // activeCell.span.textContent = value;
             if (value === '') {
                 value = undefined;
             } else {
-                value = schemas[colIndex].converter.fromString(value)
+                value = schemas[colIndex].converter.fromString(value);
+                //value = value.replace(/\\n/g, '\n');
             }
             refresh(viewModel.setCell(rowIndex, colIndex, value));
             // Must be called AFTER model is updated.
-            eventListeners['datachanged']();
+            eventListeners['dataChanged'](value);
         }
 
         activeCell.mode = 'display';
         container.focus();
     }
 
-    input.addEventListener('blur', function (evt) {
-        console.log('input.onblur');
+    editor.addEventListener('blur', function (evt) {
+        console.log('editor.onblur');
         commit();
 
         if (!container.contains(evt.relatedTarget)) {
@@ -767,13 +794,30 @@ function Grid(container, viewModel, eventListeners) {
     /**
      * @param {KeyboardEvent} evt
      */
-    input.addEventListener('keydown', function (evt) {
-
-        console.log('input.onkeydown: ' + evt);
+    editor.addEventListener('keydown', function (evt) {
+        console.log('editor.onkeydown: ' + evt);
         // Clicking editor should invoke default: move caret. It should not delegate to containers action.
         evt.stopPropagation();
 
-        if (evt.code === 'Enter') {
+        if (evt.code === 'F2') {
+            evt.preventDefault();
+            evt.stopPropagation();
+            // Toggle between input and edit mode
+            activeCell.mode = (activeCell.mode=='input'?'edit':input);
+        } else if (evt.code === 'ArrowLeft' && activeCell.mode === 'input') {
+            evt.preventDefault();
+            evt.stopPropagation();
+            navigateCell(evt, 0, -1);
+        } else if (evt.code === 'ArrowRight' && activeCell.mode === 'input') {
+            evt.preventDefault();
+            evt.stopPropagation();
+            navigateCell(evt, 0, 1);
+        } else if (evt.code === 'Enter' && evt.altKey) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            //editor.dispatchEvent(new KeyboardEvent('keydown', {code: 'Enter'}));
+            editor.setRangeText('\n', editor.selectionStart, editor.selectionEnd, 'end');
+        } else if (evt.code === 'Enter') {
             evt.preventDefault();
             evt.stopPropagation();
             commit();
@@ -791,7 +835,7 @@ function Grid(container, viewModel, eventListeners) {
         }
     });
 
-    input.addEventListener('mousedown', function (evt) {
+    editor.addEventListener('mousedown', function (evt) {
         // Clicking editor should invoke default: move the caret. It should not delegate to containers action.
         evt.stopPropagation();
     });
@@ -833,7 +877,6 @@ function Grid(container, viewModel, eventListeners) {
 
     function createCell(vpRowIndex, colIndex) {
         const schema = schemas[colIndex];
-        const type = schema.type;
         /** @type {HTMLElement} */
         let elem;
         if (schema.format === 'uri') {
@@ -858,26 +901,12 @@ function Grid(container, viewModel, eventListeners) {
         style.padding = cellPadding + 'px';
         style.backgroundColor = 'white';
 
-        if (numeric.has(type)) {
-            elem.className = 'number_column'
+        if (schema.type !== 'string' || schema.format) {
+            elem.className = 'non_string'
         }
 
-        elem.addEventListener('dblclick', function () {
-            console.log('ondblclick');
-            activeCell.setMode('edit');
-            // activeCell.input.value = activeCell.span.textContent;
-            let value = viewModel.getCell(vpRowIndex + firstRow, colIndex);
-            if ( value === undefined ) {
-                value = '';
-            } else {
-                value = schemas[colIndex].converter.toEditable(value);
-            }
-            activeCell.input.value = value;
-        });
-
+        elem.addEventListener('dblclick', () => activeCell.enterEditMode());
         cellParent.appendChild(elem);
-
-        return elem
     }
 
     function getSelection(selection) {
@@ -902,7 +931,14 @@ function Grid(container, viewModel, eventListeners) {
         rowMatrix.forEach(function (row, i) {
             tsvRows[i] = row.map(function (value, j) {
                 let schema = schemas[selection.col.min + j];
-                return value !== undefined ? schema.converter.toString(value) : undefined;
+                if (value === undefined) {
+                    return undefined;
+                }
+                value = schema.converter.toString(value);
+                if (value.includes('\t') || value.includes('\n')) {
+                    value = '"' + value + '"';
+                }
+                return value;
             }).join(sep);  // Note that a=[undefined, 3].join(',') is ',3', which is what we want.
         });
         return tsvRows.join('\r\n')
@@ -911,7 +947,7 @@ function Grid(container, viewModel, eventListeners) {
     /**
      * @param {number} topRowIndex
      * @param {number} topColIndex
-     * @param {Array<Array<string>>} matrix
+     * @param {Array<Array<string|undefined>>} matrix
      * @returns {number}
      */
     function pasteSingle(topRowIndex, topColIndex, matrix) {
@@ -984,14 +1020,11 @@ function Grid(container, viewModel, eventListeners) {
     for (let rowIndex = 0; rowIndex < spanMatrix.length; rowIndex++) {
         spanMatrix[rowIndex] = Array(colCount);
         for (let colIndex = 0; colIndex < colCount; colIndex++) {
-            let input = createCell(rowIndex, colIndex);
-            //input.defaultValue = '';
-            //input.value = '';
-            input.setAttribute('value', '');
+            createCell(rowIndex, colIndex);
         }
     }
 
-    cellParent.appendChild(input);
+    cellParent.appendChild(editor);
 
     /** @type {Selection} */
     let selection = new Selection(repaintRectangle, eventListeners);
@@ -1051,6 +1084,11 @@ function Grid(container, viewModel, eventListeners) {
  * @returns {string[][]}
  */
 export function tsvToMatrix(text) {
+    let qs = [];
+    if (text.includes('"')) {
+        [text, qs] = normalizeQuotes(text);
+    }
+
     let lines = text.split(/\r?\n/);
     // We always expect a line separator, so we expect at least two lines.
     // An empty clipboard is encoded as '\n', which yields [['']]
@@ -1068,6 +1106,14 @@ export function tsvToMatrix(text) {
     let maxRowLength = Number.NEGATIVE_INFINITY;
     lines.forEach(function (line, i) {
         let row = line.split('\t');
+        if (qs.length) {
+            row = row.map(function (cell) {
+                if (cell === String.fromCharCode(0)) {
+                    cell = qs.shift();
+                }
+                return cell;
+            });
+        }
         minRowLength = Math.min(minRowLength, row.length);
         maxRowLength = Math.max(maxRowLength, row.length);
         matrix[i] = row
@@ -1081,4 +1127,64 @@ export function tsvToMatrix(text) {
 
     return matrix;
 }
+
+
+function normalizeQuotes(text) {
+    text = text + '@';
+    const a = text.split(/(".*?"[^"])/s);
+    const qs = [];
+    for (let i=1; i<a.length; i+=2) {
+        let s = a[i];
+        a[i] = String.fromCharCode(0) + s[s.length-1];
+        s = s.substr(1, s.length - 3);
+        s = s.replace(/""/g, '"');
+        qs.push(s);
+    }
+
+    text = a.join('');
+    return [text.substr(0, text.length-1), qs]
+}
+
+/*
+function complexTsvToMatrix(text) {
+    let matrix = [];
+    let row = [];
+    let i = 0;
+
+    while (true) {
+        let nextTab = text.substr(i).indexOf('\t');
+        let nextQuote = text.substr(i).indexOf('"');
+        let nextNewline = text.substr(i).indexOf('\n');
+
+        if (nextTab === -1) nextTab = Number.POSITIVE_INFINITY;
+        if (nextQuote === -1) nextQuote = Number.POSITIVE_INFINITY;
+        if (nextNewline === -1) nextNewline = Number.POSITIVE_INFINITY;
+
+        if (nextTab < nextQuote && nextTab < nextNewline) {
+            row.push(text.substr(i, nextTab));
+            i += 1+nextTab;
+        } else if (nextQuote < nextTab && nextQuote < nextNewline) {
+            // "sds""d"
+            const start = i+nextQuote+1;
+            i = start;
+            while (true) {
+                i += 1;
+                if (text[i] === '"' && text[i + 1] !== '"') {
+                    break;
+                }
+            }
+            row.push(text.substr(start, i-start));
+            i += 1;
+        } else if (nextNewline < nextTab && nextNewline < nextQuote) {
+            matrix.push(row);
+            row = [];
+            i += 1+nextNewline;
+        } else if (nextTab === Number.POSITIVE_INFINITY && nextQuote === Number.POSITIVE_INFINITY && nextNewline === Number.POSITIVE_INFINITY) {
+            if (row) matrix.push(row);
+            break;
+        }
+    }
+
+    return matrix;
+}*/
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
-    <title>GridChen Demo</title>
+    <title>Column Types</title>
 
     <style>
         body {
@@ -14,10 +14,10 @@
 </head>
 <body>
 
-<h1>One Simple Grid</h1>
+<h1>Supported Column Data Types</h1>
 
 <p>
-    You can change row count via location hash.
+    Number of rows: <input value="1000"> <span style="margin-left:1em"></span>
 </p>
 
 <div>
@@ -28,26 +28,48 @@
     import "./modules/GridChen.js"
     import {createView} from "./modules/DataViews.js"
 
-    function range(count) {
-        return Array.from({length: count}, (_, i) => i);
-    }
+    const input = document.querySelector('input');
+    const span = document.querySelector('span');
 
-    function createMyGrid(rowCount) {
+    input.oninput = renderGrid;
+    renderGrid();
+
+    function renderGrid() {
+        function range(count) {
+            return Array.from({length: count}, (_, i) => i);
+        }
+
+        let rowCount = parseInt(input.value);
+        if (isNaN(rowCount)) {
+            span.textContent = 'Invalid row count ' + input.value;
+            return;
+        } else if (rowCount > 100000) {
+            span.textContent = 'Take it easy...';
+            return;
+        }
+        span.textContent = `Generated ${rowCount} Rows`;
         const schema = {
             title: 'demo',
             type: 'array',
             items: {
                 type: 'array',
                 items: [  // tuple schema
-                    {title: 'DateTime', width: 200, type: 'datetime', frequency: 'T1M', sortDirection: 1},
-                    {title: 'Date', width: 200, type: 'date'},
-                    {title: 'DateTimeLocal', width: 200, type: 'datetimelocal', frequency: 'T1M'},
-                    {title: 'Index', width: 50, type: 'number', fractionDigits: 0},
-                    {title: 'Col A', width: 50, type: 'number', fractionDigits: 1},
-                    {title: 'Col B', width: 100, type: 'number', fractionDigits: 2},
-                    {title: 'Col C', width: 100, type: 'string'},
+                    {
+                        title: 'DateTime',
+                        width: 200,
+                        type: 'string',
+                        format: 'datetime',
+                        frequency: 'T1M',
+                        sortDirection: 1
+                    },
+                    {title: 'Date', width: 100, type: 'string', format: 'date'},
+                    {title: 'DateTimeLocal', width: 200, type: 'string', format: 'datetimelocal', frequency: 'T1M'},
+                    {title: 'Integer', width: 50, type: 'integer'},
+                    {title: 'Digits1', width: 50, type: 'number', fractionDigits: 1},
+                    {title: 'Digits2', width: 100, type: 'number', fractionDigits: 2},
+                    {title: 'String', width: 100, type: 'string'},
                     {title: 'Boolean', width: 100, type: 'boolean'},
-                    {title: 'Uri', width: 100, type: 'string', format: 'uri'}
+                    {title: 'Uri', width: 200, type: 'string', format: 'uri'}
                 ]
             }
         };
@@ -59,45 +81,27 @@
             Date: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15),
             DateTimeLocal: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15),
             Height: (row) => row,
-            Index: (row) => row,
-            'Col A': (row) => row,
-            'Col B': (row) => row,
-            'Col C': (row) => `row ${row}`,
+            Integer: (row) => row,
+            Digits1: (row) => row,
+            Digits2: (row) => row,
+            String: (row) => `row ${row}`,
             Boolean: (row) => row % 2 === 0,
             Uri: (row) => `http://foo.bar/${row}`
         };
 
         function simulateRows() {
             let rows = range(rowCount).map(i => schema.items.items.map((schema) => simulate[schema.title](i)));
-            delete rows[3];
-            delete rows[4][1];
+            if (rowCount > 4) {
+                delete rows[3];
+                delete rows[4][1];
+            }
             return rows
         }
 
-        document.getElementById('mygrid').resetFromView(createView(schema, simulateRows()));
+        const grid = document.getElementById('mygrid').resetFromView(createView(schema, simulateRows()));
+        grid.setEventListener('dataChanged', (newValue) => console.log('dataChanged: ' + newValue));
     }
 
-    /**
-     * @param {HashChangeEvent} ev
-     */
-    window.onhashchange = function (ev) {
-        let parts = window.location.hash.substring(1).split('&');
-        let params = {rowcount: undefined};
-
-        parts.forEach(function (part) {
-            let keyValue = part.split('=');
-            params[keyValue[0].toLowerCase()] = keyValue[1]
-        });
-
-        createMyGrid(Number(params.rowcount))
-    };
-
-    if (!window.location.hash.length) {
-        // Set default
-        window.location.hash = '#rowcount=1000'
-    } else {
-        window.onhashchange(null)
-    }
 
 </script>
 </body>

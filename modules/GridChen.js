@@ -164,7 +164,7 @@ class Slider {
      * @param {string} left
      * @param handler
      */
-    constructor(container, left, handler) {
+    constructor(left, height, handler) {
         this.handler = handler;
         this.element = document.createElement('input');
         this.element.type = "range";
@@ -173,12 +173,11 @@ class Slider {
         style.position = 'absolute';
         style.display = 'inline-block';
         //this.element.style.marginLeft = '10px'
-        style.height = container.style.height;
-        style.left = left;
+        style.height = height + 'px';
+        style.left = left + 'px';
         style.width = '20px';
         this.element.min = '0';
 
-        container.parentElement.appendChild(this.element);
         // When this.element gains focus, container.parentElement.parentElement will loose is, so re-focus.
         //this.element.onfocus = () => container.parentElement.parentElement.focus();
         this.element.oninput = () => {
@@ -288,7 +287,7 @@ function Grid(container, viewModel, eventListeners) {
     let styleSheet = document.createElement('style');
     styleSheet.textContent = `
         .GRID textarea {
-            background-color: transparent; border: {cellBorderWidth}px solid black; padding: {cellPadding}px;
+            background-color: white; border: {cellBorderWidth}px solid black; padding: {cellPadding}px;
         }
         .GRID .non_string { text-align: right; }
     `;
@@ -367,7 +366,7 @@ function Grid(container, viewModel, eventListeners) {
     body.style.height = (totalHeight - 20) + 'px';
     container.appendChild(body);
 
-    let rowMenu = document.createElement('div');
+    /*let rowMenu = document.createElement('div');
     rowMenu.style.position = 'absolute';
     rowMenu.style.display = 'none';
 
@@ -401,6 +400,7 @@ function Grid(container, viewModel, eventListeners) {
     };
     rowMenu.appendChild(deleteRowButton);
     body.appendChild(rowMenu);
+*/
 
     // TODO: Why is sometdeleteRowButtonimes clientHeight not set?
     let viewPortHeight = totalHeight - 20;
@@ -426,12 +426,12 @@ function Grid(container, viewModel, eventListeners) {
         editor: editor, row: 0, col: 0, mode: 'display',
         hide: function () {
             if (this.span) this.span.style.backgroundColor = 'white'; //removeProperty('background-color');
-            rowMenu.style.display = 'none';
+            //rowMenu.style.display = 'none';
         },
         show: function () {
             if (this.span) this.span.style.backgroundColor = 'mistyrose';
-            rowMenu.style.top = this.span.offsetTop + 'px';
-            rowMenu.style.display = 'block';
+            //rowMenu.style.top = this.span.offsetTop + 'px';
+            //rowMenu.style.display = 'block';
         },
         move: function (rowIndex, colIndex) {
             this.hide();
@@ -595,6 +595,78 @@ function Grid(container, viewModel, eventListeners) {
         selection.show();
     };
 
+    function deleteSelection() {
+        let emptyRow = Array(selection.col.sup - selection.col.min);
+        emptyRow.fill(undefined);
+        let emptyMatrix = Array(selection.row.sup - selection.row.min);
+        emptyMatrix.fill(emptyRow);
+        refresh(paste(emptyMatrix));
+    }
+
+    function deleteRows() {
+        let rowCount;
+        range(selection.row.sup - selection.row.min).forEach(function() {
+            rowCount = viewModel.deleteRow(selection.row.min);
+        });
+        refresh(rowCount);
+    }
+
+    function showContextMenu() {
+        let dialog = document.getElementById('gridchenDialog');
+        let form;
+        if (!dialog) {
+            dialog = document.createElement('dialog');
+            dialog.id = 'gridchenDialog';
+            dialog.style.width = '100%';
+            dialog.style.height = '100%';
+            dialog.style.backgroundColor = 'transparent';
+            form = document.createElement('div');
+            const actions = [
+                ['Cut', () => copySelection(true)],
+                ['Copy', () => copySelection(false)],
+                ['Paste', () => alert('Not Implemented')],
+                ['Insert Row', () => refresh(viewModel.insertRowBefore(activeCell.row - 1))],
+                ['Delete Rows', deleteRows],
+                ['Delete Contents', deleteSelection]
+            ];
+            actions.forEach(function(action) {
+                const button = form.appendChild(document.createElement('button'));
+                button.textContent = action[0];
+                button.onclick = action[1];
+            });
+
+            dialog.appendChild(form);
+            const graphElement = document.createElement('div');
+            dialog.appendChild(graphElement);
+            document.body.appendChild(dialog);
+            styleSheet.textContent = `
+                #gridchenDialog div { position:absolute;display: inline-block;background-color: bisque; }
+                #gridchenDialog button { display: block; }
+            `;
+            document.body.appendChild(styleSheet);
+
+            dialog.onclick = () => dialog.close();
+        }
+        form = dialog.firstElementChild;
+        form.style.left = (activeCell.col * 100) + 'px';
+        form.style.top = (activeCell.row * rowHeight) + 'px'
+        dialog.showModal();
+    }
+
+    function copySelection(doCut) {
+        window.navigator.clipboard.writeText(selectionToTSV('\t'))
+                .then(() => {
+                    console.log('Text copied to clipboard');
+                    if (doCut) {
+                        deleteSelection();
+                    }
+                })
+                .catch(err => {
+                    // This can happen if the user denies clipboard permissions:
+                    console.error('Could not copy text: ', err);
+                });
+    }
+
     container.onkeydown = function (evt) {
         console.log('container.onkeydown ' + evt.code);
         //if (activeCell.mode === 'edit') throw Error();
@@ -633,17 +705,10 @@ function Grid(container, viewModel, eventListeners) {
             evt.stopPropagation();
             selection.set(0, 0);
             selection.expand(rowCount - 1, colCount - 1);
-        } else if (evt.code === 'KeyC' && evt.ctrlKey) {
+        } else if ((evt.code === 'KeyC' || evt.code === 'KeyX') && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation(); // Prevent text is copied from container.
-            window.navigator.clipboard.writeText(selectionToTSV('\t'))
-                .then(() => {
-                    console.log('Text copied to clipboard');
-                })
-                .catch(err => {
-                    // This can happen if the user denies clipboard permissions:
-                    console.error('Could not copy text: ', err);
-                });
+            copySelection(evt.code === 'KeyX');
         } else if (evt.code === 'KeyV' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation(); // Prevent that text is pasted into editable container.
@@ -667,11 +732,7 @@ function Grid(container, viewModel, eventListeners) {
         } else if (evt.code === 'Delete') {
             evt.preventDefault();
             evt.stopPropagation();
-            let emptyRow = Array(selection.col.sup - selection.col.min);
-            emptyRow.fill(undefined);
-            let emptyMatrix = Array(selection.row.sup - selection.row.min);
-            emptyMatrix.fill(emptyRow);
-            refresh(paste(emptyMatrix));
+            deleteSelection();
         } else if (evt.code === 'KeyQ' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation();
@@ -680,7 +741,7 @@ function Grid(container, viewModel, eventListeners) {
             // Both Web and Excel binding of context menu.
             evt.preventDefault();
             evt.stopPropagation();
-            alert(1);
+            showContextMenu();
         } else if (evt.code === 'F2') {
             evt.preventDefault();
             evt.stopPropagation();
@@ -746,6 +807,10 @@ function Grid(container, viewModel, eventListeners) {
         }
     }
 
+    let slider = new Slider(totalWidth - 20, viewPortHeight, (n) => setFirstRow(n, this));
+    // Note that the slider must before the cells (we avoid using z-order)
+    // so that the textarea-resize handle is in front of the slider.
+    body.appendChild(slider.element);
     body.appendChild(cellParent);
 
     let colCount = schemas.length;
@@ -845,10 +910,6 @@ function Grid(container, viewModel, eventListeners) {
     /** @type {Array<Array<HTMLElement>>} */
     let spanMatrix = Array(viewPortRowCount);
     let pageIncrement = Math.max(1, viewPortRowCount);
-
-    // // TODO: This is not MSE behaviour. MSE only scrolls and does not move the active cell.
-    let slider = new Slider(cellParent, (totalWidth - 20) + 'px', (n) => setFirstRow(n, this));
-
 
     function setFirstRow(_firstRow, caller) {
         refreshHeaders();

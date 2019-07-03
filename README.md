@@ -29,16 +29,19 @@ See https://decatur.github.io/GridChen
 </script>
 ```
 
+# Fixed
+* Ctrl+X (cut) must be implemented; easy
+* Shift+F10 must work; easy
+
 # Issues
 
-* Paste must select pasted region (pasted region differs from selection if selection cannot be tiled by source)
-* Using slider must not blur grid.
-* Handling of Infinity and NaN (#NV in de-de)
-* Type violation of cell value must align left. 
-* Empty URI cell must not contain a link.
-* URIs with display text are not supported.
-* Ctrl+X (cut) must be implemented.
-* Shift+F10 must work
+* Paste must select pasted region (pasted region differs from selection if selection cannot be tiled by source); easy
+* Using slider must not blur grid; easy
+* Type violation of cell value must align left; easy
+* Empty URI cell must not contain a link; medium
+* Slow click on URI must select the cell, not follow the link; hard
+* Ctrl+A must first select the smallest isolated rectangle containing the cell, the second Ctrl+A must then select the complete grid; hard
+* Modal context must not hide selection.
 
 # TODOs
 
@@ -50,7 +53,8 @@ See https://decatur.github.io/GridChen
 * Use document.activeElement instead of activeCell.span?
 * Write more unit tests
 * Test Firefox
-
+* URIs with display text are not supported
+* Handling of Infinity and NaN (#NV in de-de)
 
 # Alternatives
 * [SlickGrid](https://github.com/mleibman/SlickGrid)
@@ -77,7 +81,8 @@ SHIFT + Arrows  | Select a range of cells
 Alt + Enter     | In edit mode, insert newline
 Page Down       | Move one page down
 Page Up         | Move one page up
-Ctrl+A          | Select the entire grid
+Ctrl+A          | Select the smallest isolated rectangle containing the active cell
+Ctrl+A Ctrl+A   | Select the entire grid
 ESC             | Cancel edit or input mode
 Delete          | Remove selected cells contents
 Ctrl+C          | Copy selected cells to clipboard

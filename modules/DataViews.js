@@ -103,8 +103,23 @@ function updateSchema(schemas) {
 }
 
 /**
+ * @param {object} properties
+ * @returns {[string, object][]}
+ */
+function sortedColumns(properties) {
+    const entries = Object.entries(properties);
+    entries.sort(function(e1, e2) {
+        if ('columnIndex' in e1[1] && 'columnIndex' in e2[1]) {
+            return e1[1].columnIndex - e2[1].columnIndex;
+        }
+        return 0;
+    });
+    return entries;
+}
+
+/**
  * @param {GridChen.JSONSchema} schema
- * @param {Array<Array<object>>} matrix
+ * @param {Array<object>>} matrix
  */
 export function createView(schema, matrix) {
 
@@ -114,11 +129,14 @@ export function createView(schema, matrix) {
     }
 
     if (schema.items && schema.items.type === 'object') {
+        const entries = sortedColumns(schema.items.properties);
+
         const colSchema = {
             title: schema.title,
-            columnSchemas: Object.values(schema.items.properties),
-            ids: Object.keys(schema.items.properties)
+            columnSchemas: entries.map(e => e[1]),
+            ids: entries.map(e => e[0])
         };
+
         return createRowObjectsView(colSchema, matrix);
     }
 
@@ -127,11 +145,24 @@ export function createView(schema, matrix) {
         return createColumnMatrixView(colSchema, matrix);
     }
 
-    if (schema.type === 'object') {
-        const colSchema = {title: schema.title, columnSchemas: Object.values(schema.properties).map(item => item.items), ids:Object.keys(schema.properties)};
+    if (typeof schema.properties === 'object') {
+        // Object of columns.
+
+        const entries = sortedColumns(schema.properties);
+        const colSchemas = {
+            title: schema.title,
+            columnSchemas: entries.map(e => e[1]).map(function(item) {
+                const colSchema = item.items;
+                if (!colSchema.title) colSchema.title = item.title;
+                if (!colSchema.width) colSchema.width = item.width;
+                return colSchema;
+            }),
+            ids: entries.map(e => e[0])
+        };
+
         // Normalize missing columnCount (ragged columnCount are allowed).
-        const columns = colSchema.ids.map(id => matrix[id] || Array());
-        return createColumnMatrixView(colSchema, columns);
+        const columns = colSchemas.ids.map(id => matrix[id] || Array());
+        return createColumnMatrixView(colSchemas, columns);
     }
 
     return new Error('Invalid schema: ' + schema.title);

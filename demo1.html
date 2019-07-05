@@ -20,9 +20,8 @@
     Number of rows: <input value="1000"> <span style="margin-left:1em"></span>
 </p>
 
-<div>
-    <grid-chen id="mygrid" style="display:inline-block;height:400px;"></grid-chen>
-</div>
+<grid-chen style="display:block;height:400px;"></grid-chen>
+
 
 <script type="module">
     import "./modules/GridChen.js"
@@ -50,9 +49,9 @@
         span.textContent = `Generated ${rowCount} Rows`;
         const schema = {
             title: 'demo',
-            type: 'array',
+            type: 'object',
             items: {
-                type: 'array',
+                type: 'object',
                 items: [  // tuple schema
                     {
                         title: 'DateTime',
@@ -98,7 +97,7 @@
             return rows
         }
 
-        const grid = document.getElementById('mygrid').resetFromView(createView(schema, simulateRows()));
+        const grid = document.querySelector('grid-chen').resetFromView(createView(schema, simulateRows()));
         grid.setEventListener('dataChanged', (newValue) => console.log('dataChanged: ' + newValue));
     }
 

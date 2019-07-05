@@ -52,9 +52,9 @@
     createGrid(
         {
             title: 'Array of Row Arrays',
-            type: 'array',
+            type: 'object',
             items: {
-                type: 'array',
+                type: 'object',
                 items: [  // tuple schema
                     {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'},
                     {title: 'Age', width: 100, type: 'number'},
@@ -72,7 +72,7 @@
     createGrid(
         {
             title: 'Array of Row Objects',
-            type: 'array',
+            type: 'object',
             items: {
                 type: 'object',
                 properties: {
@@ -92,11 +92,11 @@
     createGrid(
         {
             title: 'Array of Column Arrays',
-            type: 'array',
+            type: 'object',
             items: [ // tuple schema
-                {type: 'array', items: {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'}},
-                {type: 'array', items: {title: 'Age', width: 100, type: 'number'}},
-                {type: 'array', items: {title: 'Weight', width: 100, type: 'number'}}
+                {type: 'object', items: {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'}},
+                {type: 'object', items: {title: 'Age', width: 100, type: 'number'}},
+                {type: 'object', items: {title: 'Weight', width: 100, type: 'number'}}
             ]
         },
         [
@@ -111,9 +111,9 @@
             title: 'Array of Column Objects',
             type: 'object',
             properties: {
-                timestamp: {type: 'array', items: {title: 'TimeStamp', type: 'string', format: 'datetime', width: 200}},
-                weight: {type: 'array', items: {title: 'Age', width: 100, type: 'number'}},
-                age: {type: 'array', items: {title: 'Weight', width: 100, type: 'number'}}
+                timestamp: {type: 'object', items: {title: 'TimeStamp', type: 'string', format: 'datetime', width: 200}},
+                weight: {type: 'object', items: {title: 'Age', width: 100, type: 'number'}},
+                age: {type: 'object', items: {title: 'Weight', width: 100, type: 'number'}}
             }
         },
         {

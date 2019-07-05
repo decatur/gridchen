@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Column Order</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2em;
+            background-color: aliceblue;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Dealing with Column Left to Right Order</h1>
+
+<h2>Array of Row Objects</h2>
+<grid-chen style="display:block;"></grid-chen>
+
+<h2>Object of Column Arrays</h2>
+<grid-chen style="display:block;"></grid-chen>
+
+<script type="module">
+    import "./modules/GridChen.js"
+    import {createView} from "./modules/DataViews.js"
+
+    document.querySelectorAll('grid-chen')[0].resetFromView(createView(
+        {
+            title: 'demo',
+            type: 'object',
+            items: {
+                type: 'object',
+                properties: {
+                    a: {title: 'a', type: 'number', columnIndex: 0},
+                    1: {title: '1', type: 'number', columnIndex: 1}
+                }
+            }
+        },
+        [{a: 1, 1: 3}, {a: 2, 1: 4}]
+    ));
+
+    document.querySelectorAll('grid-chen')[1].resetFromView(createView(
+        {
+            title: 'demo',
+            type: 'object',
+            properties: {
+                a: {type: 'object', title: 'a', columnIndex: 0, items: { type: 'number' }},
+                1: {type: 'object', title: '1', columnIndex: 1, items: { type: 'number' }}
+            }
+        },
+        {a: [1, 2], 1: [3, 4]}
+    ));
+
+
+</script>
+</body>
+</html>

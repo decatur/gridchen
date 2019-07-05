@@ -24,9 +24,9 @@ declare module GridChen {
 
     export interface JSONSchema {
         title: string;
-        type: string;
+        type?: string;
         properties?: Object;
-        items: Object | Object[];
+        items?: Object | Object[];
     }
 
     export interface Range {

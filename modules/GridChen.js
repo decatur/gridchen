@@ -298,10 +298,10 @@ function Grid(container, viewModel, eventListeners) {
 
     let total = 0;
     const columnEnds = [];
-    schemas.forEach(function (schema, index) {
+    for (const [index, schema] of schemas.entries()) {
         total += schema.width + 2 * cellBorderWidth + 2 * cellPadding;
         columnEnds[index] = total;
-    });
+    }
 
     // Only honour first columns sortDirection.
     schemas
@@ -331,7 +331,7 @@ function Grid(container, viewModel, eventListeners) {
     function refreshHeaders() {
         headerRow.textContent = '';
         let left = 0;
-        schemas.forEach(function (schema, index) {
+        for (const [index, schema] of schemas.entries()) {
             const header = document.createElement('span');
             const style = header.style;
             style.position = 'absolute';
@@ -354,7 +354,7 @@ function Grid(container, viewModel, eventListeners) {
             };
             headerRow.appendChild(header);
             left = columnEnds[index];
-        });
+        }
     }
 
     let totalWidth = columnEnds[columnEnds.length - 1] + 20 + 20;
@@ -628,11 +628,11 @@ function Grid(container, viewModel, eventListeners) {
                 ['Delete Rows', deleteRows],
                 ['Delete Contents', deleteSelection]
             ];
-            actions.forEach(function(action) {
+            for (const action of actions) {
                 const button = form.appendChild(document.createElement('button'));
                 button.textContent = action[0];
                 button.onclick = action[1];
-            });
+            }
 
             dialog.appendChild(form);
             const graphElement = document.createElement('div');
@@ -987,7 +987,7 @@ function Grid(container, viewModel, eventListeners) {
     function selectionToTSV(sep) {
         const rowMatrix = getSelection(selection);
         let tsvRows = Array(rowMatrix.length);
-        rowMatrix.forEach(function (row, i) {
+        for (const [i, row] of rowMatrix.entries()) {
             tsvRows[i] = row.map(function (value, j) {
                 let schema = schemas[selection.col.min + j];
                 if (value === undefined) {
@@ -999,7 +999,7 @@ function Grid(container, viewModel, eventListeners) {
                 }
                 return value;
             }).join(sep);  // Note that a=[undefined, 3].join(',') is ',3', which is what we want.
-        });
+        }
         return tsvRows.join('\r\n')
     }
 
@@ -1163,7 +1163,7 @@ export function tsvToMatrix(text) {
     let matrix = Array(lines.length);
     let minRowLength = Number.POSITIVE_INFINITY;
     let maxRowLength = Number.NEGATIVE_INFINITY;
-    lines.forEach(function (line, i) {
+    for (const [i, line] of lines.entries()) {
         let row = line.split('\t');
         if (qs.length) {
             row = row.map(function (cell) {
@@ -1176,7 +1176,7 @@ export function tsvToMatrix(text) {
         minRowLength = Math.min(minRowLength, row.length);
         maxRowLength = Math.max(maxRowLength, row.length);
         matrix[i] = row
-    });
+    }
 
     if (minRowLength !== maxRowLength) {
         // TODO: Why? Just fill with empty values.

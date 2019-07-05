@@ -40,9 +40,11 @@ function compare(a, b) {
 }
 
 function updateSortDirection(schemas, colIndex) {
-    let schema = schemas[colIndex];
-    let sortDirection = schema.sortDirection;
-    schemas.forEach((schema) => delete schema.sortDirection);
+    let sortSchema = schemas[colIndex];
+    let sortDirection = sortSchema.sortDirection;
+    for (const schema of schemas) {
+        delete schema.sortDirection
+    }
 
     if (sortDirection === undefined) {
         sortDirection = 1;
@@ -50,15 +52,15 @@ function updateSortDirection(schemas, colIndex) {
         sortDirection *= -1;
     }
 
-    schema.sortDirection = sortDirection;
-    return [schema.type, sortDirection];
+    sortSchema.sortDirection = sortDirection;
+    return [sortSchema.type, sortDirection];
 }
 
 /**
  * @param {GridChen.IColumnSchema[]} schemas
  */
 function updateSchema(schemas) {
-    schemas.forEach(function (schema) {
+    for (const schema of schemas) {
         schema.width = Number(schema.width || 100);
         schema.type = schema.type || 'string';
 
@@ -99,7 +101,7 @@ function updateSchema(schemas) {
                 fromString: (value) => value
             };
         }
-    });
+    }
 }
 
 /**

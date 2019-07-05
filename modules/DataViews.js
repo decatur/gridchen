@@ -1,3 +1,10 @@
+/**
+ * Author: Wolfgang Kühn 2019
+ * https://github.com/decatur/GridChen/modules/DataViews.js
+ *
+ * See README.md
+ */
+
 import {
     DateStringConverter,
     DateTimeLocalStringConverter,
@@ -53,6 +60,8 @@ function updateSortDirection(schemas, colIndex) {
 function updateSchema(schemas) {
     schemas.forEach(function (schema) {
         schema.width = Number(schema.width || 100);
+        schema.type = schema.type || 'string';
+
         if (numeric.has(schema.type)) {
             let fractionDigits = 2;
             if (schema.fractionDigits !== undefined) {

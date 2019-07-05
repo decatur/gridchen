@@ -1064,7 +1064,7 @@ function Grid(container, viewModel, eventListeners) {
             for (let colIndex = 0; colIndex < colCount; colIndex++) {
                 let elem = elemRow[colIndex];
                 let value = (row ? row[colIndex] : undefined);
-                if (value === undefined) {
+                if (value === undefined || value === null) {
                     value = '';
                 } else {
                     value = schemas[colIndex].converter.toString(value);

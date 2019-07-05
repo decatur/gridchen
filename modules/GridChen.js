@@ -613,14 +613,13 @@ function Grid(container, viewModel, eventListeners) {
 
     function showContextMenu() {
         let dialog = document.getElementById('gridchenDialog');
-        let form;
         if (!dialog) {
             dialog = document.createElement('dialog');
             dialog.id = 'gridchenDialog';
-            dialog.style.width = '100%';
-            dialog.style.height = '100%';
+            dialog.style.width = '20em';
+            dialog.style.height = '60px';
             dialog.style.backgroundColor = 'transparent';
-            form = document.createElement('div');
+            const form = document.createElement('div');
             const actions = [
                 ['Cut', () => copySelection(true)],
                 ['Copy', () => copySelection(false)],
@@ -644,12 +643,11 @@ function Grid(container, viewModel, eventListeners) {
                 #gridchenDialog button { display: block; }
             `;
             document.body.appendChild(styleSheet);
-
+            // Note that this event is caught even if the dialog is not directly clicked.
             dialog.onclick = () => dialog.close();
         }
-        form = dialog.firstElementChild;
-        form.style.left = (activeCell.col * 100) + 'px';
-        form.style.top = (activeCell.row * rowHeight) + 'px'
+        dialog.style.left = (activeCell.col * 100) + 'px';
+        dialog.style.top = (activeCell.row * rowHeight) + 'px'
         dialog.showModal();
     }
 

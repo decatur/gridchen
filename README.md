@@ -30,8 +30,6 @@ See https://decatur.github.io/GridChen
 ```
 
 # Fixed
-* Ctrl+X (cut) must be implemented; easy
-* Shift+F10 must work; easy
 
 # Issues
 

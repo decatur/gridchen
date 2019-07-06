@@ -10,27 +10,63 @@
             margin: 2em;
             background-color: aliceblue;
         }
+
+        label {
+            display: inline-block;
+            vertical-align: top;
+            margin: 0 2em 0 0;
+        }
+
+        textarea {
+            display: block;
+            background-color: floralwhite;
+            height: 200px;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
 
 <h1>Supported Column Data Types</h1>
 
-<p>
-    Number of rows: <input value="1000"> <span style="margin-left:1em"></span>
-</p>
+<div>
+    Demo is interactive both ways:
+    <ul>
+        <li>each change in schema or data will reset the grid, and</li>
+        <li>each cell change will update the data.</li>
+    </ul>
+</div>
 
-<grid-chen style="display:block;height:400px;"></grid-chen>
+<div>
+    Number of rows: <input value="1000"> <span style="margin-left:1em"></span>
+</div>
+
+<div id="template">
+    <h2></h2>
+    <label style="width: 40%;">
+        Schema
+        <textarea class="schema"></textarea>
+    </label>
+    <label style="width: 40%;">
+        Data
+        <textarea class="data"></textarea>
+    </label>
+    <label style="display: block;">
+        Grid
+        <grid-chen style="display: block; height: 200px;"></grid-chen>
+    </label>
+</div>
 
 
 <script type="module">
     import "./modules/GridChen.js"
-    import {createView} from "./modules/DataViews.js"
+    import {createInteractiveDemoGrid} from "./examples/demo.js"
 
     const input = document.querySelector('input');
     const span = document.querySelector('span');
 
     input.oninput = renderGrid;
+
     renderGrid();
 
     function renderGrid() {
@@ -97,8 +133,7 @@
             return rows
         }
 
-        const grid = document.querySelector('grid-chen').resetFromView(createView(schema, simulateRows()));
-        grid.setEventListener('dataChanged', (newValue) => console.log('dataChanged: ' + newValue));
+        createInteractiveDemoGrid(document.getElementById('template'), schema, simulateRows());
     }
 
 

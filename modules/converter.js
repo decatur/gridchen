@@ -62,7 +62,10 @@ export class DateTimeStringConverter {
      * @returns {string}
      */
     toString(d) {
-        if (d.constructor === String) return String(d);
+        if (d.constructor === String) {
+            d = this.fromString(d);
+            if (d.constructor === String) return d;
+        }
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
         let s = pad(d.getFullYear()) + '-' + pad(1 + d.getMonth()) + '-' + pad(d.getDate());
@@ -160,7 +163,10 @@ export class DateTimeLocalStringConverter {
      * @returns {string}
      */
     toString(d) {
-        if (d.constructor === String) return String(d);  // Note that typeof  d === 'string' fails for object strings.
+        if (d.constructor === String) {
+            d = this.fromString(d);
+            if (d.constructor === String) return d;
+        }
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
         let s = pad(d.getUTCFullYear()) + '-' + pad(1 + d.getUTCMonth()) + '-' + pad(d.getUTCDate());
@@ -217,7 +223,10 @@ export class DateStringConverter {
      * @returns {string}
      */
     toString(d) {
-        if (d.constructor === String) return String(d);
+        if (d.constructor === String) {
+            d = this.fromString(d);
+            if (d.constructor === String) return d;
+        }
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
         return pad(d.getUTCFullYear()) + '-' + pad(1 + d.getUTCMonth()) + '-' + pad(d.getUTCDate());

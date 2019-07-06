@@ -45,9 +45,7 @@ See https://decatur.github.io/GridChen
 
 * Support enum via select or datalist
 * Show 1 empty row at end (Slider issue)
-* Mark overflows, see https://stackoverflow.com/questions/9333379/check-if-an-elements-content-is-overflowing and offer tool tips
 * Avoid refreshing complete viewport on cell change
-* Use onkeypress for text entry.
 * Use document.activeElement instead of activeCell.span?
 * Write more unit tests
 * Test Firefox

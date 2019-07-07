@@ -61,7 +61,7 @@ function updateSortDirection(schemas, colIndex) {
  */
 function updateSchema(schemas) {
     for (const schema of schemas) {
-        schema.width = Number(schema.width || 100);
+        schema.width = Number(schema.width || (schema.title.length * 12) || 100);
         schema.type = schema.type || 'string';
 
         if (numeric.has(schema.type)) {

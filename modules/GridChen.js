@@ -313,7 +313,6 @@ function Grid(container, viewModel, eventListeners) {
     const headerRow = document.createElement('div');
     let style = headerRow.style;
     style.position = 'relative';
-    style.left = '20px';
     style.width = columnEnds[columnEnds.length - 1] + 'px';
     style.height = rowHeight + 'px';
     style.textAlign = 'center';
@@ -357,7 +356,7 @@ function Grid(container, viewModel, eventListeners) {
         }
     }
 
-    let totalWidth = columnEnds[columnEnds.length - 1] + 20 + 20;
+    let totalWidth = columnEnds[columnEnds.length - 1] + 20;
     container.style.width = totalWidth + 'px';
 
     const body = document.createElement('div');
@@ -410,7 +409,6 @@ function Grid(container, viewModel, eventListeners) {
     cellParent.style.display = 'inline-block';
     cellParent.style.width = columnEnds[columnEnds.length - 1] + 'px';
     cellParent.style.height = viewPortHeight + 'px';
-    cellParent.style.marginLeft = '20px';
     container.tabIndex = 0;
 
     /** @type{HTMLTextAreaElement} */

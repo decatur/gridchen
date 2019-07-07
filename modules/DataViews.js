@@ -124,6 +124,7 @@ function sortedColumns(properties) {
  * @param {Array<object>>} matrix
  */
 export function createView(schema, matrix) {
+    const invalidError = new Error('Invalid schema: ' + schema.title);
 
     if (schema.items && Array.isArray(schema.items.items)) {
         const colSchema = {title: schema.title, columnSchemas: schema.items.items};
@@ -153,10 +154,11 @@ export function createView(schema, matrix) {
         const entries = sortedColumns(schema.properties);
         const colSchemas = {
             title: schema.title,
-            columnSchemas: entries.map(e => e[1]).map(function(item) {
-                const colSchema = item.items;
-                if (!colSchema.title) colSchema.title = item.title;
-                if (!colSchema.width) colSchema.width = item.width;
+            columnSchemas: entries.map(e => e[1]).map(function(property) {
+                const colSchema = property.items;
+                if (typeof colSchema !== 'object') return invalidError;
+                if (!colSchema.title) colSchema.title = property.title;
+                if (!colSchema.width) colSchema.width = property.width;
                 return colSchema;
             }),
             ids: entries.map(e => e[0])
@@ -167,7 +169,7 @@ export function createView(schema, matrix) {
         return createColumnMatrixView(colSchemas, columns);
     }
 
-    return new Error('Invalid schema: ' + schema.title);
+    return invalidError;
 }
 
 /**

@@ -1,8 +1,6 @@
 /**
  * Author: Wolfgang Kühn 2019
  * https://github.com/decatur/GridChen/modules/DataViews.js
- *
- * See README.md
  */
 
 import {
@@ -11,7 +9,6 @@ import {
     DateTimeStringConverter,
     NumberStringConverter
 } from "./converter.js";
-
 
 const numeric = new Set(['number', 'integer']);
 
@@ -111,8 +108,8 @@ function updateSchema(schemas) {
 function sortedColumns(properties) {
     const entries = Object.entries(properties);
     entries.sort(function(e1, e2) {
-        if ('columnIndex' in e1[1] && 'columnIndex' in e2[1]) {
-            return e1[1].columnIndex - e2[1].columnIndex;
+        if ('columnOrder' in e1[1] && 'columnOrder' in e2[1]) {
+            return e1[1].columnOrder - e2[1].columnOrder;
         }
         return 0;
     });

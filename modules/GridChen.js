@@ -179,7 +179,6 @@ class Slider {
         this.element.min = '0';
 
         // When this.element gains focus, container.parentElement.parentElement will loose is, so re-focus.
-        //this.element.onfocus = () => container.parentElement.parentElement.focus();
         this.element.oninput = () => {
             console.log('slider oninput');
             this.handler(Math.round(this.element.max - this.element.value));
@@ -458,6 +457,7 @@ function Grid(container, viewModel, eventListeners) {
 
             // focus on input element, which will then receive this keyboard event.
             // Note: focus after display!
+            // Note: It is ok to scroll on focus here.
             this.editor.focus();
         },
         enterInputMode: function() {
@@ -508,7 +508,9 @@ function Grid(container, viewModel, eventListeners) {
         // The evt default is (A) to focus container element, and (B) start selecting text.
         // We want (A), but not (B), so we prevent defaults and focus explicitly.
         evt.preventDefault();
-        container.focus();
+        // We need to prevent scroll, otherwise the evt coordinates do not relate anymore
+        // with the target element coordinates. OR move this after call of index()!
+        container.focus({preventScroll: true});
 
         const rect = cellParent.getBoundingClientRect();
 
@@ -589,6 +591,8 @@ function Grid(container, viewModel, eventListeners) {
 
     container.onfocus = function (evt) {
         console.log('container.onfocus: ' + evt);
+        evt.stopPropagation();
+        evt.preventDefault();
         activeCell.show();
         selection.show();
     };
@@ -838,7 +842,7 @@ function Grid(container, viewModel, eventListeners) {
         }
 
         activeCell.mode = 'display';
-        container.focus();
+        container.focus({preventScroll: true});
     }
 
     editor.addEventListener('blur', function (evt) {

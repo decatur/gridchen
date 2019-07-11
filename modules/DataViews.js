@@ -116,16 +116,44 @@ function sortedColumns(properties) {
     return entries;
 }
 
+
 /**
  * @param {GridChen.JSONSchema} schema
- * @param {Array<object>>} matrix
+ * @param {Array<object>} matrix
+ * @returns {}
  */
 export function createView(schema, matrix) {
+    if (!schema) {
+        return new Error('createView() received undefined schema')
+    }
+
+    const creator = selectViewCreator(schema);
+    return creator(matrix);
+}
+
+/**
+ * @param {GridChen.JSONSchema} schema
+ * @returns {}
+ */
+export function selectViewCreator(schema) {
+    if (!schema) {
+        return new Error('selectViewCreator() received undefined schema')
+    }
+
+    function foo(cons, colSchema) {
+        return function(matrix) {
+            if (!matrix) {
+                return new Error('createView() received undefined data with schema title ' + schema.title);
+            };
+            return cons(colSchema, matrix);
+        }
+    }
+
     const invalidError = new Error('Invalid schema: ' + schema.title);
 
     if (schema.items && Array.isArray(schema.items.items)) {
         const colSchema = {title: schema.title, columnSchemas: schema.items.items};
-        return createRowMatrixView(colSchema, matrix);
+        return foo(createRowMatrixView, colSchema);
     }
 
     if (schema.items && schema.items.type === 'object') {
@@ -137,12 +165,12 @@ export function createView(schema, matrix) {
             ids: entries.map(e => e[0])
         };
 
-        return createRowObjectsView(colSchema, matrix);
+        return foo(createRowObjectsView, colSchema);
     }
 
     if (Array.isArray(schema.items)) {
         const colSchema = {title: schema.title, columnSchemas: schema.items.map(item => item.items)};
-        return createColumnMatrixView(colSchema, matrix);
+        return foo(createColumnMatrixView, colSchema);
     }
 
     if (typeof schema.properties === 'object') {
@@ -162,8 +190,9 @@ export function createView(schema, matrix) {
         };
 
         // Normalize missing columnCount (ragged columnCount are allowed).
-        const columns = colSchemas.ids.map(id => matrix[id] || Array());
-        return createColumnMatrixView(colSchemas, columns);
+        // TODO: Must use matrix!
+        // const columns = colSchemas.ids.map(id => matrix[id] || Array());
+        return foo(createColumnMatrixView, colSchemas);
     }
 
     return invalidError;

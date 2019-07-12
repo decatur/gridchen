@@ -8,24 +8,96 @@
 /**
  * @interface {GridChen.StringConverter}
  */
+export class StringStringConverter {
+    constructor() {}
+
+    /**
+     * @param {string} b
+     * @returns {string}
+     */
+    toString(s) {
+        if (s === undefined) return '';
+        return String(s)
+    }
+
+    /**
+     * @param {string} s
+     * @returns {string}
+     */
+    toEditable(s) {
+        return this.toString(s)
+    }
+
+    /**
+     * @param {string} s
+     */
+    fromString(s) {
+        return s.trim();
+    }
+}
+
+/**
+ * @interface {GridChen.StringConverter}
+ */
+export class BooleanStringConverter {
+    constructor() {}
+
+    /**
+     * @param {boolean} b
+     * @returns {string}
+     */
+    toString(b) {
+        return String(b)
+    }
+
+    /**
+     * @param {boolean} b
+     * @returns {string}
+     */
+    toEditable(b) {
+        return String(b)
+    }
+
+    /**
+     * @param {string} s
+     */
+    fromString(s) {
+        s = s.trim();
+        if (['true', 'wahr', '1', 'y'].indexOf(s.toLowerCase()) >= 0) {
+            return true
+        }
+        if (['false', 'falsch', '0', 'n'].indexOf(s.toLowerCase()) >= 0) {
+            return false
+        }
+        return s;
+    }
+}
+
+/**
+ * @interface {GridChen.StringConverter}
+ */
 export class NumberStringConverter {
     /**
      * @param {number} fractionDigits
      * @param {string?} locale
      */
-    constructor(fractionDigits, locale) {
-        this.nf = Intl.NumberFormat(locale, {minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits});
+    constructor(fractionDigits, locale, isPercent) {
+        this.nf = Intl.NumberFormat(locale, {
+            minimumFractionDigits: fractionDigits,
+            maximumFractionDigits: fractionDigits
+        });
         // Default for maximumFractionDigits is 3.
         this.nf1 = Intl.NumberFormat(locale, {maximumFractionDigits: 10});
         let testNumber = this.nf.format(1000.5); // 1.000,50 in de-DE
         this.thousandSep = testNumber[1];
         this.decimalSep = testNumber[5];  // Will be undefined for fractionDigits=0
+        this.isPercent = isPercent;
     }
 
     toString(n) {
         if (n.constructor === String) return String(n);
         if (n === undefined) return '';
-        return this.nf.format(n)
+        return this.nf.format(this.isPercent?n*100:n)
     }
 
     toEditable(n) {
@@ -41,7 +113,7 @@ export class NumberStringConverter {
         let parts = s.split(this.decimalSep);
         parts[0] = parts[0].split(this.thousandSep).join('');
         const n = Number(parts.join('.'));
-        return isNaN(n)?s:n;
+        return isNaN(n) ? s : (this.isPercent?n/100:n);
     }
 }
 
@@ -98,7 +170,7 @@ export class DateTimeStringConverter {
         } else {
             d = new Date(s);
         }
-        return isNaN(d.getTime())?s:d;
+        return isNaN(d.getTime()) ? s : d;
     }
 }
 
@@ -200,7 +272,7 @@ export class DateTimeLocalStringConverter {
             // Therefore always specify zulu zone.
             d = new Date(s + 'Z');
         }
-        return isNaN(d.getTime())?s:d;
+        return isNaN(d.getTime()) ? s : d;
     }
 }
 
@@ -248,7 +320,7 @@ export class DateStringConverter {
         } else {
             d = new Date(s + 'Z');
         }
-        return isNaN(d.getTime())?s:d;
+        return isNaN(d.getTime()) ? s : d;
     }
 }
 

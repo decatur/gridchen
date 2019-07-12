@@ -16,7 +16,7 @@ let IInterval;
 
 window.console.log('Executing GridChen ...');
 
-const numeric = new Set(['number', 'integer']);
+//const numeric = new Set(['number', 'integer']);
 
 function range(count) {
     return Array.from({length: count}, (_, i) => i);

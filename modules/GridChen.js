@@ -160,8 +160,8 @@ customElements.define('grid-chen', GridChen);
 class Slider {
 
     /**
-     * @param {HTMLElement} container
-     * @param {string} left
+     * @param {number} left
+     * @param {number} height
      * @param handler
      */
     constructor(left, height, handler) {
@@ -606,7 +606,7 @@ function Grid(container, viewModel, eventListeners) {
     }
 
     function deleteRows() {
-        let rowCount;
+        let rowCount = 1;
         range(selection.row.sup - selection.row.min).forEach(function() {
             rowCount = viewModel.deleteRow(selection.row.min);
         });
@@ -649,7 +649,7 @@ function Grid(container, viewModel, eventListeners) {
             dialog.onclick = () => dialog.close();
         }
         dialog.style.left = (activeCell.col * 100) + 'px';
-        dialog.style.top = (activeCell.row * rowHeight) + 'px'
+        dialog.style.top = (activeCell.row * rowHeight) + 'px';
         dialog.showModal();
     }
 
@@ -868,7 +868,7 @@ function Grid(container, viewModel, eventListeners) {
             evt.preventDefault();
             evt.stopPropagation();
             // Toggle between input and edit mode
-            activeCell.mode = (activeCell.mode=='input'?'edit':input);
+            activeCell.mode = (activeCell.mode==='input'?'edit':input);
         } else if (evt.code === 'ArrowLeft' && activeCell.mode === 'input') {
             evt.preventDefault();
             evt.stopPropagation();

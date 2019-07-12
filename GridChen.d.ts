@@ -44,7 +44,7 @@ declare module GridChen {
         rowCount: () => number;
         deleteRow: (rowIndex: number) => number;
         getCell: (rowIndex: number, colIndex: number) => any;
-        setCell: (rowIndex: number, colIndex: number, value: number) => number;
+        setCell: (rowIndex: number, colIndex: number, value: any) => number;
         insertRowBefore: (rowIndex: number) => number;
         sort: (colIndex: number) => number;
         plot: () => void;

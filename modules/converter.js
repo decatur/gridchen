@@ -12,7 +12,7 @@ export class StringStringConverter {
     constructor() {}
 
     /**
-     * @param {string} b
+     * @param {string} s
      * @returns {string}
      */
     toString(s) {
@@ -80,6 +80,7 @@ export class NumberStringConverter {
     /**
      * @param {number} fractionDigits
      * @param {string?} locale
+     * @param {boolean?} isPercent
      */
     constructor(fractionDigits, locale, isPercent) {
         this.nf = Intl.NumberFormat(locale, {
@@ -95,8 +96,8 @@ export class NumberStringConverter {
     }
 
     toString(n) {
-        if (n.constructor === String) return String(n);
         if (n === undefined) return '';
+        if (n.constructor === String) return String(n);
         return this.nf.format(this.isPercent?n*100:n)
     }
 
@@ -136,7 +137,7 @@ export class DateTimeStringConverter {
     toString(d) {
         if (d.constructor === String) {
             d = this.fromString(d);
-            if (d.constructor === String) return d;
+            if (d.constructor === String) return /**@type {string}*/ d;
         }
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
@@ -237,7 +238,7 @@ export class DateTimeLocalStringConverter {
     toString(d) {
         if (d.constructor === String) {
             d = this.fromString(d);
-            if (d.constructor === String) return d;
+            if (d.constructor === String) return /**@type{string}*/d;
         }
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
@@ -297,7 +298,7 @@ export class DateStringConverter {
     toString(d) {
         if (d.constructor === String) {
             d = this.fromString(d);
-            if (d.constructor === String) return d;
+            if (d.constructor === String) return /**@type{string}*/ d;
         }
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
@@ -357,7 +358,7 @@ function parseFrequency(frequency) {
  * @param {Array<string>} dateStrings
  * @returns {Date[]}
  */
-function localDateStringToDate(dateStrings) {
+/*function localDateStringToDate(dateStrings) {
     let prevTime = undefined;
     return dateStrings.map(function (s) {
         let d = new Date(s);
@@ -367,4 +368,4 @@ function localDateStringToDate(dateStrings) {
         prevTime = d.getTime();
         return (d);
     });
-}
+}*/

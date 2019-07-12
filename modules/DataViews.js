@@ -10,7 +10,7 @@ import {
     NumberStringConverter,
     BooleanStringConverter,
     StringStringConverter
-} from "../../GridChen/modules/converter.js";
+} from "./converter.js";
 
 const numeric = new Set(['number', 'integer']);
 
@@ -93,8 +93,10 @@ function updateSchema(schemas) {
 function sortedColumns(properties) {
     const entries = Object.entries(properties);
     entries.sort(function(e1, e2) {
-        if ('columnOrder' in e1[1] && 'columnOrder' in e2[1]) {
-            return e1[1].columnOrder - e2[1].columnOrder;
+        const o1 = e1[1]['columnOrder'];
+        const o2 = e2[1]['columnOrder'];
+        if (o1 !== undefined && o2 !== undefined) {
+            return o1 - o2;
         }
         return 0;
     });
@@ -105,7 +107,7 @@ function sortedColumns(properties) {
 /**
  * @param {GridChen.JSONSchema} schema
  * @param {Array<object>} matrix
- * @returns {}
+ * @returns {?}
  */
 export function createView(schema, matrix) {
     if (!schema) {
@@ -118,11 +120,11 @@ export function createView(schema, matrix) {
 
 /**
  * @param {GridChen.JSONSchema} schema
- * @returns {}
+ * @returns {function(?)}
  */
 export function selectViewCreator(schema) {
     if (!schema) {
-        return new Error('selectViewCreator() received undefined schema')
+        return () => new Error('selectViewCreator() received undefined schema')
     }
 
     function foo(cons, colSchema) {
@@ -174,13 +176,10 @@ export function selectViewCreator(schema) {
             const property = entry[1];
             const colSchema = property.items;
             if (typeof colSchema !== 'object') {
-                return invalidError;
+                return () => invalidError
             }
             if (!colSchema.title) colSchema.title = property.title;
             if (!colSchema.width) colSchema.width = property.width;
-
-
-
 
             colSchemas.columnSchemas.push(colSchema);
         }
@@ -191,7 +190,7 @@ export function selectViewCreator(schema) {
         return foo(createColumnMatrixView, colSchemas);
     }
 
-    return invalidError;
+    return () => invalidError
 }
 
 /**
@@ -208,6 +207,9 @@ export function createRowMatrixView(schema, rows) {
         if (row === undefined) rowCount[i] = Array(schemas.length);
     });*/
 
+    /**
+     * @implements {GridChen.DataView}
+     */
     class RowMatrixView {
         constructor() {
             this.schema = schema;
@@ -241,7 +243,7 @@ export function createRowMatrixView(schema, rows) {
         /**
          * @param {number} rowIndex
          * @param {number} colIndex
-         * @returns {object}
+         * @returns {*}
          */
         getCell(rowIndex, colIndex) {
             if (!rows[rowIndex]) return undefined;
@@ -274,7 +276,7 @@ export function createRowMatrixView(schema, rows) {
          * @returns {number}
          */
         sort(colIndex) {
-            let [type, sortDirection] = updateSortDirection(schemas, colIndex);
+            let [, sortDirection] = updateSortDirection(schemas, colIndex);
             rows.sort((row1, row2) => compare(row1[colIndex], row2[colIndex]) * sortDirection);
             return rows.length;
         }
@@ -302,6 +304,9 @@ export function createRowObjectsView(schema, rows) {
         if (row === undefined) rowCount[i] = {};
     });*/
 
+    /**
+     * @implements {GridChen.DataView}
+     */
     class RowObjectsView {
         constructor() {
             this.schema = schema;
@@ -326,7 +331,7 @@ export function createRowObjectsView(schema, rows) {
         /**
          * @param {number} rowIndex
          * @param {number} colIndex
-         * @returns {object}
+         * @returns {*}
          */
         getCell(rowIndex, colIndex) {
             if (!rows[rowIndex]) return undefined;
@@ -359,7 +364,7 @@ export function createRowObjectsView(schema, rows) {
          * @returns {number}
          */
         sort(colIndex) {
-            let [type, sortDirection] = updateSortDirection(schemas, colIndex);
+            let [, sortDirection] = updateSortDirection(schemas, colIndex);
             rows.sort((row1, row2) => compare(row1[ids[colIndex]], row2[ids[colIndex]]) * sortDirection);
             return rows.length;
         }
@@ -418,7 +423,7 @@ export function createColumnMatrixView(schema, columns) {
         /**
          * @param {number} rowIndex
          * @param {number} colIndex
-         * @returns {object}
+         * @returns {*}
          */
         getCell(rowIndex, colIndex) {
             return columns[colIndex][rowIndex];
@@ -451,7 +456,7 @@ export function createColumnMatrixView(schema, columns) {
          * @returns {number}
          */
         sort(colIndex) {
-            let [type, sortDirection] = updateSortDirection(schemas, colIndex);
+            let [, sortDirection] = updateSortDirection(schemas, colIndex);
             const indexes = columns[colIndex].map((value, rowIndex) => [value, rowIndex]);
 
             indexes.sort((a, b) => compare(a[0], b[0]) * sortDirection);

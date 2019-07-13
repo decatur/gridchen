@@ -82,7 +82,7 @@ export class NumberStringConverter {
      * @param {string?} locale
      * @param {boolean?} isPercent
      */
-    constructor(fractionDigits, locale, isPercent) {
+    constructor(fractionDigits, locale) {
         this.nf = Intl.NumberFormat(locale, {
             minimumFractionDigits: fractionDigits,
             maximumFractionDigits: fractionDigits
@@ -92,7 +92,7 @@ export class NumberStringConverter {
         let testNumber = this.nf.format(1000.5); // 1.000,50 in de-DE
         this.thousandSep = testNumber[1];
         this.decimalSep = testNumber[5];  // Will be undefined for fractionDigits=0
-        this.isPercent = isPercent;
+        this.isPercent = false;
     }
 
     toString(n) {

@@ -110,55 +110,45 @@ function sortedColumns(properties) {
  * @returns {?}
  */
 export function createView(schema, matrix) {
-    if (!schema) {
+    const columnSchemas = createColumnSchemas(schema);
+    if (schema instanceof Error) {
         return new Error('createView() received undefined schema')
     }
-
-    const creator = selectViewCreator(schema);
-    return creator(matrix);
+    return columnSchemas.viewCreator(columnSchemas, matrix);
 }
 
 /**
  * @param {GridChen.JSONSchema} schema
- * @returns {function(?)}
+ * @returns {object | Error}
  */
-export function selectViewCreator(schema) {
+export function createColumnSchemas(schema) {
     if (!schema) {
-        return () => new Error('selectViewCreator() received undefined schema')
-    }
-
-    function foo(cons, colSchema) {
-        return function(matrix) {
-            if (!matrix) {
-                return new Error('createView() received undefined data with schema title ' + schema.title);
-
-            }
-            return cons(colSchema, matrix);
-        }
+        return new Error('selectViewCreator() received undefined schema')
     }
 
     const invalidError = new Error('Invalid schema: ' + schema.title);
 
     if (schema.items && Array.isArray(schema.items.items)) {
-        const colSchema = {title: schema.title, columnSchemas: schema.items.items};
-        return foo(createRowMatrixView, colSchema);
+        return {title: schema.title, columnSchemas: schema.items.items, viewCreator: createRowMatrixView}
     }
 
     if (schema.items && schema.items.type === 'object') {
         const entries = sortedColumns(schema.items.properties);
 
-        const colSchema = {
+        return {
             title: schema.title,
             columnSchemas: entries.map(e => e[1]),
-            ids: entries.map(e => e[0])
-        };
-
-        return foo(createRowObjectsView, colSchema);
+            ids: entries.map(e => e[0]),
+            viewCreator: createRowObjectsView
+        }
     }
 
     if (Array.isArray(schema.items)) {
-        const colSchema = {title: schema.title, columnSchemas: schema.items.map(item => item.items)};
-        return foo(createColumnMatrixView, colSchema);
+        return {
+            title: schema.title,
+            columnSchemas: schema.items.map(item => item.items),
+            viewCreator: createColumnMatrixView
+        }
     }
 
     if (typeof schema.properties === 'object') {
@@ -169,14 +159,15 @@ export function selectViewCreator(schema) {
             title: schema.title,
 
             columnSchemas: [],
-            ids: entries.map(e => e[0])
+            ids: entries.map(e => e[0]),
+            viewCreator: createColumnMatrixView
         };
 
         for (const entry of entries) {
             const property = entry[1];
             const colSchema = property.items;
             if (typeof colSchema !== 'object') {
-                return () => invalidError
+                return invalidError
             }
             if (!colSchema.title) colSchema.title = property.title;
             if (!colSchema.width) colSchema.width = property.width;
@@ -187,20 +178,24 @@ export function selectViewCreator(schema) {
         // Normalize missing columnCount (ragged columnCount are allowed).
         // TODO: Must use matrix!
         // const columns = colSchemas.ids.map(id => matrix[id] || Array());
-        return foo(createColumnMatrixView, colSchemas);
+        return colSchemas
     }
 
-    return () => invalidError
+    return invalidError
 }
 
 /**
  * @param {GridChen.IGridSchema} schema
  * @param {Array<object>} rows
- * @returns {GridChen.DataView}
+ * @returns {GridChen.DataView | Error}
  */
 export function createRowMatrixView(schema, rows) {
     let schemas = schema.columnSchemas;
     updateSchema(schemas);
+
+    if (!rows) {
+        return new Error('createView() received undefined data with schema title ' + schema.title);
+    }
 
     // Normalize missing rowCount (ragged rowCount are allowed).
     /*rowCount.forEach(function (row, i) {
@@ -292,12 +287,16 @@ export function createRowMatrixView(schema, rows) {
 /**
  * @param {GridChen.IGridSchema} schema
  * @param {Array<object>} rows
- * @returns {GridChen.DataView}
+ * @returns {GridChen.DataView | Error}
  */
 export function createRowObjectsView(schema, rows) {
     const schemas = schema.columnSchemas;
     const ids = schema.ids;
     updateSchema(schemas);
+
+    if (!rows) {
+        return new Error('createView() received undefined data with schema title ' + schema.title);
+    }
 
     // Normalize missing rowCount (ragged rowCount are allowed).
     /*rowCount.forEach(function (row, i) {
@@ -384,6 +383,10 @@ export function createRowObjectsView(schema, rows) {
 export function createColumnMatrixView(schema, columns) {
     let schemas = schema.columnSchemas;
     updateSchema(schemas);
+
+    if (!columns) {
+        return new Error('createView() received undefined data with schema title ' + schema.title);
+    }
 
     // Normalize missing columnCount (ragged columnCount are allowed).
     /*columnCount.forEach(function (column, j) {

@@ -746,13 +746,11 @@ function Grid(container, viewModel, eventListeners) {
             evt.preventDefault();
             evt.stopPropagation();
             activeCell.enterEditMode();
-        }
-    };
-
-    container.onkeypress = function (evt) {
-        console.log('keypress ' + evt.code);
-        if (activeCell.mode === 'display') {
-            activeCell.enterInputMode();
+        } else if (evt.key.length === 1) {
+            // evt.key.length === 1 looks like a bad idea to sniff for character input, but keypress is deprecated.
+            if (activeCell.mode === 'display') {
+                activeCell.enterInputMode();
+            }
         }
     };
 

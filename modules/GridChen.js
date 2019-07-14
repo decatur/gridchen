@@ -305,9 +305,9 @@ function Grid(container, viewModel, eventListeners) {
     // Only honour first columns sortDirection.
     schemas
         .filter(schema => Math.abs(schema.sortDirection) === 1)
-        .slice(1).forEach(function(schema) {
-            delete schema.sortDirection;
-        });
+        .slice(1).forEach(function (schema) {
+        delete schema.sortDirection;
+    });
 
     const headerRow = document.createElement('div');
     let style = headerRow.style;
@@ -422,7 +422,8 @@ function Grid(container, viewModel, eventListeners) {
         span: undefined,
         editor: editor, row: 0, col: 0, mode: 'display',
         hide: function () {
-            if (this.span) this.span.style.backgroundColor = 'white'; //removeProperty('background-color');
+            if (this.span) this.span.style.backgroundColor = 'white';
+            headerRow.style.backgroundColor = 'khaki';//removeProperty('background-color');
             //rowMenu.style.display = 'none';
         },
         show: function () {
@@ -440,7 +441,7 @@ function Grid(container, viewModel, eventListeners) {
             this.show();
             eventListeners['activeCellChanged'](this);
         },
-       enterMode: function() {
+        enterMode: function () {
             if (this.row < firstRow) {
                 // scroll into view
                 setFirstRow(this.row)
@@ -460,15 +461,15 @@ function Grid(container, viewModel, eventListeners) {
             // Note: It is ok to scroll on focus here.
             this.editor.focus();
         },
-        enterInputMode: function() {
+        enterInputMode: function () {
             this.mode = 'input';
             this.enterMode();
         },
-        enterEditMode: function() {
+        enterEditMode: function () {
             this.mode = 'edit';
             this.enterMode();
             let value = viewModel.getCell(this.row, this.col);
-            if ( value === undefined ) {
+            if (value === undefined) {
                 value = '';
             } else {
                 value = schemas[this.col].converter.toEditable(value);
@@ -607,12 +608,17 @@ function Grid(container, viewModel, eventListeners) {
 
     function deleteRows() {
         let rowCount = 1;
-        range(selection.row.sup - selection.row.min).forEach(function() {
+        range(selection.row.sup - selection.row.min).forEach(function () {
             rowCount = viewModel.deleteRow(selection.row.min);
         });
         refresh(rowCount);
     }
 
+    function insertRow() {
+        refresh(viewModel.insertRowBefore(activeCell.row - 1));
+    }
+
+    /*
     function showContextMenu() {
         let dialog = document.getElementById('gridchenDialog');
         if (!dialog) {
@@ -626,7 +632,7 @@ function Grid(container, viewModel, eventListeners) {
                 ['Cut', () => copySelection(true)],
                 ['Copy', () => copySelection(false)],
                 ['Paste', () => alert('Not Implemented')],
-                ['Insert Row', () => refresh(viewModel.insertRowBefore(activeCell.row - 1))],
+                ['Insert Row', insertRow],
                 ['Delete Rows', deleteRows],
                 ['Delete Contents', deleteSelection]
             ];
@@ -651,20 +657,20 @@ function Grid(container, viewModel, eventListeners) {
         dialog.style.left = (activeCell.col * 100) + 'px';
         dialog.style.top = (activeCell.row * rowHeight) + 'px';
         dialog.showModal();
-    }
+    }*/
 
-    function copySelection(doCut) {
-        window.navigator.clipboard.writeText(selectionToTSV('\t'))
-                .then(() => {
-                    console.log('Text copied to clipboard');
-                    if (doCut) {
-                        deleteSelection();
-                    }
-                })
-                .catch(err => {
-                    // This can happen if the user denies clipboard permissions:
-                    console.error('Could not copy text: ', err);
-                });
+    function copySelection(doCut, withHeaders) {
+        window.navigator.clipboard.writeText(selectionToTSV('\t', withHeaders))
+            .then(() => {
+                console.log('Text copied to clipboard');
+                if (doCut) {
+                    deleteSelection();
+                }
+            })
+            .catch(err => {
+                // This can happen if the user denies clipboard permissions:
+                console.error('Could not copy text: ', err);
+            });
     }
 
     container.onkeydown = function (evt) {
@@ -703,12 +709,18 @@ function Grid(container, viewModel, eventListeners) {
             // This is reverted on the next onblur event.
             evt.preventDefault();  // Do not select the inputs content.
             evt.stopPropagation();
-            selection.set(0, 0);
-            selection.expand(rowCount - 1, colCount - 1);
+            if (selection.row.min === 0 && selection.col.min === 0
+                && selection.row.sup === rowCount && selection.col.sup === colCount) {
+                // Already all data cells selected.
+                headerRow.style.backgroundColor = 'red';
+            } else {
+                selection.set(0, 0);
+                selection.expand(rowCount - 1, colCount - 1);
+            }
         } else if ((evt.code === 'KeyC' || evt.code === 'KeyX') && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation(); // Prevent text is copied from container.
-            copySelection(evt.code === 'KeyX');
+            copySelection(evt.code === 'KeyX', headerRow.style.backgroundColor === 'red');
         } else if (evt.code === 'KeyV' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation(); // Prevent that text is pasted into editable container.
@@ -737,16 +749,34 @@ function Grid(container, viewModel, eventListeners) {
             evt.preventDefault();
             evt.stopPropagation();
             viewModel.plot();
-        } else if (evt.code === 'F10' && evt.shiftKey) {
+        } else if (evt.key === '+' && evt.ctrlKey) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            insertRow();
+        } else if (evt.key === '-' && evt.ctrlKey) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            deleteRows();
+        } else if (evt.code === 'Space' && evt.ctrlKey) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            selection.set(0, activeCell.col);
+            selection.expand(rowCount - 1, activeCell.col);
+        } else if (evt.code === 'Space' && evt.shiftKey) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            selection.set(activeCell.row, 0);
+            selection.expand(activeCell.row, colCount);
+        } /*else if (evt.code === 'F10' && evt.shiftKey) {
             // Both Web and Excel binding of context menu.
             evt.preventDefault();
             evt.stopPropagation();
             showContextMenu();
-        } else if (evt.code === 'F2') {
+        } */ else if (evt.code === 'F2') {
             evt.preventDefault();
             evt.stopPropagation();
             activeCell.enterEditMode();
-        } else if (evt.key.length === 1) {
+        } else if (evt.key.length === 1 && !evt.ctrlKey && !evt.altKey) {
             // evt.key.length === 1 looks like a bad idea to sniff for character input, but keypress is deprecated.
             if (activeCell.mode === 'display') {
                 activeCell.enterInputMode();
@@ -771,7 +801,20 @@ function Grid(container, viewModel, eventListeners) {
         }
 
         let rowIndex = cell.row + rowOffset;
-        let colIndex = Math.min(colCount - 1, Math.max(0, cell.col + colOffset));
+        let colIndex = cell.col + colOffset;
+        if (colIndex === -1) {
+            if (rowIndex > 0) {
+                colIndex = colCount - 1;
+                rowIndex--;
+            } else {
+                rowIndex = rowCount - 1;
+                colIndex = colCount - 1;
+            }
+        } else if (colIndex === colCount) {
+            colIndex = 0;
+            rowIndex++;
+        }
+        //let colIndex = Math.min(colCount - 1, Math.max(0, cell.col + colOffset));
 
         if (isExpansion) {
             selection.expand(rowIndex, colIndex);
@@ -866,7 +909,7 @@ function Grid(container, viewModel, eventListeners) {
             evt.preventDefault();
             evt.stopPropagation();
             // Toggle between input and edit mode
-            activeCell.mode = (activeCell.mode==='input'?'edit':input);
+            activeCell.mode = (activeCell.mode === 'input' ? 'edit' : input);
         } else if (evt.code === 'ArrowLeft' && activeCell.mode === 'input') {
             evt.preventDefault();
             evt.stopPropagation();
@@ -982,15 +1025,16 @@ function Grid(container, viewModel, eventListeners) {
 
     /**
      * @param {string} sep
+     * @param {boolean} withHeaders
      * @returns {string}
      */
-    function selectionToTSV(sep) {
+    function selectionToTSV(sep, withHeaders) {
         const rowMatrix = getSelection(selection);
         let tsvRows = Array(rowMatrix.length);
         for (const [i, row] of rowMatrix.entries()) {
             tsvRows[i] = row.map(function (value, j) {
                 let schema = schemas[selection.col.min + j];
-                if (value === undefined) {
+                if (value === undefined || value === null) {
                     return undefined;
                 }
                 value = schema.converter.toString(value);
@@ -999,6 +1043,9 @@ function Grid(container, viewModel, eventListeners) {
                 }
                 return value;
             }).join(sep);  // Note that a=[undefined, 3].join(',') is ',3', which is what we want.
+        }
+        if (withHeaders) {
+            tsvRows.unshift(schemas.map(schema => schema.title).join(sep));
         }
         return tsvRows.join('\r\n')
     }
@@ -1192,16 +1239,16 @@ function normalizeQuotes(text) {
     text = text + '@';
     const a = text.split(/(".*?"[^"])/s);
     const qs = [];
-    for (let i=1; i<a.length; i+=2) {
+    for (let i = 1; i < a.length; i += 2) {
         let s = a[i];
-        a[i] = String.fromCharCode(0) + s[s.length-1];
+        a[i] = String.fromCharCode(0) + s[s.length - 1];
         s = s.substr(1, s.length - 3);
         s = s.replace(/""/g, '"');
         qs.push(s);
     }
 
     text = a.join('');
-    return [text.substr(0, text.length-1), qs]
+    return [text.substr(0, text.length - 1), qs]
 }
 
 /*

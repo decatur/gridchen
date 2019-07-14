@@ -72,23 +72,27 @@ See also [Keyboard shortcuts in Excel](https://support.office.com/en-us/article/
 |Key            |               Action               |
 |---------------|------------------------------------|
 Arrows          | Move active cell up/down/left/right (not in edit mode)
-Tab             | Move active cell right
-Enter           | Move active cell down
-Shift + Enter   | Move active cell up
-Shift+Tab       | Move active cell left
+Tab             | Move active cell right (non-rolling)
+Enter           | Move active cell down (non-rolling)
+Shift + Enter   | Move active cell up (non-rolling)
+Shift + Tab     | Move active cell left (non-rolling)
 SHIFT + Arrows  | Select a range of cells
+Ctrl + Space    | Select entire column
+Shift + Space   | Select entire row
+Ctrl + -        | Delete selected row
+Ctrl + +        | Insert row before selection
 Alt + Enter     | In edit mode, insert newline
 Page Down       | Move one page down
 Page Up         | Move one page up
-Ctrl+A          | Select the smallest isolated rectangle containing the active cell
-Ctrl+A Ctrl+A   | Select the entire grid
+Ctrl+A          | Select all grid cells (same as Ctrl+A in a Excel List Object)
+Ctrl+A Ctrl+A   | Select the entire grid including header (same as Ctrl+A Ctrl+A in a Excel List Object)
 ESC             | Cancel edit or input mode
 Delete          | Remove selected cells contents
 Ctrl+C          | Copy selected cells to clipboard
 Ctrl+V          | Paste clipboard into selected cells
 Ctrl+X          | Cut
 F2              | Enter edit mode; In input or edit mode, toggle between input and edit.
-Shift+F10       | Display context menu (GridChen politely does not alter the right mouse click or oncontextmenu event)
+~~Shift+F10~~       | Display context menu (GridChen politely does not alter the right mouse click or oncontextmenu event)
 Backspace       | In input or edit mode, deletes one character to the left
 Delete          | In input or edit mode, deletes one character to the right
 End             | In input or edit mode, move to the end of the text

@@ -34,44 +34,6 @@ const console = {
     }
 };
 
-export class Rectangle {
-    /**
-     * @param {IInterval} row
-     * @param {IInterval} col
-     */
-    constructor(row, col) {
-        this.row = row;
-        this.col = col;
-    }
-
-    /**
-     * TODO: Implement on Range.
-     * Intersect this rectangle with another rectangle.
-     * @param {Rectangle} other
-     * @returns {Rectangle}
-     */
-    intersect(other) {
-        const row = intersectInterval(this.row, other.row);
-        const col = intersectInterval(this.col, other.col);
-        if (col === undefined || row === undefined) {
-            return undefined;
-        }
-        return new Rectangle(row, col)
-    }
-
-    /**
-     * Copy this reactangle to a shifted position.
-     * @param {number} rowOffset
-     * @param {number} colOffset
-     * @returns {Rectangle}
-     */
-    shift(rowOffset, colOffset) {
-        return new Rectangle(
-            {min: this.row.min + rowOffset, sup: this.row.sup + rowOffset},
-            {min: this.col.min + colOffset, sup: this.col.sup + colOffset});
-    }
-}
-
 /**
  * @param {IInterval} i1
  * @param {IInterval} i2
@@ -211,59 +173,118 @@ function pos(row, col) {
     return {row: row, col: col}
 }
 
-class Selection extends Rectangle {
+class Range {
+    constructor(rowIndex, columnIndex, rowCount, columnCount) {
+        this.rowIndex = rowIndex;
+        this.columnIndex = columnIndex;
+        this.rowCount = rowCount;
+        this.columnCount = columnCount;
+    }
+
+    toString() {
+        return `Range(${this.rowIndex}, ${this.columnIndex}, ${this.rowCount}, ${this.columnCount})`
+    }
+
+    /**
+     * TODO: Implement on Range.
+     * Intersect this range with another range.
+     * @param {Range} other
+     * @returns {Range}
+     */
+    intersect(other) {
+        const row = intersectInterval(
+            {min: this.rowIndex, sup: this.rowIndex + this.rowCount},
+            {min: other.rowIndex, sup: other.rowIndex + other.rowCount});
+        const col = intersectInterval(
+            {min: this.columnIndex, sup: this.columnIndex + this.columnCount},
+            {min: other.columnIndex, sup: other.columnIndex + other.columnCount});
+        if (col === undefined || row === undefined) {
+            return undefined;
+        }
+        return new Range(row.min, col.min, row.sup - row.min, col.sup - col.min)
+    }
+
+    /**
+     * Copy this range to an offset position.
+     * @param {number} rowOffset
+     * @param {number} colOffset
+     * @returns {Range}
+     */
+    offset(rowOffset, colOffset) {
+        return new Range(
+            this.rowIndex + rowOffset, this.columnIndex + colOffset,
+            this.rowCount, this.columnCount)
+    }
+}
+
+class Selection extends Range {
     constructor(repainter, eventListeners) {
         super({min: 0, sup: 1}, {min: 0, sup: 1});
         this.initial = pos(0, 0);
         this.head = pos(0, 0); // Cell opposite the initial.
         this.repainter = repainter;
         this.eventListeners = eventListeners;
+        /** @type{Array<Range>} */
+        this.areas = [];
     }
 
     /**
      */
     show() {
-        this.repainter('LightBlue', this);
+        for (const r of this.areas) {
+            console.log('show: ' + r.toString());
+            this.repainter('LightBlue', r);
+        }
     }
 
     hide() {
-        this.repainter(undefined, this);
+        for (const r of this.areas) {
+            this.repainter(undefined, r);
+        }
     }
 
     /**
      * @param {number} rowIndex
-     * @param {number} colIndex
+     * @param {number} columnIndex
      */
-    set(rowIndex, colIndex) {
+    set(rowIndex, columnIndex) {
         console.log('Selection.set');
         this.hide(); // TODO: Why?
-        this.initial = {row: rowIndex, col: colIndex};
-        this.head = {row: rowIndex, col: colIndex};
-        this.row = {min: rowIndex, sup: 1 + rowIndex};
-        this.col = {min: colIndex, sup: 1 + colIndex};
+        this.initial = {row: rowIndex, col: columnIndex};
+        this.head = {row: rowIndex, col: columnIndex};
+        this.areas = [];
+        this.add(rowIndex, columnIndex);
         this.eventListeners['selectionChanged'](this);
     }
 
     /**
      * @param {number} rowIndex
-     * @param {number} colIndex
+     * @param {number} columnIndex
      */
-    expand(rowIndex, colIndex) {
+    expand(rowIndex, columnIndex) {
         console.log('Selection.expand');
         this.hide();
 
-        this.head = {row: rowIndex, col: colIndex};
-        this.row = {
-            min: Math.min(this.initial.row, rowIndex),
-            sup: 1 + Math.max(this.initial.row, rowIndex)
-        };
-
-        this.col = {
-            min: Math.min(this.initial.col, colIndex),
-            sup: 1 + Math.max(this.initial.col, colIndex)
-        };
+        this.head = {row: rowIndex, col: columnIndex};
+        const r = this.areas.pop();
+        r.rowIndex = Math.min(this.initial.row, rowIndex);
+        r.columnIndex = Math.min(this.initial.col, columnIndex);
+        r.rowCount = 1 + Math.max(this.initial.row, rowIndex) - r.rowIndex;
+        r.columnCount = 1 + Math.max(this.initial.col, columnIndex) - r.columnIndex;
+        this.areas.push(r);
 
         this.show();
+        this.eventListeners['selectionChanged'](this);
+    }
+
+    /**
+     * @param {number} rowIndex
+     * @param {number} columnIndex
+     */
+    add(rowIndex, columnIndex) {
+        console.log('Selection.add');
+        this.hide(); // TODO: Why?
+        this.areas.push(new Range(rowIndex, columnIndex, 1, 1));
         this.eventListeners['selectionChanged'](this);
     }
 }
@@ -481,14 +502,14 @@ function Grid(container, viewModel, eventListeners) {
     /**
      *
      * @param {string?} backgroundColor
-     * @param {Rectangle} rectangle
+     * @param {Range} range
      */
-    function repaintRectangle(backgroundColor, rectangle) {
-        let r = rectangle.shift(-firstRow, 0);
-        let rr = r.intersect(new Rectangle({min: 0, sup: viewPortRowCount}, {min: 0, sup: colCount}));
+    function repaintRange(backgroundColor, range) {
+        let r = range.offset(-firstRow, 0);
+        let rr = r.intersect(new Range(0, 0, viewPortRowCount, colCount));
         if (!rr) return;
-        for (let row = rr.row.min; row < rr.row.sup; row++) {
-            for (let col = rr.col.min; col < rr.col.sup; col++) {
+        for (let row = rr.rowIndex; row < rr.rowIndex + rr.rowCount; row++) {
+            for (let col = rr.columnIndex; col < rr.columnIndex + rr.columnCount; col++) {
                 const span = spanMatrix[row][col];
                 const style = span.style;
                 if (spanMatrix[row][col] === activeCell.span) {
@@ -533,6 +554,9 @@ function Grid(container, viewModel, eventListeners) {
 
         if (evt.shiftKey) {
             selection.expand(rowIndex, colIndex);
+        } else if (evt.ctrlKey) {
+            selection.add(rowIndex, colIndex);
+            selection.show();
         } else {
             navigateCell(evt, rowIndex - activeCell.row, colIndex - activeCell.col);
             selection.set(rowIndex, colIndex);
@@ -599,18 +623,28 @@ function Grid(container, viewModel, eventListeners) {
     };
 
     function deleteSelection() {
-        let emptyRow = Array(selection.col.sup - selection.col.min);
-        emptyRow.fill(undefined);
-        let emptyMatrix = Array(selection.row.sup - selection.row.min);
-        emptyMatrix.fill(emptyRow);
-        refresh(paste(emptyMatrix));
+        for (const r of selection.areas) {
+            let rowIndex = r.rowIndex;
+            let endRowIndex = rowIndex + r.rowCount;
+            let endColIndex = r.columnIndex + r.columnCount;
+
+            for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {
+                let colIndex = r.columnIndex;
+                for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
+                    viewModel.setCell(rowIndex, colIndex, undefined);
+                }
+            }
+        }
+        refresh(viewModel.rowCount());
     }
 
     function deleteRows() {
-        let rowCount = 1;
-        range(selection.row.sup - selection.row.min).forEach(function () {
-            rowCount = viewModel.deleteRow(selection.row.min);
-        });
+        let rowCount = undefined;
+        for (const r of selection.areas) {
+            range(r.rowCount).forEach(function () {
+                rowCount = viewModel.deleteRow(r.rowIndex);
+            });
+        }
         refresh(rowCount);
     }
 
@@ -660,7 +694,7 @@ function Grid(container, viewModel, eventListeners) {
     }*/
 
     function copySelection(doCut, withHeaders) {
-        window.navigator.clipboard.writeText(selectionToTSV('\t', withHeaders))
+        window.navigator.clipboard.writeText(rangeToTSV(selection.areas[0], '\t', withHeaders))
             .then(() => {
                 console.log('Text copied to clipboard');
                 if (doCut) {
@@ -709,8 +743,8 @@ function Grid(container, viewModel, eventListeners) {
             // This is reverted on the next onblur event.
             evt.preventDefault();  // Do not select the inputs content.
             evt.stopPropagation();
-            if (selection.row.min === 0 && selection.col.min === 0
-                && selection.row.sup === rowCount && selection.col.sup === colCount) {
+            if (selection.rowIndex === 0 && selection.columnIndex === 0
+                && selection.rowCount === rowCount && selection.columnCount === colCount) {
                 // Already all data cells selected.
                 headerRow.style.backgroundColor = 'red';
             } else {
@@ -720,6 +754,10 @@ function Grid(container, viewModel, eventListeners) {
         } else if ((evt.code === 'KeyC' || evt.code === 'KeyX') && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation(); // Prevent text is copied from container.
+            if (selection.areas.length > 1) {
+                alert('This action is not possible with multi-selections.');
+                return
+            }
             copySelection(evt.code === 'KeyX', headerRow.style.backgroundColor === 'red');
         } else if (evt.code === 'KeyV' && evt.ctrlKey) {
             evt.preventDefault();
@@ -972,7 +1010,7 @@ function Grid(container, viewModel, eventListeners) {
         }
 
         updateViewportRows(getSelection(
-            new Rectangle({min: firstRow, sup: firstRow + viewPortRowCount}, {min: 0, sup: colCount})));
+            new Range(firstRow, 0, viewPortRowCount, colCount)));
         activeCell.move(activeCell.row, activeCell.col);
         selection.show();
     }
@@ -1011,12 +1049,17 @@ function Grid(container, viewModel, eventListeners) {
         cellParent.appendChild(elem);
     }
 
+    /**
+     * TODO: Rename to getData
+     * @param {Range} selection
+     * @returns {Array<Array<?>>}
+     */
     function getSelection(selection) {
-        let matrix = Array(selection.row.sup - selection.row.min);
-        for (let i = 0, rowIndex = selection.row.min; rowIndex < selection.row.sup; i++, rowIndex++) {
-            matrix[i] = Array(selection.col.sup - selection.col.min);
+        let matrix = Array(selection.rowCount);
+        for (let i = 0, rowIndex = selection.rowIndex; rowIndex < selection.rowIndex + selection.rowCount; i++, rowIndex++) {
+            matrix[i] = Array(selection.columnCount);
             if (rowIndex >= rowCount) continue;
-            for (let j = 0, colIndex = selection.col.min; colIndex < selection.col.sup; colIndex++, j++) {
+            for (let j = 0, colIndex = selection.columnIndex; colIndex < selection.columnIndex + selection.columnCount; colIndex++, j++) {
                 matrix[i][j] = viewModel.getCell(rowIndex, colIndex);
             }
         }
@@ -1024,16 +1067,17 @@ function Grid(container, viewModel, eventListeners) {
     }
 
     /**
+     * @param {Range} r
      * @param {string} sep
      * @param {boolean} withHeaders
      * @returns {string}
      */
-    function selectionToTSV(sep, withHeaders) {
-        const rowMatrix = getSelection(selection);
+    function rangeToTSV(r, sep, withHeaders) {
+        const rowMatrix = getSelection(r);
         let tsvRows = Array(rowMatrix.length);
         for (const [i, row] of rowMatrix.entries()) {
             tsvRows[i] = row.map(function (value, j) {
-                let schema = schemas[selection.col.min + j];
+                let schema = schemas[r.columnIndex + j];
                 if (value === undefined || value === null) {
                     return undefined;
                 }
@@ -1057,7 +1101,6 @@ function Grid(container, viewModel, eventListeners) {
      * @returns {number}
      */
     function pasteSingle(topRowIndex, topColIndex, matrix) {
-
         let rowIndex = topRowIndex;
         let endRowIndex = rowIndex + matrix.length;
         let endColIndex = Math.min(schemas.length, topColIndex + matrix[0].length);
@@ -1079,21 +1122,28 @@ function Grid(container, viewModel, eventListeners) {
      * @@param {Array<Array<string>>} matrix
      */
     function paste(matrix) {
+        if (selection.areas.length > 1) {
+            alert('This action is not possible with multi-selections.');
+            return
+        }
+
+        const r = selection.areas[0];
+
         if (!matrix[0].length) {
             alert('You have nothing to paste')
         }
         const sourceRows = matrix.length;
         const sourceColumns = matrix[0].length;
-        const targetRows = selection.row.sup - selection.row.min;
-        const targetColumns = selection.col.sup - selection.col.min;
+        const targetRows = r.rowCount;
+        const targetColumns = r.columnCount;
         if (targetRows % sourceRows || targetColumns % sourceColumns) {
-            pasteSingle(selection.row.min, selection.col.min, matrix);
+            pasteSingle(r.rowIndex, r.columnIndex, matrix);
             // TODO: Reshape selection
         } else {
             // Tile target with source.
             for (let i = 0; i < Math.trunc(targetRows / sourceRows); i++) {
                 for (let j = 0; j < Math.trunc(targetColumns / sourceColumns); j++) {
-                    pasteSingle(selection.row.min + i * sourceRows, selection.col.min + j * sourceColumns, matrix);
+                    pasteSingle(r.rowIndex + i * sourceRows, r.columnIndex + j * sourceColumns, matrix);
                 }
             }
         }
@@ -1133,7 +1183,7 @@ function Grid(container, viewModel, eventListeners) {
     cellParent.appendChild(editor);
 
     /** @type {Selection} */
-    let selection = new Selection(repaintRectangle, eventListeners);
+    let selection = new Selection(repaintRange, eventListeners);
     //selection.set(0, 0);
 
     firstRow = 0;
@@ -1142,12 +1192,9 @@ function Grid(container, viewModel, eventListeners) {
     activeCell.hide();
     selection.hide();
 
-    class Range {
+    class Range1 extends Range {
         constructor(rowIndex, columnIndex, rowCount, columnCount) {
-            this.rowIndex = rowIndex;
-            this.columnIndex = columnIndex;
-            this.rowCount = rowCount;
-            this.columnCount = columnCount;
+            super(rowIndex, columnIndex, rowCount, columnCount);
         }
 
         select() {
@@ -1159,17 +1206,17 @@ function Grid(container, viewModel, eventListeners) {
 
     return {
         /**
-         * @returns {Range}
+         * @returns {Range1}
          */
         getActiveCell() {
-            return new Range(activeCell.row, activeCell.col, 1, 1);
+            return new Range1(activeCell.row, activeCell.col, 1, 1);
         },
         /**
-         * @returns {Range}
+         * @returns {Range1}
          */
         getSelection() {
-            return new Range(selection.row.min, selection.col.min,
-                selection.row.sup - selection.row.min, selection.col.sup - selection.col.min);
+            return new Range1(selection.rowIndex, selection.columnIndex,
+                selection.rowCount, selection.columnCount);
         },
         /**
          * @param {number} rowIndex
@@ -1179,7 +1226,7 @@ function Grid(container, viewModel, eventListeners) {
          * @returns {Range}
          */
         getRange(rowIndex, columnIndex, rowCount, columnCount) {
-            return new Range(rowIndex, columnIndex, rowCount, columnCount);
+            return new Range1(rowIndex, columnIndex, rowCount, columnCount);
         }
     };
 }

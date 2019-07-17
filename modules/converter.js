@@ -80,7 +80,6 @@ export class NumberStringConverter {
     /**
      * @param {number} fractionDigits
      * @param {string?} locale
-     * @param {boolean?} isPercent
      */
     constructor(fractionDigits, locale) {
         this.nf = Intl.NumberFormat(locale, {

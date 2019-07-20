@@ -421,6 +421,7 @@ function Grid(container, viewModel, eventListeners) {
     body.appendChild(rowMenu);
 */
 
+
     // TODO: Why is sometdeleteRowButtonimes clientHeight not set?
     let viewPortHeight = totalHeight - 20;
     let cellParent = /** @type {HTMLElement} */ document.createElement('div');
@@ -431,17 +432,170 @@ function Grid(container, viewModel, eventListeners) {
     cellParent.style.height = viewPortHeight + 'px';
     container.tabIndex = 0;
 
-    /** @type{HTMLTextAreaElement} */
-    const editor = /** @type{HTMLTextAreaElement} */ document.createElement('textarea');
-    editor.id = 'editor';
-    editor.style.position = 'absolute';
-    editor.style.display = 'none';
-    editor.style.height = innerHeight;
-    editor.style.padding = cellPadding + 'px';
+    class Editor {
+
+        constructor(container) {
+            /** @type{HTMLInputElement} */
+            this.input = document.createElement('input');
+            this.input.id = 'editor';
+            this.input.style.position = 'absolute';
+            this.input.style.display = 'none';
+            this.input.style.height = innerHeight;
+            this.input.style.padding = cellPadding + 'px';
+            this.input.setAttribute('list', 'enum');
+            /** @type{HTMLTextAreaElement} */
+            this.textarea = document.createElement('textarea');
+            this.textarea.id = 'textarea';
+            this.textarea.style.position = 'absolute';
+            this.textarea.style.display = 'none';
+            this.textarea.style.height = innerHeight;
+            this.textarea.style.padding = cellPadding + 'px';
+
+            function foo(evt) {
+                // Clicking editor should invoke default: move the caret. It should not delegate to containers action.
+                evt.stopPropagation();
+            }
+
+            this.input.addEventListener('keydown', this.keydownHandler);
+            this.textarea.addEventListener('keydown', this.keydownHandler);
+
+            this.input.addEventListener('mousedown', foo);
+            this.textarea.addEventListener('mousedown', foo);
+
+            container.appendChild(this.input);
+            container.appendChild(this.textarea);
+        }
+
+        /**
+         * @param {KeyboardEvent} evt
+         */
+        keydownHandler(evt) {
+            console.log('editor.onkeydown: ' + evt.code);
+            // Clicking editor should invoke default: move caret. It should not delegate to containers action.
+            evt.stopPropagation();
+
+            if (evt.code === 'F2') {
+                evt.preventDefault();
+                evt.stopPropagation();
+                // Toggle between input and edit mode
+                activeCell.mode = (activeCell.mode === 'input' ? 'edit' : input);
+            } else if (evt.code === 'ArrowLeft' && activeCell.mode === 'input') {
+                evt.preventDefault();
+                evt.stopPropagation();
+                navigateCell(evt, 0, -1);
+            } else if (evt.code === 'ArrowRight' && activeCell.mode === 'input') {
+                evt.preventDefault();
+                evt.stopPropagation();
+                navigateCell(evt, 0, 1);
+            } else if (false && evt.code === 'Enter' && evt.altKey) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                //editor.dispatchEvent(new KeyboardEvent('keydown', {code: 'Enter'}));
+                editor.setRangeText('\n', editor.selectionStart, editor.selectionEnd, 'end');
+            } else if (evt.code === 'Enter' && evt.altKey) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                if (ee.input.style.display !== 'none') {
+                    ee.showTextArea();
+                } else {
+                    ee.textarea.setRangeText('\n', ee.textarea.selectionStart, ee.textarea.selectionEnd, 'end');
+                }
+            } else if (evt.code === 'Enter') {
+                evt.preventDefault();
+                evt.stopPropagation();
+                commit();
+                navigateCell(evt, evt.shiftKey ? -1 : 1, 0);
+            } else if (evt.code === 'Tab') {
+                evt.preventDefault();
+                evt.stopPropagation();
+                commit();
+                navigateCell(evt, 0, evt.shiftKey ? -1 : 1);
+            } else if (evt.code === 'Escape') {
+                // Leave edit mode.
+                evt.preventDefault();
+                evt.stopPropagation();
+                commit();
+            }
+        }
+
+        blurHandler(evt) {
+            console.log('editor.onblur');
+            commit();
+
+            if (!container.contains(evt.relatedTarget)) {
+                container.blur();
+                activeCell.hide();
+                selection.hide();
+            }
+        }
+
+        hide() {
+            this.setValue('');
+            if (this.input.style.display !== 'none') {
+                this.input.style.display = 'none';
+            } else {
+                this.textarea.style.display = 'none';
+            }
+        }
+
+        showInput(top, left, width) {
+            const style = this.input.style;
+            style.top = top;
+            style.left = left;
+            style.width = (parseInt(width) + 20) + 'px';  // Account for the resize handle, which is about 20px
+            style.height = innerHeight;
+            style.display = 'inline-block';
+            // focus on input element, which will then receive this keyboard event.
+            // Note: focus after display!
+            // Note: It is ok to scroll on focus here.
+            this.input.focus();
+            this.input.addEventListener('blur', this.blurHandler);
+        }
+
+        showTextArea() {
+            const style = this.input.style;
+            style.display = 'none';
+            this.input.removeEventListener('blur', this.blurHandler);
+            this.textarea.style.left = style.left;
+            this.textarea.style.top = style.top;
+            this.textarea.style.display = 'inline-block';
+            this.textarea.value = this.input.value;
+            this.textarea.focus();
+            //window.setTimeout(()=>textarea.focus(), 10);
+            this.textarea.addEventListener('blur', this.blurHandler);
+        }
+
+        /**
+         * @param {string} value
+         */
+        setValue(value) {
+            if (this.input.style.display !== 'none') {
+                this.input.value = value;
+                if (value.includes('\n')) {
+                    this.showTextArea();
+                    this.textarea.value = value;
+                }
+            } else {
+                this.textarea.value = value;
+            }
+        }
+
+        getValue() {
+            if (this.input.style.display !== 'none') {
+                return this.input.value;
+            } else {
+                return this.textarea.value;
+            }
+        }
+    }
+
+
     /** @type {{span?:{HTMLSpanElement}, editor:{HTMLInputElement}, row:number, col:number, mode:string}} */
     const activeCell = {
         span: undefined,
-        editor: editor, row: 0, col: 0, mode: 'display',
+        row: 0,
+        col: 0,
+        mode: 'display',
         hide: function () {
             if (this.span) this.span.style.backgroundColor = 'white';
             headerRow.style.backgroundColor = 'khaki';//removeProperty('background-color');
@@ -470,17 +624,7 @@ function Grid(container, viewModel, eventListeners) {
 
             const spanStyle = this.span.style;
             spanStyle.display = 'none';
-            const style = this.editor.style;
-            style.top = spanStyle.top;
-            style.left = spanStyle.left;
-            style.width = (parseInt(spanStyle.width) + 20) + 'px';  // Account for the resize handle, which is about 20px
-            editor.style.height = innerHeight;
-            style.display = 'inline-block';
-
-            // focus on input element, which will then receive this keyboard event.
-            // Note: focus after display!
-            // Note: It is ok to scroll on focus here.
-            this.editor.focus();
+            ee.showInput(spanStyle.top, spanStyle.left, spanStyle.width);
         },
         enterInputMode: function () {
             this.mode = 'input';
@@ -495,7 +639,7 @@ function Grid(container, viewModel, eventListeners) {
             } else {
                 value = schemas[this.col].converter.toEditable(value);
             }
-            editor.value = value;
+            ee.setValue(value);
         }
     };
 
@@ -905,9 +1049,8 @@ function Grid(container, viewModel, eventListeners) {
         if (activeCell.mode !== 'display') {
             const rowIndex = activeCell.row;
             const colIndex = activeCell.col;
-            let value = editor.value.trim();
-            editor.value = '';
-            editor.style.display = 'none';
+            let value = ee.getValue().trim();
+            ee.hide();
             // activeCell.span.textContent = value;
             if (value === '') {
                 value = undefined;
@@ -924,65 +1067,7 @@ function Grid(container, viewModel, eventListeners) {
         container.focus({preventScroll: true});
     }
 
-    editor.addEventListener('blur', function (evt) {
-        console.log('editor.onblur');
-        commit();
 
-        if (!container.contains(evt.relatedTarget)) {
-            container.blur();
-            activeCell.hide();
-            selection.hide();
-        }
-    });
-
-    /**
-     * @param {KeyboardEvent} evt
-     */
-    editor.addEventListener('keydown', function (evt) {
-        console.log('editor.onkeydown: ' + evt);
-        // Clicking editor should invoke default: move caret. It should not delegate to containers action.
-        evt.stopPropagation();
-
-        if (evt.code === 'F2') {
-            evt.preventDefault();
-            evt.stopPropagation();
-            // Toggle between input and edit mode
-            activeCell.mode = (activeCell.mode === 'input' ? 'edit' : input);
-        } else if (evt.code === 'ArrowLeft' && activeCell.mode === 'input') {
-            evt.preventDefault();
-            evt.stopPropagation();
-            navigateCell(evt, 0, -1);
-        } else if (evt.code === 'ArrowRight' && activeCell.mode === 'input') {
-            evt.preventDefault();
-            evt.stopPropagation();
-            navigateCell(evt, 0, 1);
-        } else if (evt.code === 'Enter' && evt.altKey) {
-            evt.preventDefault();
-            evt.stopPropagation();
-            //editor.dispatchEvent(new KeyboardEvent('keydown', {code: 'Enter'}));
-            editor.setRangeText('\n', editor.selectionStart, editor.selectionEnd, 'end');
-        } else if (evt.code === 'Enter') {
-            evt.preventDefault();
-            evt.stopPropagation();
-            commit();
-            navigateCell(evt, evt.shiftKey ? -1 : 1, 0);
-        } else if (evt.code === 'Tab') {
-            evt.preventDefault();
-            evt.stopPropagation();
-            commit();
-            navigateCell(evt, 0, evt.shiftKey ? -1 : 1);
-        } else if (evt.code === 'Escape') {
-            // Leave edit mode.
-            evt.preventDefault();
-            evt.stopPropagation();
-            commit();
-        }
-    });
-
-    editor.addEventListener('mousedown', function (evt) {
-        // Clicking editor should invoke default: move the caret. It should not delegate to containers action.
-        evt.stopPropagation();
-    });
 
 
     let viewPortRowCount = Math.floor(viewPortHeight / rowHeight);
@@ -1180,7 +1265,7 @@ function Grid(container, viewModel, eventListeners) {
         }
     }
 
-    cellParent.appendChild(editor);
+    const ee = new Editor(cellParent);
 
     /** @type {Selection} */
     let selection = new Selection(repaintRange, eventListeners);
@@ -1191,6 +1276,13 @@ function Grid(container, viewModel, eventListeners) {
     // Revoke action by setFirstRow(). TODO: Refactor.
     activeCell.hide();
     selection.hide();
+
+    const foo = document.createElement('datalist');
+    foo.innerHTML = `
+        <option value="bar"/>
+        <option value="foo"/>`;
+    foo.id = 'enum'
+    container.appendChild(foo)
 
     class Range1 extends Range {
         constructor(rowIndex, columnIndex, rowCount, columnCount) {

@@ -129,7 +129,14 @@ export function createColumnSchemas(schema) {
     const invalidError = new Error('Invalid schema: ' + schema.title);
 
     if (schema.items && Array.isArray(schema.items.items)) {
-        return {title: schema.title, columnSchemas: schema.items.items, viewCreator: createRowMatrixView}
+        return {
+            title: schema.title,
+            columnSchemas: schema.items.items,
+            viewCreator: createRowMatrixView,
+            validate: function(data) {
+                return data || []
+            }
+        }
     }
 
     if (schema.items && schema.items.type === 'object') {
@@ -137,9 +144,15 @@ export function createColumnSchemas(schema) {
 
         return {
             title: schema.title,
-            columnSchemas: entries.map(e => e[1]),
+            columnSchemas: entries.map(function(e) {
+                e[1].title = e[1].title || e[0];
+                return e[1]
+            }),
             ids: entries.map(e => e[0]),
-            viewCreator: createRowObjectsView
+            viewCreator: createRowObjectsView,
+            validate: function(data) {
+                return data || []
+            }
         }
     }
 
@@ -147,7 +160,10 @@ export function createColumnSchemas(schema) {
         return {
             title: schema.title,
             columnSchemas: schema.items.map(item => item.items),
-            viewCreator: createColumnMatrixView
+            viewCreator: createColumnMatrixView,
+            validate: function(data) {
+                return data || []
+            }
         }
     }
 
@@ -171,6 +187,9 @@ export function createColumnSchemas(schema) {
                     columns.push(column);
                 }
                 return createColumnMatrixView(schema, columns);
+            },
+            validate: function(data) {
+                return data || {}
             }
         };
 
@@ -206,7 +225,9 @@ export function createRowMatrixView(schema, rows) {
     updateSchema(schemas);
 
     if (!rows) {
-        return new Error('createView() received undefined data with schema title ' + schema.title);
+        const e = new Error('createView() received undefined data with schema title ' + schema.title);
+        console.error(e);
+        return e
     }
 
     // Normalize missing rowCount (ragged rowCount are allowed).
@@ -307,7 +328,9 @@ export function createRowObjectsView(schema, rows) {
     updateSchema(schemas);
 
     if (!rows) {
-        return new Error('createView() received undefined data with schema title ' + schema.title);
+        const e = new Error('createView() received undefined data with schema title ' + schema.title);
+        console.error(e);
+        return e
     }
 
     // Normalize missing rowCount (ragged rowCount are allowed).
@@ -397,7 +420,9 @@ export function createColumnMatrixView(schema, columns) {
     updateSchema(schemas);
 
     if (!columns) {
-        return new Error('createView() received undefined data with schema title ' + schema.title);
+        const e = new Error('createView() received undefined data with schema title ' + schema.title);
+        console.error(e);
+        return e
     }
 
     // Normalize missing columnCount (ragged columnCount are allowed).

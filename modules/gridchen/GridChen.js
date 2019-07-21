@@ -526,7 +526,9 @@ function Grid(container, viewModel, eventListeners) {
             //style.height = innerHeight;
             if (schemas[activeCell.col].enum) {
                 this.input.setAttribute('list', 'enum' + activeCell.col);
-            }
+            } else {
+				this.input.removeAttribute('list');
+			}
 
             style.display = 'inline-block';
             // focus on input element, which will then receive this keyboard event.

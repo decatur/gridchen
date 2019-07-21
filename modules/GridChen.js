@@ -346,6 +346,24 @@ function Grid(container, viewModel, eventListeners) {
     }
 
     refreshHeaders();
+    makeDataLists();
+
+    /**
+     * For each enum restricted column with index columnIndex,
+     * generate a datalist element with id enum<columnIndex>.
+     */
+    function makeDataLists() {
+        // Note we have to loop over all columns to retain the column index.
+        for (const [columnIndex, schema] of schemas.entries()) {
+            if (!schema.enum) continue;
+            const datalist = document.createElement('datalist');
+            datalist.id = 'enum' + columnIndex;
+            for (const item of schema.enum) {
+                datalist.appendChild(document.createElement('option')).value = item;
+            }
+            container.appendChild(datalist)
+        }
+    }
 
     function refreshHeaders() {
         headerRow.textContent = '';
@@ -385,44 +403,6 @@ function Grid(container, viewModel, eventListeners) {
     body.style.height = (totalHeight - 20) + 'px';
     container.appendChild(body);
 
-    /*let rowMenu = document.createElement('div');
-    rowMenu.style.position = 'absolute';
-    rowMenu.style.display = 'none';
-
-    let insertRowButton = document.createElement('button');
-    insertRowButton.type = 'button';
-    insertRowButton.style.position = 'absolute';
-    insertRowButton.style.top = '-20px';
-    insertRowButton.style.padding = '0';
-    insertRowButton.title = "Insert Row Above";
-    insertRowButton.textContent = '+';
-    insertRowButton.onclick = function () {
-        refresh(viewModel.insertRowBefore(activeCell.row - 1));
-        //inputList[previousFocus.row][0].select()
-    };
-    rowMenu.appendChild(insertRowButton);
-
-    let deleteRowButton = document.createElement('button');
-    deleteRowButton.id = 'delete';
-    deleteRowButton.type = 'button';
-    deleteRowButton.style.position = 'absolute';
-    deleteRowButton.style.padding = '0';
-    deleteRowButton.type = 'button';
-    deleteRowButton.title = "Delete Selected Rows";
-    deleteRowButton.textContent = '-';
-    deleteRowButton.onclick = function () {
-        let rowCount = 0;
-        range(selection.row.sup - selection.row.min).forEach(function() {
-            rowCount = viewModel.deleteRow(selection.row.min);
-        });
-        refresh(rowCount);
-    };
-    rowMenu.appendChild(deleteRowButton);
-    body.appendChild(rowMenu);
-*/
-
-
-    // TODO: Why is sometdeleteRowButtonimes clientHeight not set?
     let viewPortHeight = totalHeight - 20;
     let cellParent = /** @type {HTMLElement} */ document.createElement('div');
     cellParent.className = "GRID";
@@ -442,7 +422,7 @@ function Grid(container, viewModel, eventListeners) {
             this.input.style.display = 'none';
             this.input.style.height = innerHeight;
             this.input.style.padding = cellPadding + 'px';
-            this.input.setAttribute('list', 'enum');
+
             /** @type{HTMLTextAreaElement} */
             this.textarea = document.createElement('textarea');
             this.textarea.id = 'textarea';
@@ -543,7 +523,11 @@ function Grid(container, viewModel, eventListeners) {
             style.top = top;
             style.left = left;
             style.width = (parseInt(width) + 20) + 'px';  // Account for the resize handle, which is about 20px
-            style.height = innerHeight;
+            //style.height = innerHeight;
+            if (schemas[activeCell.col].enum) {
+                this.input.setAttribute('list', 'enum' + activeCell.col);
+            }
+
             style.display = 'inline-block';
             // focus on input element, which will then receive this keyboard event.
             // Note: focus after display!
@@ -795,47 +779,6 @@ function Grid(container, viewModel, eventListeners) {
     function insertRow() {
         refresh(viewModel.insertRowBefore(activeCell.row - 1));
     }
-
-    /*
-    function showContextMenu() {
-        let dialog = document.getElementById('gridchenDialog');
-        if (!dialog) {
-            dialog = document.createElement('dialog');
-            dialog.id = 'gridchenDialog';
-            dialog.style.width = '20em';
-            dialog.style.height = '60px';
-            dialog.style.backgroundColor = 'transparent';
-            const form = document.createElement('div');
-            const actions = [
-                ['Cut', () => copySelection(true)],
-                ['Copy', () => copySelection(false)],
-                ['Paste', () => alert('Not Implemented')],
-                ['Insert Row', insertRow],
-                ['Delete Rows', deleteRows],
-                ['Delete Contents', deleteSelection]
-            ];
-            for (const action of actions) {
-                const button = form.appendChild(document.createElement('button'));
-                button.textContent = action[0];
-                button.onclick = action[1];
-            }
-
-            dialog.appendChild(form);
-            const graphElement = document.createElement('div');
-            dialog.appendChild(graphElement);
-            document.body.appendChild(dialog);
-            styleSheet.textContent = `
-                #gridchenDialog div { position:absolute;display: inline-block;background-color: bisque; }
-                #gridchenDialog button { display: block; }
-            `;
-            document.body.appendChild(styleSheet);
-            // Note that this event is caught even if the dialog is not directly clicked.
-            dialog.onclick = () => dialog.close();
-        }
-        dialog.style.left = (activeCell.col * 100) + 'px';
-        dialog.style.top = (activeCell.row * rowHeight) + 'px';
-        dialog.showModal();
-    }*/
 
     function copySelection(doCut, withHeaders) {
         window.navigator.clipboard.writeText(rangeToTSV(selection.areas[0], '\t', withHeaders))
@@ -1276,13 +1219,6 @@ function Grid(container, viewModel, eventListeners) {
     // Revoke action by setFirstRow(). TODO: Refactor.
     activeCell.hide();
     selection.hide();
-
-    const foo = document.createElement('datalist');
-    foo.innerHTML = `
-        <option value="bar"/>
-        <option value="foo"/>`;
-    foo.id = 'enum'
-    container.appendChild(foo)
 
     class Range1 extends Range {
         constructor(rowIndex, columnIndex, rowCount, columnCount) {

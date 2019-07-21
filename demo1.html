@@ -103,6 +103,7 @@
                     {title: 'Digits1', width: 50, type: 'number', fractionDigits: 1},
                     {title: 'Digits2', width: 100, type: 'number', fractionDigits: 2},
                     {title: 'String', width: 100, type: 'string'},
+                    {title: 'Enum', width: 50, type: 'string', enum: ['foo', 'bar']},
                     {title: 'Boolean', width: 100, type: 'boolean'},
                     {title: 'Uri', width: 200, type: 'string', format: 'uri'}
                 ]
@@ -120,6 +121,7 @@
             Digits1: (row) => row,
             Digits2: (row) => row,
             String: (row) => `row ${row}`,
+            Enum: (row) => ['foo', 'bar'][row],
             Boolean: (row) => row % 2 === 0,
             Uri: (row) => `http://foo.bar/${row}`
         };

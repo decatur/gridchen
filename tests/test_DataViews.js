@@ -1,5 +1,5 @@
 import {test, assert} from './utils.js'
-import {createView, createRowMatrixView, createColumnMatrixView} from '../modules/DataViews.js'
+import {createView, createRowMatrixView, createColumnMatrixView} from '../modules/gridchen/DataViews.js'
 
 const schema = {
     title: 'test',

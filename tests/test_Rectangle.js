@@ -1,5 +1,5 @@
 import {test, assert} from './utils.js'
-import {Rectangle} from '../modules/GridChen.js'
+import {Rectangle} from '../modules/gridchen/GridChen.js'
 
 test('Rectangle', () => {
     assert.equal(

@@ -1,4 +1,4 @@
-import {createView} from "../modules/DataViews.js"
+import {createView} from "../modules/gridchen/DataViews.js"
 
 export function createInteractiveDemoGrid(container, schema, data) {
     const schemaElement = container.querySelector('.schema');

@@ -1,5 +1,5 @@
 import {test, assert} from './utils.js'
-import {DateTimeStringConverter, DateStringConverter, DateTimeLocalStringConverter, NumberStringConverter} from "../modules/converter.js";
+import {DateTimeStringConverter, DateStringConverter, DateTimeLocalStringConverter, NumberStringConverter} from "../modules/gridchen/converter.js";
 
 test('DateTimeStringConverter', () => {
     let converter = new DateTimeStringConverter();

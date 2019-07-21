@@ -618,7 +618,7 @@ function Grid(container, viewModel, eventListeners) {
             this.mode = 'edit';
             this.enterMode();
             let value = viewModel.getCell(this.row, this.col);
-            if (value === undefined) {
+            if (value === undefined || value === null) {
                 value = '';
             } else {
                 value = schemas[this.col].converter.toEditable(value);

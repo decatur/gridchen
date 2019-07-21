@@ -59,7 +59,7 @@
 
 
 <script type="module">
-    import "./modules/GridChen.js"
+    import "./modules/gridchen/GridChen.js"
     import {createInteractiveDemoGrid} from "./examples/demo.js"
 
     const input = document.querySelector('input');
@@ -115,12 +115,11 @@
         const simulate = {
             DateTime: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15),
             Date: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15),
-            DateTimeLocal: (row) => new Date(startDate.getTime() + row * 1000 * 60 * 15),
-            Height: (row) => row,
-            Integer: (row) => row,
+            DateTimeLocal: (row) => row%4?new Date(startDate.getTime() + row * 1000 * 60 * 15):undefined,
+            Integer: (row) => row % 4?row:null,
             Digits1: (row) => row,
             Digits2: (row) => row,
-            String: (row) => `row ${row}`,
+            String: (row) => row % 2?`row ${row}`:undefined,
             Enum: (row) => ['foo', 'bar'][row],
             Boolean: (row) => row % 2 === 0,
             Uri: (row) => `http://foo.bar/${row}`

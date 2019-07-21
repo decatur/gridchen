@@ -46,7 +46,6 @@ See https://decatur.github.io/GridChen
 
 # TODOs
 
-* Support enum via select or datalist
 * Show 1 empty row at end (Slider issue)
 * Avoid refreshing complete viewport on cell change
 * Use document.activeElement instead of activeCell.span?

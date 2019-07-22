@@ -122,7 +122,7 @@
             String: (row) => row % 2?`row ${row}`:undefined,
             Enum: (row) => ['foo', 'bar'][row],
             Boolean: (row) => row % 2 === 0,
-            Uri: (row) => `http://foo.bar/${row}`
+            Uri: (row) => `[Link ${row}](http://foo.bar/${row})`
         };
 
         function simulateRows() {

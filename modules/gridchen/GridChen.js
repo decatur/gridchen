@@ -1195,9 +1195,17 @@ function Grid(container, viewModel, eventListeners) {
                     value = schemas[colIndex].converter.toString(value);
                 }
 
-                elem.textContent = value;
                 if (elem.tagName === 'A') {
-                    elem.href = value;
+                    // Check for markdown link, i.e. [sdsd](http://sdsd)
+                    const m = value.match(/^\[(.+)\]\((.+)\)$/);
+                    if (m) {
+                        elem.textContent = m[1];
+                        elem.href = m[2];
+                    } else {
+                        elem.href = elem.textContent = value;
+                    }
+                } else {
+                    elem.textContent = value;
                 }
             }
         }

@@ -38,11 +38,12 @@ See https://decatur.github.io/GridChen
 * Paste must select pasted region (pasted region differs from selection if selection cannot be tiled by source); easy
 * Using slider must not blur grid; easy
 * Type violation of cell value must align left; easy
-* Empty URI cell must not contain a link; medium
+* Empty URI cell must not contain a link; medium -> simply do not set href?
 * Slow click on URI must select the cell, not follow the link; hard
 * Ctrl+A must first select the smallest isolated rectangle containing the cell, the second Ctrl+A must then select the complete grid; hard
 * Modal context must not hide selection.
 * Float Titles must be locale aware.
+* Grid must only scroll if selected, not when simply hovering over it.
 
 # TODOs
 

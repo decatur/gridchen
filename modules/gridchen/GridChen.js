@@ -720,6 +720,8 @@ function Grid(container, viewModel, eventListeners) {
     cellParent.onmousewheel = function (_evt) {
         console.log('onmousewheel');
 
+        if (container.parentNode.activeElement !== container) return;
+
         let evt = /** @type {WheelEvent} */ _evt;
         // Do not disable zoom. Both Excel and Browsers zoom on ctrl-wheel.
         if (evt.ctrlKey) return;

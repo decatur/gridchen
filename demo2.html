@@ -27,7 +27,10 @@
 </head>
 <body>
 
-<h1>Four Default Schema Types</h1>
+<h1>Default Schema Types</h1>
+
+There are five <em>natural</em> types to express a matrix structure.
+All of them are supported by default.
 
 <div>
     These demos are interactive both ways:
@@ -55,13 +58,18 @@
 
 <script type="module">
     import "./modules/gridchen/GridChen.js"
+    import {DateTimeStringConverter} from './modules/gridchen/converter.js'
     import {createInteractiveDemoGrid} from "./examples/demo.js"
 
     const template = document.getElementById('template');
     template.parentElement.removeChild(template);
 
-
-    const dates = [new Date("2016-12-31T23:00Z"), new Date("2016-12-31T23:15Z"), new Date("2016-12-31T23:30Z")];
+    const c = new DateTimeStringConverter();
+    const dates = [
+        c.fromString("2016-12-31T23:00Z"),
+        c.fromString("2016-12-31T23:15Z"),
+        c.fromString("2016-12-31T23:30Z")
+    ];
 
     createInteractiveDemoGrid(document.body.appendChild(template.cloneNode(true)),
         {
@@ -105,7 +113,7 @@
 
     createInteractiveDemoGrid(document.body.appendChild(template.cloneNode(true)),
         {
-            title: 'Array of Column Arrays',
+            title: 'Array of Column Array',
             type: 'object',
             items: [ // tuple schema
                 {type: 'object', items: {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'}},
@@ -138,6 +146,15 @@
             weight: [0, 1, 2],
             age: [0, 2, 4]
         }
+    );
+
+    createInteractiveDemoGrid(document.body.appendChild(template.cloneNode(true)),
+        {
+            title: 'Column Array',
+            type: 'object',
+            items: {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'}
+        },
+        dates
     );
 
 </script>

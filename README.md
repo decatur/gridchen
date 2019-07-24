@@ -44,6 +44,7 @@ See https://decatur.github.io/GridChen
 * Modal context must not hide selection.
 * Float Titles must be locale aware.
 * Grid must only scroll if selected, not when simply hovering over it.
+* Single column matrix must be supported.
 
 # TODOs
 

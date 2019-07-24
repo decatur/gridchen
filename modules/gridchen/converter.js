@@ -159,7 +159,7 @@ export class DateTimeStringConverter {
     /**
      * Parses any valid date-time format, but iso format is preferred.
      * @param {string} s
-     * @returns {Date}
+     * @returns {Date | string}
      */
     fromString(s) {
         s = s.trim();
@@ -170,7 +170,10 @@ export class DateTimeStringConverter {
         } else {
             d = new Date(s);
         }
-        return isNaN(d.getTime()) ? s : d;
+
+        if (isNaN(d.getTime())) return s;
+        d.toJSON = () => this.toString(d);
+        return d;
     }
 }
 

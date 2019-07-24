@@ -212,6 +212,17 @@ export function createColumnSchemas(schema) {
         return colSchemas
     }
 
+    if (schema.items && schema.items.constructor === Object) {
+        return {
+            title: schema.title,
+            columnSchemas: [schema.items],
+            viewCreator: createColumnMatrixView,
+            validate: function(data) {
+                return [data] || []
+            }
+        }
+    }
+
     return invalidError
 }
 

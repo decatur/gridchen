@@ -231,7 +231,7 @@ class Selection extends Range {
     /**
      */
     show() {
-        for (const r of this.areas) {
+        for (const /** @type{Range} */ r of this.areas) {
             console.log('show: ' + r.toString());
             this.repainter('LightBlue', r);
         }
@@ -874,10 +874,11 @@ function Grid(container, viewModel, eventListeners) {
             evt.preventDefault();
             evt.stopPropagation();
             deleteSelection();
-        } else if (evt.code === 'KeyQ' && evt.ctrlKey) {
+        } else if (evt.code === 'F1' && evt.altKey) {
+            // Alt + F1 creates a modal chart of the data.
             evt.preventDefault();
             evt.stopPropagation();
-            viewModel.plot();
+            plot();
         } else if (evt.key === '+' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation();
@@ -912,6 +913,45 @@ function Grid(container, viewModel, eventListeners) {
             }
         }
     };
+
+    function plot() {
+        let dialog = document.getElementById('gridchenDialog');
+        if (!dialog) {
+            dialog = document.createElement('dialog');
+            dialog.id = 'gridchenDialog';
+            dialog.style.width = '80%';
+            //dialog.innerHTML = '<form method="dialog"><button type="submit">Hide</button></form>';
+            dialog.appendChild(document.createElement('div'));
+            document.body.appendChild(dialog);
+        }
+
+        dialog.showModal();
+        const graphElement = dialog.lastElementChild;
+
+        /** @type{Array<number>} */
+        const columnIndices = [];
+        for (const /** @type{Range} */ r of selection.areas) {
+            for (let count=0; count<r.columnCount; count++) {
+                columnIndices.push(r.columnIndex + count);
+            }
+        }
+
+        if (columnIndices.length < 2) {
+            graphElement.textContent = `🤮 Please select 2 columns or more, you only selected column ${columnIndices[0]}`;
+            return
+        }
+
+        const columnSchemas = [];
+        const columns = [];
+        for (const columnIndex of columnIndices) {
+            columnSchemas.push(columnIndex);
+            columns.push(viewModel.getColumn(columnIndex));
+        }
+
+        import(`../../examples/plotly.js`)
+            .then(module => module.renderPlot(graphElement, schema.title, columnSchemas, columns))
+            .catch(err => alert(err));
+    }
 
     function navigateCell(evt, rowOffset, colOffset) {
         console.log('navigateCell');

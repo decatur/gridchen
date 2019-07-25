@@ -76,8 +76,8 @@ Arrows          	| Move active cell up/down/left/right (not in edit mode)
 Tab             	| Move active cell right (non-rolling)
 Enter           	| Move active cell down (non-rolling)
 Shift+Enter     	| Move active cell up (non-rolling)
-Shift+ Tab      	| Move active cell left (non-rolling)
-SHIFT+ Arrows   	| Select a range of cells
+Shift+Tab      	    | Move active cell left (non-rolling)
+SHIFT+Arrows   	    | Select a range of cells
 Ctrl+Space      	| Select entire column
 Shift+Space     	| Select entire row
 Shift+MouseClick	| Expand selection
@@ -95,6 +95,7 @@ Ctrl+C          	| Copy selected cells to clipboard
 Ctrl+V          	| Paste clipboard into selected cells
 Ctrl+X          	| Cut
 F2              	| Enter edit mode; In input or edit mode, toggle between input and edit.
+Alt+F1              | Open a modal chart of the selection.
 ~~Shift+F10~~       | Display context menu (GridChen politely does not alter the right mouse click or oncontextmenu event)
 Backspace       	| In input or edit mode, deletes one character to the left
 Delete          	| In input or edit mode, deletes one character to the right

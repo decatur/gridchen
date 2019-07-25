@@ -226,6 +226,33 @@ export function createColumnSchemas(schema) {
     return invalidError
 }
 
+class MatrixView {
+
+    /**
+     * @returns {number}
+     */
+    rowCount() {
+        throw new Error('Abstract method');
+    }
+
+    /**
+     * @param {number} rowIndex
+     * @param {number} colIndex
+     * @returns {*}
+     */
+    getCell(rowIndex, colIndex) {
+        throw new Error('Abstract method');
+    }
+
+    /**
+     * @param {number} columnIndex
+     * @returns {*[]}
+     */
+    getColumn(columnIndex) {
+        return range(this.rowCount()).map(rowIndex =>this.getCell(rowIndex, columnIndex));
+    }
+}
+
 /**
  * @param {GridChen.IGridSchema} schema
  * @param {Array<object>} rows
@@ -249,8 +276,9 @@ export function createRowMatrixView(schema, rows) {
     /**
      * @implements {GridChen.DataView}
      */
-    class RowMatrixView {
+    class RowMatrixView extends MatrixView {
         constructor() {
+            super();
             this.schema = schema;
         }
 
@@ -319,10 +347,6 @@ export function createRowMatrixView(schema, rows) {
             rows.sort((row1, row2) => compare(row1[colIndex], row2[colIndex]) * sortDirection);
             return rows.length;
         }
-
-        plot() {
-            renderPlot(schema, rows);
-        }
     }
 
     return new RowMatrixView();
@@ -352,8 +376,9 @@ export function createRowObjectsView(schema, rows) {
     /**
      * @implements {GridChen.DataView}
      */
-    class RowObjectsView {
+    class RowObjectsView extends MatrixView {
         constructor() {
+            super();
             this.schema = schema;
         }
 
@@ -413,10 +438,6 @@ export function createRowObjectsView(schema, rows) {
             rows.sort((row1, row2) => compare(row1[ids[colIndex]], row2[ids[colIndex]]) * sortDirection);
             return rows.length;
         }
-
-        plot() {
-            renderPlot(schema, rows);
-        }
     }
 
     return new RowObjectsView();
@@ -448,8 +469,9 @@ export function createColumnMatrixView(schema, columns) {
     /**
      * @extends {GridChen.DataView}
      */
-    class ColumnMatrixView {
+    class ColumnMatrixView extends MatrixView {
         constructor() {
+            super();
             this.schema = schema;
         }
 
@@ -521,10 +543,6 @@ export function createColumnMatrixView(schema, columns) {
             });
 
             return getRowCount();
-        }
-
-        plot() {
-            renderPlot(schema, columns);
         }
     }
 

@@ -1,8 +1,10 @@
 /**
- * Alt+F1: creates an modal chart of the data.
+ * Plotly interface to plotting.
+ * Dependencies:
+ *  You have to bring in Plotly, for example by adding
+ *      <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+ *  to the head element.
  */
-
-
 
 /**
  * @param {HTMLElement} container
@@ -32,7 +34,7 @@ export function renderPlot(container, title, schemas, series) {
             name: schemas[i].title,
             x: series[0],
             y: series[i],
-            line: {shape: 'hv'},
+            line: {shape: 'linear'}, // "linear" | "spline" | "hv" | "vh" | "hvh" | "vhv"
             marker: {size: 3}
         })
     }

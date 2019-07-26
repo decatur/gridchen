@@ -111,8 +111,10 @@ function sortedColumns(properties) {
  */
 export function createView(schema, matrix) {
     const columnSchemas = createColumnSchemas(schema);
-    if (schema instanceof Error) {
-        return new Error('createView() received undefined schema')
+    if (columnSchemas instanceof Error) {
+        const err =  new Error('createView() received undefined schema');
+        console.error(err);
+        return err
     }
     return columnSchemas.viewCreator(columnSchemas, matrix);
 }
@@ -200,7 +202,7 @@ export function createColumnSchemas(schema) {
                 // TODO: Be much more strict!
                 return invalidError
             }
-            if (!colSchema.title) colSchema.title = property.title;
+            if (!colSchema.title) colSchema.title = property.title || entry[0];
             if (!colSchema.width) colSchema.width = property.width;
 
             colSchemas.columnSchemas.push(colSchema);

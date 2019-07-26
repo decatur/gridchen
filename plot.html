@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Plot Demo</title>
+    <script src="./examples/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2em;
+            background-color: aliceblue;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Plot Demo</h1>
+
+<grid-chen style="display:block; height: 400px"></grid-chen>
+
+<script type="module">
+    import "./modules/gridchen/GridChen.js"
+    import {createView} from "./modules/gridchen/DataViews.js"
+    import {renderPlot} from "./examples/plotly.js"
+
+    const schema = {
+        title: 'demo',
+        type: 'object',
+        properties: {
+            time: {
+                title: 'Time t',
+                type: 'object',
+                items: {
+                    type: 'string', format: 'datetime', width: '200'
+                }
+            },
+            sin: {
+                title: 'sin(t/7)',
+                type: 'object',
+                items: {
+                    type: 'number', width: '70'
+                }
+            },
+            cos: {
+                title: 'cos(t/5)',
+                type: 'object',
+                items: {
+                    type: 'number', width: '70'
+                }
+            }
+        }
+    };
+
+    const data = {
+        time: [], sin: [], cos: []
+    };
+
+    const now = new Date().getTime();
+    const millisInHour = 3600 * 1000;
+    for (let i = 0; i < 1000; i++) {
+        data.time.push(new Date(now + i * 3600 * 1000));
+        data.sin.push(Math.sin(i / 7));
+        data.cos.push(Math.cos(i / 5));
+    }
+
+    document.querySelector('grid-chen')
+        .resetFromView(createView(schema, data))
+        .setEventListener('plot1',
+            (container, title, schemas, series) => renderPlot(container, title, schemas, series))
+
+
+</script>
+</body>
+</html>

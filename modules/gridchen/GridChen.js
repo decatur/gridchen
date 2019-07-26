@@ -56,7 +56,8 @@ export class GridChen extends HTMLElement {
             'dataChanged': () => null,
             'activeCellChanged': () => null,
             'selectionChanged': () => null,
-            'paste': () => null
+            'paste': () => null,
+            'plot': undefined
         };
     }
 
@@ -928,6 +929,11 @@ function Grid(container, viewModel, eventListeners) {
         dialog.showModal();
         const graphElement = dialog.lastElementChild;
 
+        if (!eventListeners['plot']) {
+            graphElement.textContent = 'You must set an event listener of type plot.';
+            return
+        }
+
         /** @type{Array<number>} */
         const columnIndices = [];
         for (const /** @type{Range} */ r of selection.areas) {
@@ -948,9 +954,7 @@ function Grid(container, viewModel, eventListeners) {
             columns.push(viewModel.getColumn(columnIndex));
         }
 
-        import(`../../examples/plotly.js`)
-            .then(module => module.renderPlot(graphElement, schema.title, columnSchemas, columns))
-            .catch(err => alert(err));
+        eventListeners['plot'](graphElement, schema.title, columnSchemas, columns);
     }
 
     function navigateCell(evt, rowOffset, colOffset) {

@@ -4,8 +4,11 @@
  */
 
 import {
-    DateStringConverter,
-    DateTimeLocalStringConverter,
+    FullDateConverter,
+    FullDateStringConverter,
+    DatePartialTimeConverter,
+    DatePartialTimeStringConverter,
+    DateTimeConverter,
     DateTimeStringConverter,
     NumberStringConverter,
     BooleanStringConverter,
@@ -71,12 +74,18 @@ function updateSchema(schemas) {
                 fractionDigits = 0;
             }
             schema.converter = new NumberStringConverter(fractionDigits);
-        } else if (schema.format === 'datetime') {
+        } else if (schema.type === 'string' && schema.format === 'full-date') {
+            schema.converter = new FullDateStringConverter();
+        } else if (schema.type === 'FullDate') {
+            schema.converter = new FullDateConverter();
+        } else if (schema.type === 'string' && schema.format === 'date-partial-time') {
+            schema.converter = new DatePartialTimeStringConverter();
+        } else if (schema.type === 'DatePartialTime') {
+            schema.converter = new DatePartialTimeConverter(schema.frequency || 'T1M');
+        } else if (schema.type === 'string' && schema.format === 'date-time') {
             schema.converter = new DateTimeStringConverter(schema.frequency || 'T1M');
-        } else if (schema.format === 'datetimelocal') {
-            schema.converter = new DateTimeLocalStringConverter(schema.frequency || 'T1M');
-        } else if (schema.format === 'date') {
-            schema.converter = new DateStringConverter();
+        } else if (schema.type === 'Date') {
+            schema.converter = new DateTimeConverter(schema.frequency || 'T1M');
         } else if (schema.type === 'boolean') {
             schema.converter = new BooleanStringConverter();
         } else {

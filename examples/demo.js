@@ -64,7 +64,7 @@ REPR.stringify = function(v, depth) {
         out.push(']');
     } else if (typeof v === 'object') {
         out.push('{');
-        for (const [key, value] of v.entries()) {
+        for (const [key, value] of Object.entries(v)) {
             out.push(key);
             out.push(': ');
             out.push(REPR.stringify(value, depth+1));

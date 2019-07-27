@@ -125,7 +125,7 @@ export function createView(schema, matrix) {
         console.error(err);
         return err
     }
-    return columnSchemas.viewCreator(columnSchemas, matrix);
+    return columnSchemas.viewCreator(columnSchemas, columnSchemas.validate(matrix));
 }
 
 /**

@@ -65,11 +65,7 @@ All of them are supported by default.
     template.parentElement.removeChild(template);
 
     const c = new DateTimeStringConverter();
-    const dates = [
-        c.fromString("2016-12-31T23:00Z"),
-        c.fromString("2016-12-31T23:15Z"),
-        c.fromString("2016-12-31T23:30Z")
-    ];
+    const dates = ["2019-01-01", "2019-01-01", "2019-01-01"];
 
     createInteractiveDemoGrid(document.body.appendChild(template.cloneNode(true)),
         {
@@ -78,7 +74,7 @@ All of them are supported by default.
             items: {
                 type: 'object',
                 items: [  // tuple schema
-                    {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'},
+                    {title: 'TimeStamp', width: 200, type: 'string', format: 'full-date'},
                     {title: 'Age', width: 100, type: 'number'},
                     {title: 'Weight', width: 100, type: 'number'}
                 ]
@@ -98,7 +94,7 @@ All of them are supported by default.
             items: {
                 type: 'object',
                 properties: {
-                    timestamp: {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'},
+                    timestamp: {title: 'TimeStamp', width: 200, type: 'string', format: 'full-date'},
                     age: {title: 'Age', width: 100, type: 'number'},
                     weight: {title: 'Weight', width: 100, type: 'number'}
                 }
@@ -116,7 +112,7 @@ All of them are supported by default.
             title: 'Array of Column Array',
             type: 'object',
             items: [ // tuple schema
-                {type: 'object', items: {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'}},
+                {type: 'object', items: {title: 'TimeStamp', width: 200, type: 'string', format: 'full-date'}},
                 {type: 'object', items: {title: 'Age', width: 100, type: 'number'}},
                 {type: 'object', items: {title: 'Weight', width: 100, type: 'number'}}
             ]
@@ -135,7 +131,7 @@ All of them are supported by default.
             properties: {
                 timestamp: {
                     type: 'object',
-                    items: {title: 'TimeStamp', type: 'string', format: 'datetime', width: 200}
+                    items: {title: 'TimeStamp', type: 'string', format: 'full-date', width: 200}
                 },
                 weight: {type: 'object', items: {title: 'Age', width: 100, type: 'number'}},
                 age: {type: 'object', items: {title: 'Weight', width: 100, type: 'number'}}
@@ -152,7 +148,7 @@ All of them are supported by default.
         {
             title: 'Single Column Array',
             type: 'object',
-            items: {title: 'TimeStamp', width: 200, type: 'string', format: 'datetime'}
+            items: {title: 'TimeStamp', width: 200, type: 'string', format: 'full-date'}
         },
         dates
     );

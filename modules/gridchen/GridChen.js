@@ -88,7 +88,13 @@ export class GridChen extends HTMLElement {
         if (!filteredKeys) {
             throw new Error('Invalid listener type: ' + type);
         }
-        this.eventListeners[filteredKeys[0]] = listener;
+        this.eventListeners[filteredKeys[0]] = function(_) {
+            try {
+                listener(...arguments);
+            } catch(err) {
+                console.error(err);
+            }
+        };
         return this
     }
 
@@ -220,7 +226,7 @@ class Range {
 
 class Selection extends Range {
     constructor(repainter, eventListeners) {
-        super({min: 0, sup: 1}, {min: 0, sup: 1});
+        super(0, 0, 1, 1);
         this.initial = pos(0, 0);
         this.head = pos(0, 0); // Cell opposite the initial.
         this.repainter = repainter;
@@ -273,7 +279,7 @@ class Selection extends Range {
         r.rowCount = 1 + Math.max(this.initial.row, rowIndex) - r.rowIndex;
         r.columnCount = 1 + Math.max(this.initial.col, columnIndex) - r.columnIndex;
         this.areas.push(r);
-
+        this.convexHull();
         this.show();
         this.eventListeners['selectionChanged'](this);
     }
@@ -286,7 +292,18 @@ class Selection extends Range {
         console.log('Selection.add');
         this.hide(); // TODO: Why?
         this.areas.push(new Range(rowIndex, columnIndex, 1, 1));
+        this.convexHull();
         this.eventListeners['selectionChanged'](this);
+    }
+
+    /**
+     * Synchronizes the convex hull of all areas.
+     */
+    convexHull() {
+        this.rowIndex = Math.min(...this.areas.map(r=>r.rowIndex));
+        this.rowCount = Math.max(...this.areas.map(r=>r.rowIndex+r.rowCount)) - this.rowIndex;
+        this.columnIndex = Math.min(...this.areas.map(r=>r.columnIndex));
+        this.columnCount = Math.max(...this.areas.map(r=>r.columnIndex+r.columnCount)) - this.columnIndex;
     }
 }
 

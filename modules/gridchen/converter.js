@@ -31,11 +31,19 @@ export class DatePartialTime extends Date {
     }
 }
 
+/*
+class DefaultConverter {
+    fromString(s) {
+        return s.trim();
+    }
+}*/
+
 /**
  * @interface {GridChen.StringConverter}
  */
-export class StringStringConverter {
-    constructor() {}
+export class StringConverter {
+    constructor() {
+    }
 
     /**
      * @param {string} s
@@ -66,7 +74,8 @@ export class StringStringConverter {
  * @interface {GridChen.StringConverter}
  */
 export class BooleanStringConverter {
-    constructor() {}
+    constructor() {
+    }
 
     /**
      * @param {boolean} b
@@ -102,7 +111,7 @@ export class BooleanStringConverter {
 /**
  * @interface {GridChen.StringConverter}
  */
-export class NumberStringConverter {
+export class NumberConverter {
     /**
      * @param {number} fractionDigits
      * @param {string?} locale
@@ -123,7 +132,7 @@ export class NumberStringConverter {
     toString(n) {
         if (n === undefined) return '';
         if (n.constructor === String) return String(n);
-        return this.nf.format(this.isPercent?n*100:n)
+        return this.nf.format(this.isPercent ? n * 100 : n)
     }
 
     toEditable(n) {
@@ -139,7 +148,7 @@ export class NumberStringConverter {
         let parts = s.split(this.decimalSep);
         parts[0] = parts[0].split(this.thousandSep).join('');
         const n = Number(parts.join('.'));
-        return isNaN(n) ? s : (this.isPercent?n/100:n);
+        return isNaN(n) ? s : (this.isPercent ? n / 100 : n);
     }
 }
 
@@ -241,36 +250,49 @@ function createLocalDateParsers(locale) {
     // console.log(testDate);
 
     const m = testDate.match(/[^0-9]/);  // Heuristic: First non-numeric character is date separator.
-    console.assert(m);
-    const r = {dateSeparator: m[0]};
+    let dateSeparator;
+    let yearIndex;
+    let monthIndex;
+    let dateIndex ;
 
-    /** @type {number[]} */
-    const testParts = testDate.split(r.dateSeparator).map(v => Number(v));
-    let yearIndex = testParts.indexOf(2019);
-    let monthIndex = testParts.indexOf(1);
-    let dateIndex = testParts.indexOf(17);
-    r.localDateParser = function (s) {
-        let parts = s.split(r.dateSeparator);
-        if (parts.length ===3) {
-            return new FullDate(parts[yearIndex], parts[monthIndex] - 1, parts[dateIndex]);
-        } else {
-            parts = s.split('-');
-            return new FullDate(parts[0], parts[1] - 1, parts[2]);
-        }
-    };
-    r.localDateTimeParser = function (s) {
-        const parts = s.split(/,?\s+|T/i);
-        if (parts.length !== 2) return new Date(NaN);
-        const d = r.localDateParser(parts[0]);
-        const timeParts = parts[1].split(':').map(v => Number(v));
-        d.setUTCHours(timeParts[0]);
-        if (timeParts.length > 0) {
-            d.setUTCMinutes(timeParts[1]);
-        }
-        return d;
-    };
+    if (m) {
+        dateSeparator = m[0];
+        /** @type {number[]} */
+        const testParts = testDate.split(dateSeparator).map(v => Number(v));
+        yearIndex = testParts.indexOf(2019);
+        monthIndex = testParts.indexOf(1);
+        dateIndex = testParts.indexOf(17);
+    }
 
-    return r
+    /**
+     * @param {string} s
+     * @returns {number[]}
+     */
+    function parseFullDate(s) {
+        let parts;
+        if (dateSeparator) {
+            parts = s.split(dateSeparator);
+            if (parts.length === 3) {
+                return [parts[yearIndex], parts[monthIndex] - 1, parts[dateIndex]].map(p => Number(p));
+            }
+        }
+
+        parts = s.split('-');
+        return [parts[0], parts[1] - 1, parts[2]].map(p => Number(p));
+    }
+
+    return {
+        localDateParser(s) {
+            return new FullDate(...parseFullDate(s));
+        },
+        localDateTimeParser(s) {
+            const parts = s.split(/,?\s+|T/i);
+            if (parts.length !== 2) return new DatePartialTime(NaN, NaN, NaN, NaN, NaN);
+            const fullDate = parseFullDate(parts[0]);
+            const partialTime = parts[1].split(':').map(v => Number(v));
+            return new DatePartialTime(...fullDate, ...partialTime);
+        }
+    }
 }
 
 /**
@@ -287,9 +309,7 @@ export class DatePartialTimeStringConverter {
      */
     constructor(frequency, locale) {
         this.frequency = parseFrequency(frequency || 'T1M');
-        const parsers = createLocalDateParsers(locale);
-        this.dateSeparator = parsers.dateSeparator;
-        this.parser = parsers.localDateTimeParser;
+        this.parser = createLocalDateParsers(locale).localDateTimeParser;
     }
 
     /**
@@ -308,7 +328,7 @@ export class DatePartialTimeStringConverter {
     /**
      * Parses any valid date-time format, but iso format is preferred.
      * @param {string} s
-     * @returns {Date}
+     * @returns {string}
      */
     fromString(s) {
         return s.trim()
@@ -329,18 +349,19 @@ export class DatePartialTimeConverter {
      */
     constructor(frequency, locale) {
         this.frequency = parseFrequency(frequency || 'T1M');
-        const parsers = createLocalDateParsers(locale);
-        this.dateSeparator = parsers.dateSeparator;
-        this.parser = parsers.localDateTimeParser;
+        this.parser = createLocalDateParsers(locale).localDateTimeParser;
     }
 
     /**
      * Returns a iso formatted string in local time without timezone information, for example 2017-01-01T02:00.
-     * @param {Date} d
+     * @param {Date|*} d
      * @returns {string}
      */
     toString(d) {
-        if (isNaN(d.getTime())) return d.toString();
+        if (!(d instanceof DatePartialTime)) {
+            return String(d);
+        }
+
         const pad = (v) => String(v).padStart(2, '0');
         let s = pad(d.getUTCFullYear()) + '-' + pad(1 + d.getUTCMonth()) + '-' + pad(d.getUTCDate());
         if (this.frequency.H || this.frequency.M) {
@@ -350,6 +371,7 @@ export class DatePartialTimeConverter {
                 s += ':' + pad(d.getMinutes());
             }
         }
+
         return s;
     }
 
@@ -358,22 +380,25 @@ export class DatePartialTimeConverter {
     }
 
     /**
+     * @param {FullDate} d
+     * @returns {string}
+     */
+    toREPR(d) {
+        return `new DatePartialTime(${d.getUTCFullYear()}, ${d.getUTCMonth()}, ${d.getUTCDate()}, ${d.getUTCHours()}, ${d.getUTCMinutes()})`;
+    }
+
+    /**
      * Parses any valid date-time format, but iso format is preferred.
      * @param {string} s
-     * @returns {Date}
+     * @returns {DatePartialTime|string}
      */
     fromString(s) {
         s = s.trim();
-        let d;
-        if (this.dateSeparator && s.indexOf(this.dateSeparator) !== -1) {
-            d = this.parser(s);
-        } else {
-            // Note that new Date('2019-10-27').toISOString() -> 2019-10-27T00:00:00Z
-            // But new Date('2019-10-27T00:00').toISOString() -> 2019-10-26T22:00:00Z
-            // Therefore always specify zulu zone.
-            d = new Date(s + 'Z');
+        const d = this.parser(s);
+        if (isNaN(d.getTime())) {
+            return s
         }
-        return isNaN(d.getTime()) ? s : d;
+        return d
     }
 }
 
@@ -386,9 +411,7 @@ export class FullDateStringConverter {
      * @param {string?} locale
      */
     constructor(locale) {
-        const parsers = createLocalDateParsers(locale);
-        this.dateSeparator = parsers.dateSeparator;
-        this.parser = parsers.localDateParser;
+        this.parser = createLocalDateParsers(locale).localDateParser;
     }
 
     /**
@@ -417,16 +440,18 @@ export class FullDateConverter {
      * @param {string?} locale
      */
     constructor(locale) {
-        const parsers = createLocalDateParsers(locale);
-        this.dateSeparator = parsers.dateSeparator;
-        this.parser = parsers.localDateParser;
+        this.parser = createLocalDateParsers(locale).localDateParser;
+        this.targetType = FullDate;
     }
 
     /**
-     * @param {Date|string} d
+     * @param {FullDate|*} d
      * @returns {string}
      */
     toString(d) {
+        if (!(d instanceof FullDate)) {
+            return String(d);
+        }
         const pad = (v) => String(v).padStart(2, '0');
         return pad(d.getUTCFullYear()) + '-' + pad(1 + d.getUTCMonth()) + '-' + pad(d.getUTCDate());
     }
@@ -436,11 +461,24 @@ export class FullDateConverter {
     }
 
     /**
+     * @param {FullDate} d
+     * @returns {string}
+     */
+    toREPR(d) {
+        return `new FullDate(${d.getUTCFullYear()}, ${d.getUTCMonth()}, ${d.getUTCDate()})`
+    }
+
+    /**
      * @param {string} s
-     * @returns {FullDate}
+     * @returns {FullDate|string}
      */
     fromString(s) {
-        return this.parser(s);
+        s = s.trim();
+        const d = this.parser(s);
+        if (isNaN(d.getTime())) {
+            return s
+        }
+        return d
     }
 }
 

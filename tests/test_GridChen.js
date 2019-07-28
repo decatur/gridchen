@@ -1,9 +1,9 @@
 import {test, assert} from './utils.js'
 import {GridChen} from '../modules/gridchen/GridChen.js'
 import {createColumnMatrixView, createRowMatrixView} from "../modules/gridchen/DataViews.js";
-import {NumberStringConverter} from "../modules/gridchen/converter.js";
+import {NumberConverter} from "../modules/gridchen/converter.js";
 
-const decimalSep = new NumberStringConverter(1).decimalSep;
+const decimalSep = new NumberConverter(1).decimalSep;
 
 function getGridElement(gc) {
     return gc.shadowRoot.querySelector('.GRID');

@@ -10,9 +10,9 @@ import {
     DatePartialTimeStringConverter,
     DateTimeConverter,
     DateTimeStringConverter,
-    NumberStringConverter,
+    NumberConverter,
     BooleanStringConverter,
-    StringStringConverter
+    StringConverter
 } from "./converter.js";
 
 const numeric = new Set(['number', 'integer']);
@@ -73,7 +73,7 @@ function updateSchema(schemas) {
             } else if (schema.type === 'integer') {
                 fractionDigits = 0;
             }
-            schema.converter = new NumberStringConverter(fractionDigits);
+            schema.converter = new NumberConverter(fractionDigits);
         } else if (schema.type === 'string' && schema.format === 'full-date') {
             schema.converter = new FullDateStringConverter();
         } else if (schema.type === 'FullDate') {
@@ -90,7 +90,7 @@ function updateSchema(schemas) {
             schema.converter = new BooleanStringConverter();
         } else {
             // string and others
-            schema.converter = new StringStringConverter();
+            schema.converter = new StringConverter();
         }
     }
 }
@@ -229,7 +229,8 @@ export function createColumnSchemas(schema) {
             columnSchemas: [schema.items],
             viewCreator: createColumnMatrixView,
             validate: function(data) {
-                return [data] || []
+                if (data) return [data]
+                return [[]]
             }
         }
     }

@@ -1,10 +1,10 @@
 import {assert, test, log} from './utils.js'
 import '../modules/gridchen/GridChen.js'
 import {createRowMatrixView} from "../modules/gridchen/DataViews.js";
-import {NumberStringConverter} from "../modules/gridchen/converter.js";
+import {NumberConverter} from "../modules/gridchen/converter.js";
 
 
-const decimalSep = new NumberStringConverter(1).decimalSep;
+const decimalSep = new NumberConverter(1).decimalSep;
 
 function dispatchKey(gc, eventInitDict) {
     gc.shadowRoot.firstElementChild.dispatchEvent(new KeyboardEvent('keydown', eventInitDict));

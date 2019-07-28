@@ -1,5 +1,5 @@
 import {test, assert} from './utils.js'
-import {DateTimeStringConverter, DateStringConverter, DateTimeLocalStringConverter, NumberStringConverter} from "../modules/gridchen/converter.js";
+import {DateTimeStringConverter, DateStringConverter, DateTimeLocalStringConverter, NumberConverter} from "../modules/gridchen/converter.js";
 
 test('DateTimeStringConverter', () => {
     let converter = new DateTimeStringConverter();
@@ -48,8 +48,8 @@ test('DateTimeLocalStringConverter', () => {
     assert.equal('10/27/foo 02:00', converter.fromString('10/27/foo 02:00'));
 });
 
-test('NumberStringConverter', () => {
-    let converter = new NumberStringConverter(2);
+test('NumberConverter', () => {
+    let converter = new NumberConverter(2);
     // This will work in any locale.
     assert.equal(3.14, converter.fromString(converter.toString(Math.PI)));
 });

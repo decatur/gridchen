@@ -227,6 +227,7 @@ export function createColumnSchemas(schema) {
         return {
             title: schema.title,
             columnSchemas: [schema.items],
+            isSingleColumn: true,
             viewCreator: createColumnMatrixView,
             validate: function(data) {
                 if (data) return [data]

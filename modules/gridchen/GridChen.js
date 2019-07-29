@@ -785,6 +785,7 @@ function Grid(container, viewModel, eventListeners) {
                 }
             }
         }
+        eventListeners['dataChanged']('delete');
         refresh(viewModel.rowCount());
     }
 
@@ -795,11 +796,13 @@ function Grid(container, viewModel, eventListeners) {
                 rowCount = viewModel.deleteRow(r.rowIndex);
             });
         }
+        eventListeners['dataChanged']('delete');
         refresh(rowCount);
     }
 
     function insertRow() {
         refresh(viewModel.insertRowBefore(activeCell.row - 1));
+        eventListeners['dataChanged']('insert');
     }
 
     function copySelection(doCut, withHeaders) {
@@ -1205,6 +1208,7 @@ function Grid(container, viewModel, eventListeners) {
                 let value = matrix[i][j];
                 if (value !== undefined) value = schemas[colIndex].converter.fromString(value);
                 viewModel.setCell(rowIndex, colIndex, value);
+                eventListeners['dataChanged'](value);
             }
         }
     }

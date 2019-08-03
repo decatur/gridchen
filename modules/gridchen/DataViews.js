@@ -343,6 +343,26 @@ export function createRowMatrixView(schema, rows) {
         }
 
         /**
+         * Return the absolute path to the specified cell in the format /1/2.
+         * @param {number} rowIndex
+         * @param {number} colIndex
+         * @returns {string}
+         */
+        getPath(rowIndex, colIndex) {
+            return `/${rowIndex}/${colIndex}`
+        }
+
+        /**
+         * Return the absolute path to the specified cells, for example
+         *  ['/1'].
+         * @param {number} rowIndex
+         * @returns {string[]}
+         */
+        getRowPaths(rowIndex) {
+            return [`/${rowIndex}`];
+        }
+
+        /**
          * @param {number} rowIndex
          * @returns {number}
          */
@@ -419,6 +439,26 @@ export function createRowObjectsView(schema, rows) {
         getCell(rowIndex, colIndex) {
             if (!rows[rowIndex]) return undefined;
             return rows[rowIndex][ids[colIndex]];
+        }
+
+        /**
+         * Return the absolute path to the specified cell in the format /1/foo.
+         * @param {number} rowIndex
+         * @param {number} colIndex
+         * @returns {string}
+         */
+        getPath(rowIndex, colIndex) {
+            return `/${rowIndex}/${ids[colIndex]}`
+        }
+
+         /**
+         * Return the absolute path to the specified cells, for example
+          * ['/1'].
+         * @param {number} rowIndex
+         * @returns {string[]}
+         */
+        getRowPaths(rowIndex) {
+            return [`/${rowIndex}`];
         }
 
         /**
@@ -504,6 +544,26 @@ export function createColumnMatrixView(schema, columns) {
                 column.splice(rowIndex, 1);
             });
             return getRowCount();
+        }
+
+        /**
+         * Return the absolute path to the specified cell in the format /2/1.
+         * @param {number} rowIndex
+         * @param {number} colIndex
+         * @returns {string}
+         */
+        getPath(rowIndex, colIndex) {
+            return `/${colIndex}/${rowIndex}`
+        }
+
+        /**
+         * Return the absolute path to the specified cells, for example
+         *  ['/0/1', '/1/1'].
+         * @param {number} rowIndex
+         * @returns {string[]}
+         */
+        getRowPaths(rowIndex) {
+            return range(schemas.length).map(colIndex => `/${colIndex}/${rowIndex}`);
         }
 
         /**

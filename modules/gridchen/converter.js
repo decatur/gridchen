@@ -50,7 +50,7 @@ export class StringConverter {
      * @returns {string}
      */
     toString(s) {
-        if (s === undefined) return '';
+        if (s == null) return '';
         return String(s)
     }
 
@@ -78,10 +78,11 @@ export class BooleanStringConverter {
     }
 
     /**
-     * @param {boolean} b
+     * @param {boolean|*} b
      * @returns {string}
      */
     toString(b) {
+        if (b == null) return '';
         return String(b)
     }
 
@@ -129,8 +130,12 @@ export class NumberConverter {
         this.isPercent = false;
     }
 
+    /**
+     * @param {number|*} n
+     * @returns {string|*}
+     */
     toString(n) {
-        if (n === undefined) return '';
+        if (n == null) return '';
         if (n.constructor === String) return String(n);
         return this.nf.format(this.isPercent ? n * 100 : n)
     }
@@ -169,6 +174,7 @@ export class DateTimeStringConverter {
      * @returns {string}
      */
     toString(s) {
+        if (s == null) return '';
         return s
     }
 
@@ -202,6 +208,7 @@ export class DateTimeConverter {
      * @returns {string}
      */
     toString(d) {
+        if (d == null) return '';
         if (isNaN(d.getTime())) return d.toString();
         const pad = (v) => String(v).padStart(2, '0');
         let s = pad(d.getFullYear()) + '-' + pad(1 + d.getMonth()) + '-' + pad(d.getDate());

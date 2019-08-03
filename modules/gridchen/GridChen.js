@@ -773,6 +773,7 @@ function Grid(container, viewModel, eventListeners) {
     };
 
     function deleteSelection() {
+        const patches = [];
         for (const r of selection.areas) {
             let rowIndex = r.rowIndex;
             let endRowIndex = rowIndex + r.rowCount;
@@ -782,27 +783,35 @@ function Grid(container, viewModel, eventListeners) {
                 let colIndex = r.columnIndex;
                 for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
                     viewModel.setCell(rowIndex, colIndex, undefined);
+                    patches.push({op: 'remove', path: viewModel.getPath(rowIndex, colIndex)});
                 }
             }
         }
-        eventListeners['dataChanged']('delete');
+        eventListeners['dataChanged'](patches);
         refresh(viewModel.rowCount());
     }
 
     function deleteRows() {
+        const patches = [];
         let rowCount = undefined;
         for (const r of selection.areas) {
             range(r.rowCount).forEach(function () {
                 rowCount = viewModel.deleteRow(r.rowIndex);
+                const paths = viewModel.getRowPaths(r.rowIndex);
+                for (const path of paths) {
+                    patches.push({op: 'remove', path: path});
+                }
             });
         }
-        eventListeners['dataChanged']('delete');
+        eventListeners['dataChanged'](patches);
         refresh(rowCount);
     }
 
     function insertRow() {
         refresh(viewModel.insertRowBefore(activeCell.row - 1));
-        eventListeners['dataChanged']('insert');
+        const paths = viewModel.getRowPaths(activeCell.row);
+        const patches = paths.map(function(path) { return {op: 'add', path: path} });
+        eventListeners['dataChanged'](patches);
     }
 
     function copySelection(doCut, withHeaders) {
@@ -1071,7 +1080,7 @@ function Grid(container, viewModel, eventListeners) {
             }
             refresh(viewModel.setCell(rowIndex, colIndex, value));
             // Must be called AFTER model is updated.
-            eventListeners['dataChanged'](value);
+            eventListeners['dataChanged']([{op: 'replace', path: viewModel.getPath(rowIndex, colIndex), value:value}]);
         }
 
         activeCell.mode = 'display';
@@ -1208,7 +1217,7 @@ function Grid(container, viewModel, eventListeners) {
                 let value = matrix[i][j];
                 if (value !== undefined) value = schemas[colIndex].converter.fromString(value);
                 viewModel.setCell(rowIndex, colIndex, value);
-                eventListeners['dataChanged'](value);
+                eventListeners['dataChanged']([{op:'replace', path:viewModel.getPath(rowIndex, colIndex), value:value}]);
             }
         }
     }

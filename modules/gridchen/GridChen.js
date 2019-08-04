@@ -795,9 +795,9 @@ function Grid(container, viewModel, eventListeners) {
         const patches = [];
         let rowCount = undefined;
         for (const r of selection.areas) {
-            range(r.rowCount).forEach(function (rowIndex) {
-                const paths = viewModel.getRowPaths(rowIndex);
-                rowCount = viewModel.deleteRow(r.rowIndex);  // Note: r.rowIndex, not rowIndex
+            range(r.rowCount).forEach(function (i) {
+                const paths = viewModel.getRowPaths(r.rowIndex + i);
+                rowCount = viewModel.deleteRow(r.rowIndex);  // Note: Always the first row
                 for (const path of paths) {
                     patches.push({op: 'remove', path: path});
                 }

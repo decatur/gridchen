@@ -189,6 +189,7 @@ export function createColumnSchemas(schema) {
             ids: entries.map(e => e[0]),
             viewCreator: function(schema, colObject) {
                 const columns = [];
+                const ids = [];
                 for (let id of colSchemas.ids) {
                     let column = colObject[id];
                     if (!column) {
@@ -197,7 +198,14 @@ export function createColumnSchemas(schema) {
                     }
                     columns.push(column);
                 }
-                return createColumnMatrixView(schema, columns);
+                const view = createColumnMatrixView(schema, columns);
+                view.getPath = function(rowIndex, colIndex) {
+                    return `/${colSchemas.ids[colIndex]}/${rowIndex}`
+                };
+                view.getRowPaths = function(rowIndex) {
+                    return range(colSchemas.ids.length).map(colIndex => view.getPath(rowIndex, colIndex));
+                }
+                return view;
             },
             validate: function(data) {
                 return data || {}
@@ -227,8 +235,16 @@ export function createColumnSchemas(schema) {
         return {
             title: schema.title,
             columnSchemas: [schema.items],
-            isSingleColumn: true,
-            viewCreator: createColumnMatrixView,
+            viewCreator: function(schema, columns) {
+                const view = createColumnMatrixView(schema, columns);
+                view.getPath = function(rowIndex, colIndex) {
+                    return `/${rowIndex}`
+                };
+                view.getRowPaths = function(rowIndex) {
+                    return [view.getPath(rowIndex, 0)];
+                }
+                return view;
+            },
             validate: function(data) {
                 if (data) return [data]
                 return [[]]

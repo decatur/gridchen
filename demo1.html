@@ -38,18 +38,22 @@
 </div>
 
 <div>
-    Number of rows: <input value="1000"> <span style="margin-left:1em"></span>
+    Number of rows: <input value="100"> <span style="margin-left:1em"></span>
 </div>
 
 <div id="template">
     <h2></h2>
-    <label style="width: 40%;">
+    <label style="width: 30%;">
         JSON Schema
         <textarea class="schema"></textarea>
     </label>
-    <label style="width: 40%;">
+    <label style="width: 30%;">
         JavaScript Data
         <textarea class="data"></textarea>
+    </label>
+    <label style="width: 30%;">
+        JavaScript Patch
+        <pre class="patch"></pre>
     </label>
     <label style="display: block;">
         Grid
@@ -79,7 +83,7 @@
         if (isNaN(rowCount)) {
             span.textContent = 'Invalid row count ' + input.value;
             return;
-        } else if (rowCount > 100000) {
+        } else if (rowCount > 1000) {
             span.textContent = 'Take it easy...';
             return;
         }

@@ -21,7 +21,13 @@
             background-color: floralwhite;
             margin: 0 2em 0 0;
             height: 200px;
-            width: 300px;
+            width: 90%;
+        }
+
+        .patch {
+            height: 200px;
+            width: 90%;
+            overflow: scroll;
         }
     </style>
 </head>
@@ -40,20 +46,28 @@ All of them are supported by default.
     </ul>
 </div>
 
-<div id="template">
-    <h2></h2>
-    <label>
-        Schema
-        <textarea class="schema"></textarea>
-    </label>
-    <label>
-        Data
-        <textarea class="data"></textarea>
-    </label>
-    <label>
-        Grid
-        <grid-chen style="display: block; height: 200px;"></grid-chen>
-    </label>
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: auto">
+
+    <div id="template" style="display: contents">
+        <h2 style="grid-column: span 3"></h2>
+        <label>
+            Schema
+            <textarea class="schema"></textarea>
+        </label>
+        <label>
+            JavaScript Data
+            <textarea class="data"></textarea>
+        </label>
+        <div>
+            JavaScript Patch
+            <pre class="patch"></pre>
+        </div>
+        <div style="grid-column: span 3">
+            Grid
+            <grid-chen style="display: block; height: 200px;"></grid-chen>
+        </div>
+    </div>
+
 </div>
 
 <script type="module">
@@ -62,12 +76,13 @@ All of them are supported by default.
     import {createInteractiveDemoGrid} from "./examples/demo.js"
 
     const template = document.getElementById('template');
-    template.parentElement.removeChild(template);
+    const container = template.parentElement;
+    container.removeChild(template);
 
     const c = new DateTimeStringConverter();
     const dates = ["2019-01-01", "2019-01-01", "2019-01-01"];
 
-    createInteractiveDemoGrid(document.body.appendChild(template.cloneNode(true)),
+    createInteractiveDemoGrid(container.appendChild(template.cloneNode(true)),
         {
             title: 'Array of Row Arrays',
             type: 'object',
@@ -87,7 +102,7 @@ All of them are supported by default.
         ]
     );
 
-    createInteractiveDemoGrid(document.body.appendChild(template.cloneNode(true)),
+    createInteractiveDemoGrid(container.appendChild(template.cloneNode(true)),
         {
             title: 'Array of Row Objects',
             type: 'object',
@@ -107,7 +122,7 @@ All of them are supported by default.
         ]
     );
 
-    createInteractiveDemoGrid(document.body.appendChild(template.cloneNode(true)),
+    createInteractiveDemoGrid(container.appendChild(template.cloneNode(true)),
         {
             title: 'Array of Column Array',
             type: 'object',
@@ -124,7 +139,7 @@ All of them are supported by default.
         ]
     );
 
-    createInteractiveDemoGrid(document.body.appendChild(template.cloneNode(true)),
+    createInteractiveDemoGrid(container.appendChild(template.cloneNode(true)),
         {
             title: 'Object of Columns',
             type: 'object',
@@ -133,18 +148,18 @@ All of them are supported by default.
                     type: 'object',
                     items: {title: 'TimeStamp', type: 'string', format: 'full-date', width: 200}
                 },
-                weight: {type: 'object', items: {title: 'Age', width: 100, type: 'number'}},
-                age: {type: 'object', items: {title: 'Weight', width: 100, type: 'number'}}
+                age: {type: 'object', items: {title: 'Age', width: 100, type: 'number'}},
+                weight: {type: 'object', items: {title: 'Weight', width: 100, type: 'number'}}
             }
         },
         {
             timestamp: dates,
-            weight: [0, 1, 2],
-            age: [0, 2, 4]
+            age: [0, 2, 4],
+            weight: [0, 1, 2]
         }
     );
 
-    createInteractiveDemoGrid(document.body.appendChild(template.cloneNode(true)),
+    createInteractiveDemoGrid(container.appendChild(template.cloneNode(true)),
         {
             title: 'Single Column Array',
             type: 'object',

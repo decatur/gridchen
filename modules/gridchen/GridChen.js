@@ -776,7 +776,7 @@ function Grid(container, viewModel, eventListeners) {
         const patches = [];
         for (const r of selection.areas) {
             let rowIndex = r.rowIndex;
-            let endRowIndex = rowIndex + r.rowCount;
+            let endRowIndex = Math.min(rowCount, rowIndex + r.rowCount);
             let endColIndex = r.columnIndex + r.columnCount;
 
             for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {
@@ -795,9 +795,9 @@ function Grid(container, viewModel, eventListeners) {
         const patches = [];
         let rowCount = undefined;
         for (const r of selection.areas) {
-            range(r.rowCount).forEach(function () {
-                rowCount = viewModel.deleteRow(r.rowIndex);
-                const paths = viewModel.getRowPaths(r.rowIndex);
+            range(r.rowCount).forEach(function (rowIndex) {
+                const paths = viewModel.getRowPaths(rowIndex);
+                rowCount = viewModel.deleteRow(r.rowIndex);  // Note: r.rowIndex, not rowIndex
                 for (const path of paths) {
                     patches.push({op: 'remove', path: path});
                 }
@@ -1101,9 +1101,9 @@ function Grid(container, viewModel, eventListeners) {
         selection.hide();
 
         firstRow = _firstRow;
-        if (rowCount < firstRow + viewPortRowCount) {
-            rowCount = firstRow + viewPortRowCount;
-        }
+        //if (rowCount < firstRow + viewPortRowCount) {
+        //    rowCount = firstRow + viewPortRowCount;
+        //}
 
         if (caller !== slider) {
             // TODO: remove caller.

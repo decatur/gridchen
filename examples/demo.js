@@ -5,31 +5,38 @@ export function createInteractiveDemoGrid(container, schema, data) {
     const schemaElement = container.querySelector('.schema');
     const dataElement = container.querySelector('.data');
     const gridElement = container.querySelector('grid-chen');
+    let view;
 
     function dataChanged(patch) {
-        dataElement.value = REPR.stringify(data, null, 2);
+        dataElement.value = REPR.stringify(view.getModel(), null, 2);
         container.querySelector('.patch').textContent = REPR.stringify(patch, null, 2);
     }
 
     function resetHandler() {
-        let view;
-        try {
-            schema = JSON.parse(schemaElement.value);
+
+        function newView() {
+            try {
+                schema = JSON.parse(schemaElement.value);
+            } catch (e) {
+                e.message = 'Error in JSON Schema: ' + e.message;
+                return e;
+            }
+
             data = null;
+            view = null;
+
             try {
                 data = REPR.parse(dataElement.value);
             } catch (e) {
                 e.message = 'Error in JavaScript Data: ' + e.message;
-                view = e;
+                return e;
             }
-            if (data != null) {
-                view = createView(schema, data);
-            }
-        } catch (e) {
-            e.message = 'Error in JSON Schema: ' + e.message;
-            view = e;
+
+            return createView(schema, data);
         }
-        gridElement.resetFromView(view)
+
+        view = newView();
+        gridElement.resetFromView(view);
     }
 
     container.querySelector('h2').textContent = schema.title;
@@ -53,6 +60,8 @@ export const REPR = {
      * @returns {*}
      */
     parse(s) {
+        s = s.trim();
+        if (s === '') return undefined;
         return eval('(' + s + ')')
     },
     /**

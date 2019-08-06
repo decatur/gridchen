@@ -101,7 +101,7 @@ function updateSchema(schemas) {
  */
 function sortedColumns(properties) {
     const entries = Object.entries(properties);
-    entries.sort(function(e1, e2) {
+    entries.sort(function (e1, e2) {
         const o1 = e1[1]['columnOrder'];
         const o2 = e2[1]['columnOrder'];
         if (o1 !== undefined && o2 !== undefined) {
@@ -121,11 +121,11 @@ function sortedColumns(properties) {
 export function createView(schema, matrix) {
     const columnSchemas = createColumnSchemas(schema);
     if (columnSchemas instanceof Error) {
-        const err =  new Error('createView() received undefined schema');
+        const err = new Error('createView() received undefined schema');
         console.error(err);
         return err
     }
-    return columnSchemas.viewCreator(columnSchemas, columnSchemas.validate(matrix));
+    return columnSchemas.viewCreator(columnSchemas, matrix);
 }
 
 /**
@@ -143,10 +143,7 @@ export function createColumnSchemas(schema) {
         return {
             title: schema.title,
             columnSchemas: schema.items.items,
-            viewCreator: createRowMatrixView,
-            validate: function(data) {
-                return data || []
-            }
+            viewCreator: createRowMatrixView
         }
     }
 
@@ -155,15 +152,12 @@ export function createColumnSchemas(schema) {
 
         return {
             title: schema.title,
-            columnSchemas: entries.map(function(e) {
+            columnSchemas: entries.map(function (e) {
                 e[1].title = e[1].title || e[0];
                 return e[1]
             }),
             ids: entries.map(e => e[0]),
-            viewCreator: createRowObjectsView,
-            validate: function(data) {
-                return data || []
-            }
+            viewCreator: createRowObjectsView
         }
     }
 
@@ -171,10 +165,7 @@ export function createColumnSchemas(schema) {
         return {
             title: schema.title,
             columnSchemas: schema.items.map(item => item.items),
-            viewCreator: createColumnMatrixView,
-            validate: function(data) {
-                return data || []
-            }
+            viewCreator: createColumnMatrixView
         }
     }
 
@@ -184,32 +175,9 @@ export function createColumnSchemas(schema) {
         const entries = sortedColumns(schema.properties);
         const colSchemas = {
             title: schema.title,
-
             columnSchemas: [],
             ids: entries.map(e => e[0]),
-            viewCreator: function(schema, colObject) {
-                const columns = [];
-                const ids = [];
-                for (let id of colSchemas.ids) {
-                    let column = colObject[id];
-                    if (!column) {
-                        column = [];
-                        colObject[id] = column;
-                    }
-                    columns.push(column);
-                }
-                const view = createColumnMatrixView(schema, columns);
-                view.getPath = function(rowIndex, colIndex) {
-                    return `/${colSchemas.ids[colIndex]}/${rowIndex}`
-                };
-                view.getRowPaths = function(rowIndex) {
-                    return range(colSchemas.ids.length).map(colIndex => view.getPath(rowIndex, colIndex));
-                }
-                return view;
-            },
-            validate: function(data) {
-                return data || {}
-            }
+            viewCreator: createColumnObjectView
         };
 
         for (const entry of entries) {
@@ -225,9 +193,6 @@ export function createColumnSchemas(schema) {
             colSchemas.columnSchemas.push(colSchema);
         }
 
-        // Normalize missing columnCount (ragged columnCount are allowed).
-        // TODO: Must use matrix!
-
         return colSchemas
     }
 
@@ -235,20 +200,7 @@ export function createColumnSchemas(schema) {
         return {
             title: schema.title,
             columnSchemas: [schema.items],
-            viewCreator: function(schema, columns) {
-                const view = createColumnMatrixView(schema, columns);
-                view.getPath = function(rowIndex, colIndex) {
-                    return `/${rowIndex}`
-                };
-                view.getRowPaths = function(rowIndex) {
-                    return [view.getPath(rowIndex, 0)];
-                }
-                return view;
-            },
-            validate: function(data) {
-                if (data) return [data]
-                return [[]]
-            }
+            viewCreator: createColumnVectorView
         }
     }
 
@@ -278,7 +230,7 @@ class MatrixView {
      * @returns {*[]}
      */
     getColumn(columnIndex) {
-        return range(this.rowCount()).map(rowIndex =>this.getCell(rowIndex, columnIndex));
+        return range(this.rowCount()).map(rowIndex => this.getCell(rowIndex, columnIndex));
     }
 }
 
@@ -291,17 +243,6 @@ export function createRowMatrixView(schema, rows) {
     let schemas = schema.columnSchemas;
     updateSchema(schemas);
 
-    if (!rows) {
-        const e = new Error('createView() received undefined data with schema title ' + schema.title);
-        console.error(e);
-        return e
-    }
-
-    // Normalize missing rowCount (ragged rowCount are allowed).
-    /*rowCount.forEach(function (row, i) {
-        if (row === undefined) rowCount[i] = Array(schemas.length);
-    });*/
-
     /**
      * @implements {GridChen.DataView}
      */
@@ -309,13 +250,18 @@ export function createRowMatrixView(schema, rows) {
         constructor() {
             super();
             this.schema = schema;
+            this.model = rows;
+        }
+
+        getModel() {
+            return rows;
         }
 
         /**
          * @returns {number}
          */
         rowCount() {
-            return rows.length
+            return rows ? rows.length : 0
         }
 
         /**
@@ -329,11 +275,11 @@ export function createRowMatrixView(schema, rows) {
 
         /**
          * @param {number} rowIndex
-         * @returns {number}
+         * @returns {object[]}
          */
         deleteRow(rowIndex) {
             rows.splice(rowIndex, 1);
-            return rows.length;
+            return [{op: 'remove', path: `/${rowIndex}`}];
         }
 
         /**
@@ -342,6 +288,7 @@ export function createRowMatrixView(schema, rows) {
          * @returns {*}
          */
         getCell(rowIndex, colIndex) {
+            // TODO: Should not be called with rowIndex >= rowCount.
             if (!rows[rowIndex]) return undefined;
             return rows[rowIndex][colIndex];
         }
@@ -350,41 +297,34 @@ export function createRowMatrixView(schema, rows) {
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param value
-         * @returns {number}
+         * @returns {object[]}
          */
         setCell(rowIndex, colIndex, value) {
-            if (!rows[rowIndex]) rows[rowIndex] = Array(schemas.length);
+            let patches = [];
+
+            if (!rows) {
+                rows = [];
+                patches.push({op: 'add', path: '/', value: []});
+            }
+
+            if (!rows[rowIndex]) {
+                rows[rowIndex] = Array(schemas.length);
+                patches.push({op: 'add', path: `/${rowIndex}`, value: []});
+            }
+
+            patches.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value});
+
             rows[rowIndex][colIndex] = value;
-            return rows.length;
-        }
-
-        /**
-         * Return the absolute path to the specified cell in the format /1/2.
-         * @param {number} rowIndex
-         * @param {number} colIndex
-         * @returns {string}
-         */
-        getPath(rowIndex, colIndex) {
-            return `/${rowIndex}/${colIndex}`
-        }
-
-        /**
-         * Return the absolute path to the specified cells, for example
-         *  ['/1'].
-         * @param {number} rowIndex
-         * @returns {string[]}
-         */
-        getRowPaths(rowIndex) {
-            return [`/${rowIndex}`];
+            return patches;
         }
 
         /**
          * @param {number} rowIndex
-         * @returns {number}
+         * @returns {object[]}
          */
-        insertRowBefore(rowIndex) {
-            rows.splice(rowIndex + 1, 0, Array(schemas.length));
-            return rows.length;
+        splice(rowIndex) {
+            rows.splice(rowIndex, 0, Array(schemas.length));
+            return [{op: 'add', path: `/${rowIndex}`}];
         }
 
         /**
@@ -411,17 +351,6 @@ export function createRowObjectsView(schema, rows) {
     const ids = schema.ids;
     updateSchema(schemas);
 
-    if (!rows) {
-        const e = new Error('createView() received undefined data with schema title ' + schema.title);
-        console.error(e);
-        return e
-    }
-
-    // Normalize missing rowCount (ragged rowCount are allowed).
-    /*rowCount.forEach(function (row, i) {
-        if (row === undefined) rowCount[i] = {};
-    });*/
-
     /**
      * @implements {GridChen.DataView}
      */
@@ -431,20 +360,24 @@ export function createRowObjectsView(schema, rows) {
             this.schema = schema;
         }
 
+        getModel() {
+            return rows;
+        }
+
         /**
          * @returns {number}
          */
         rowCount() {
-            return rows.length
+            return rows ? rows.length : 0
         }
 
         /**
          * @param {number} rowIndex
-         * @returns {number}
+         * @returns {object[]}
          */
         deleteRow(rowIndex) {
             rows.splice(rowIndex, 1);
-            return rows.length;
+            return [{op: 'remove', path: `/${rowIndex}`}];
         }
 
         /**
@@ -458,44 +391,37 @@ export function createRowObjectsView(schema, rows) {
         }
 
         /**
-         * Return the absolute path to the specified cell in the format /1/foo.
-         * @param {number} rowIndex
-         * @param {number} colIndex
-         * @returns {string}
-         */
-        getPath(rowIndex, colIndex) {
-            return `/${rowIndex}/${ids[colIndex]}`
-        }
-
-         /**
-         * Return the absolute path to the specified cells, for example
-          * ['/1'].
-         * @param {number} rowIndex
-         * @returns {string[]}
-         */
-        getRowPaths(rowIndex) {
-            return [`/${rowIndex}`];
-        }
-
-        /**
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param value
-         * @returns {number}
+         * @returns {object[]}
          */
         setCell(rowIndex, colIndex, value) {
-            if (!rows[rowIndex]) rows[rowIndex] = {};
+            let patches = [];
+
+            if (!rows) {
+                rows = [];
+                patches.push({op: 'add', path: '/', value: []});
+            }
+
+            if (!rows[rowIndex]) {
+                rows[rowIndex] = {};
+                patches.push({op: 'add', path: `/${rowIndex}`, value: {}});
+            }
+
+            patches.push({op: 'replace', path: `/${rowIndex}/${ids[colIndex]}`, value: value});
             rows[rowIndex][ids[colIndex]] = value;
-            return rows.length;
+            return patches;
         }
 
         /**
          * @param {number} rowIndex
-         * @returns {number}
+         * @returns {object[]}
          */
-        insertRowBefore(rowIndex) {
-            rows.splice(rowIndex + 1, 0, {});
-            return rows.length;
+        splice(rowIndex) {
+            rows.splice(rowIndex, 0, {});
+            return [{op: 'add', path: `/${rowIndex}`}];
+            ;
         }
 
         /**
@@ -520,18 +446,8 @@ export function createColumnMatrixView(schema, columns) {
     let schemas = schema.columnSchemas;
     updateSchema(schemas);
 
-    if (!columns) {
-        const e = new Error('createView() received undefined data with schema title ' + schema.title);
-        console.error(e);
-        return e
-    }
-
-    // Normalize missing columnCount (ragged columnCount are allowed).
-    /*columnCount.forEach(function (column, j) {
-        if (column === undefined) columnCount[j] = Array();
-    });*/
-
     function getRowCount() {
+        if (!columns) return 0;
         return columns.reduce((length, column) => Math.max(length, column.length), 0);
     }
 
@@ -544,6 +460,10 @@ export function createColumnMatrixView(schema, columns) {
             this.schema = schema;
         }
 
+        getModel() {
+            return columns;
+        }
+
         /**
          * @returns {number}
          */
@@ -553,33 +473,13 @@ export function createColumnMatrixView(schema, columns) {
 
         /**
          * @param {number} rowIndex
-         * @returns {number}
+         * @returns {object[]}
          */
         deleteRow(rowIndex) {
             columns.forEach(function (column) {
                 column.splice(rowIndex, 1);
             });
-            return getRowCount();
-        }
-
-        /**
-         * Return the absolute path to the specified cell in the format /2/1.
-         * @param {number} rowIndex
-         * @param {number} colIndex
-         * @returns {string}
-         */
-        getPath(rowIndex, colIndex) {
-            return `/${colIndex}/${rowIndex}`
-        }
-
-        /**
-         * Return the absolute path to the specified cells, for example
-         *  ['/0/1', '/1/1'].
-         * @param {number} rowIndex
-         * @returns {string[]}
-         */
-        getRowPaths(rowIndex) {
-            return range(schemas.length).map(colIndex => `/${colIndex}/${rowIndex}`);
+            return range(schemas.length).map(colIndex => ({op: 'remove', path: `/${colIndex}/${rowIndex}`}));
         }
 
         /**
@@ -588,6 +488,7 @@ export function createColumnMatrixView(schema, columns) {
          * @returns {*}
          */
         getCell(rowIndex, colIndex) {
+            if (!columns[colIndex]) return undefined;
             return columns[colIndex][rowIndex];
         }
 
@@ -595,22 +496,37 @@ export function createColumnMatrixView(schema, columns) {
          * @param {number} rowIndex
          * @param {number} colIndex
          * @param value
-         * @returns {number}
+         * @returns {object[]}
          */
         setCell(rowIndex, colIndex, value) {
+            let patches = [];
+            if (!columns) {
+                columns = [];
+                patches.push({op: 'add', path: '/', value: []});
+            }
+
+            if (!columns[colIndex]) {
+                columns[colIndex] = [];
+                patches.push({op: 'add', path: `/${colIndex}`, value: []});
+            }
+
+            patches.push({op: 'replace', path: `/${colIndex}/${rowIndex}`, value: value});
+
             columns[colIndex][rowIndex] = value;
-            return getRowCount();
+            return patches;
         }
 
         /**
          * @param {number} rowIndex
-         * @returns {number}
+         * @returns {object[]}
          */
-        insertRowBefore(rowIndex) {
-            columns.forEach(function (column) {
-                column.splice(rowIndex + 1, 0, undefined);
+        splice(rowIndex) {
+            let patches = [];
+            columns.forEach(function (column, colIndex) {
+                column.splice(rowIndex, 0, undefined);
+                patches.push({op: 'add', path: `/${colIndex}/${rowIndex}`});
             });
-            return getRowCount();
+            return patches;
         }
 
         /**
@@ -636,4 +552,226 @@ export function createColumnMatrixView(schema, columns) {
     }
 
     return new ColumnMatrixView();
+}
+
+/**
+ * @param {GridChen.IGridSchema} schema
+ * @param {object} columns
+ */
+export function createColumnObjectView(schema, columns) {
+    let schemas = schema.columnSchemas;
+    let ids = schema.ids;
+    updateSchema(schemas);
+
+    function getRowCount() {
+        if (!columns) return 0;
+        return Object.values(columns).reduce((length, column) => Math.max(length, column.length), 0);
+    }
+
+    /**
+     * @extends {GridChen.DataView}
+     */
+    class ColumnObjectView extends MatrixView {
+        constructor() {
+            super();
+            this.schema = schema;
+        }
+
+        getModel() {
+            return columns;
+        }
+
+        /**
+         * @returns {number}
+         */
+        rowCount() {
+            return getRowCount();
+        }
+
+        /**
+         * @param {number} rowIndex
+         * @returns {object[]}
+         */
+        deleteRow(rowIndex) {
+            Object.values(columns).forEach(function (column) {
+                column.splice(rowIndex, 1);
+            });
+            return range(schemas.length).map(colIndex => ({op: 'remove', path: `/${ids[colIndex]}/${rowIndex}`}));
+        }
+
+        /**
+         * @param {number} rowIndex
+         * @param {number} colIndex
+         * @returns {*}
+         */
+        getCell(rowIndex, colIndex) {
+            const key = ids[colIndex];
+            if (!columns[key]) return undefined;
+            return columns[key][rowIndex];
+        }
+
+        /**
+         * @param {number} rowIndex
+         * @param {number} colIndex
+         * @param value
+         * @returns {object[]}
+         */
+        setCell(rowIndex, colIndex, value) {
+            const key = ids[colIndex];
+            let patches = [];
+            if (!columns) {
+                columns = {};
+                patches.push({op: 'add', path: '/', value: {}});
+            }
+
+            if (!columns[key]) {
+                columns[key] = [];
+                patches.push({op: 'add', path: `/${key}`, value: []});
+            }
+
+            patches.push({op: 'replace', path: `/${key}/${rowIndex}`, value: value});
+
+            columns[key][rowIndex] = value;
+            return patches;
+        }
+
+        /**
+         * @param {number} rowIndex
+         * @returns {object[]}
+         */
+        splice(rowIndex) {
+            let patches = [];
+            // TODO: Object.values and sort index?
+            Object.values(columns).forEach(function (column, colIndex) {
+                column.splice(rowIndex, 0, undefined);
+                patches.push({op: 'add', path: `/${colIndex}/${rowIndex}`});
+            });
+            return patches;
+        }
+
+        /**
+         * @param {number} colIndex
+         * @returns {number}
+         */
+        sort(colIndex) {
+            const key = ids[colIndex];
+            let [, sortDirection] = updateSortDirection(schemas, colIndex);
+            const indexes = columns[key].map((value, rowIndex) => [value, rowIndex]);
+
+            indexes.sort((a, b) => compare(a[0], b[0]) * sortDirection);
+
+            columns.forEach(function (column, j) {
+                const sortedColumn = Array();
+                indexes.forEach(function (index, i) {
+                    sortedColumn[i] = column[index[1]];
+                });
+                columns[ids[j]] = sortedColumn;
+            });
+
+            return getRowCount();
+        }
+    }
+
+    return new ColumnObjectView();
+}
+
+/**
+ * @param {GridChen.IGridSchema} schema
+ * @param {Array<*>} column
+ */
+export function createColumnVectorView(schema, column) {
+    let columnSchema = schema.columnSchemas[0];
+    updateSchema(schema.columnSchemas);
+
+    function getRowCount() {
+        if (!column) return 0
+        return column.length
+    }
+
+    /**
+     * @extends {GridChen.DataView}
+     */
+    class ColumnVectorView extends MatrixView {
+        constructor() {
+            super();
+            this.schema = schema;
+        }
+
+        getModel() {
+            return column;
+        }
+
+        /**
+         * @returns {number}
+         */
+        rowCount() {
+            return getRowCount();
+        }
+
+        /**
+         * @param {number} rowIndex
+         * @returns {object[]}
+         */
+        deleteRow(rowIndex) {
+            column.splice(rowIndex, 1);
+            return [{op: 'remove', path: `/${rowIndex}`}];
+        }
+
+        /**
+         * @param {number} rowIndex
+         * @param {number} colIndex
+         * @returns {*}
+         */
+        getCell(rowIndex, colIndex) {
+            return column[rowIndex];
+        }
+
+        /**
+         * @param {number} rowIndex
+         * @param {number} colIndex
+         * @param value
+         * @returns {object[]}
+         */
+        setCell(rowIndex, colIndex, value) {
+            let patches = [];
+            if (!column) {
+                column = [];
+                patches.push({op: 'add', path: '/', value: []});
+            }
+
+            patches.push({op: 'replace', path: `/${rowIndex}`, value: value});
+
+            column[rowIndex] = value;
+            return patches;
+        }
+
+        /**
+         * @param {number} rowIndex
+         * @returns {object[]}
+         */
+        splice(rowIndex) {
+            column.splice(rowIndex, 0, undefined);
+            return [{op: 'add', path: `/${rowIndex}`}]
+        }
+
+        /**
+         * @param {number} colIndex
+         * @returns {number}
+         */
+        sort(colIndex) {
+            console.assert(colIndex === 0)
+            let [, sortDirection] = updateSortDirection([columnSchema], 0);
+            const indexes = column.map((value, rowIndex) => [value, rowIndex]);
+
+            indexes.sort((a, b) => compare(a[0], b[0]) * sortDirection);
+            const sortedColumn = Array();
+            indexes.forEach(function (index, i) {
+                sortedColumn[i] = column[index[1]];
+            });
+            column = sortedColumn;
+            return getRowCount();
+        }
+    }
+
+    return new ColumnVectorView();
 }

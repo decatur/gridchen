@@ -782,8 +782,7 @@ function Grid(container, viewModel, eventListeners) {
             for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {
                 let colIndex = r.columnIndex;
                 for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
-                    viewModel.setCell(rowIndex, colIndex, undefined);
-                    patches.push({op: 'remove', path: viewModel.getPath(rowIndex, colIndex)});
+                    patches.push(...viewModel.setCell(rowIndex, colIndex, undefined));
                 }
             }
         }
@@ -796,22 +795,17 @@ function Grid(container, viewModel, eventListeners) {
         let rowCount = undefined;
         for (const r of selection.areas) {
             range(r.rowCount).forEach(function (i) {
-                const paths = viewModel.getRowPaths(r.rowIndex + i);
-                rowCount = viewModel.deleteRow(r.rowIndex);  // Note: Always the first row
-                for (const path of paths) {
-                    patches.push({op: 'remove', path: path});
-                }
+                patches.push(...viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
             });
         }
         eventListeners['dataChanged'](patches);
-        refresh(rowCount);
+        refresh(viewModel.rowCount());
     }
 
     function insertRow() {
-        refresh(viewModel.insertRowBefore(activeCell.row - 1));
-        const paths = viewModel.getRowPaths(activeCell.row);
-        const patches = paths.map(function(path) { return {op: 'add', path: path} });
+        const patches = viewModel.splice(activeCell.row);
         eventListeners['dataChanged'](patches);
+        refresh(viewModel.rowCount());
     }
 
     function copySelection(doCut, withHeaders) {
@@ -1078,9 +1072,10 @@ function Grid(container, viewModel, eventListeners) {
                 value = schemas[colIndex].converter.fromString(value);
                 //value = value.replace(/\\n/g, '\n');
             }
-            refresh(viewModel.setCell(rowIndex, colIndex, value));
+            const patches = viewModel.setCell(rowIndex, colIndex, value);
+            refresh(viewModel.rowCount());
             // Must be called AFTER model is updated.
-            eventListeners['dataChanged']([{op: 'replace', path: viewModel.getPath(rowIndex, colIndex), value:value}]);
+            eventListeners['dataChanged'](patches);
         }
 
         activeCell.mode = 'display';
@@ -1216,8 +1211,8 @@ function Grid(container, viewModel, eventListeners) {
             for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
                 let value = matrix[i][j];
                 if (value !== undefined) value = schemas[colIndex].converter.fromString(value);
-                viewModel.setCell(rowIndex, colIndex, value);
-                eventListeners['dataChanged']([{op:'replace', path:viewModel.getPath(rowIndex, colIndex), value:value}]);
+                const patches = viewModel.setCell(rowIndex, colIndex, value);
+                eventListeners['dataChanged'](patches);
             }
         }
     }

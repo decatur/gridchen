@@ -212,6 +212,13 @@ class MatrixView {
     /**
      * @returns {number}
      */
+    columnCount() {
+        throw new Error('Abstract method');
+    }
+
+    /**
+     * @returns {number}
+     */
     rowCount() {
         throw new Error('Abstract method');
     }
@@ -232,19 +239,27 @@ class MatrixView {
     getColumn(columnIndex) {
         return range(this.rowCount()).map(rowIndex => this.getCell(rowIndex, columnIndex));
     }
+
+    /**
+     * @param {number} columnIndex
+     * @returns {*[]}
+     */
+    getRow(rowIndex) {
+        return range(this.columnCount()).map(columnIndex => this.getCell(rowIndex, columnIndex));
+    }
 }
 
 /**
  * @param {GridChen.IGridSchema} schema
  * @param {Array<object>} rows
- * @returns {GridChen.DataView | Error}
+ * @returns {GridChen.MatrixView | Error}
  */
 export function createRowMatrixView(schema, rows) {
     let schemas = schema.columnSchemas;
     updateSchema(schemas);
 
     /**
-     * @implements {GridChen.DataView}
+     * @implements {GridChen.MatrixView}
      */
     class RowMatrixView extends MatrixView {
         constructor() {
@@ -255,6 +270,18 @@ export function createRowMatrixView(schema, rows) {
 
         getModel() {
             return rows;
+        }
+
+        removeModel() {
+            rows = undefined;
+            return [{op: 'remove', path: '/'}];
+        }
+
+        /**
+         * @returns {number}
+         */
+        columnCount() {
+            return schemas.length
         }
 
         /**
@@ -302,6 +329,12 @@ export function createRowMatrixView(schema, rows) {
         setCell(rowIndex, colIndex, value) {
             let patches = [];
 
+            if (value == null) {
+                delete rows[rowIndex][colIndex];
+                patches.push({op: 'remove', path: `/${rowIndex}/${colIndex}`});
+                return patches
+            }
+
             if (!rows) {
                 rows = [];
                 patches.push({op: 'add', path: '/', value: []});
@@ -309,7 +342,7 @@ export function createRowMatrixView(schema, rows) {
 
             if (!rows[rowIndex]) {
                 rows[rowIndex] = Array(schemas.length);
-                patches.push({op: 'add', path: `/${rowIndex}`, value: []});
+                patches.push({op: 'add', path: `/${rowIndex}`, value: Array(schemas.length)});
             }
 
             patches.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value});
@@ -344,7 +377,7 @@ export function createRowMatrixView(schema, rows) {
 /**
  * @param {GridChen.IGridSchema} schema
  * @param {Array<object>} rows
- * @returns {GridChen.DataView | Error}
+ * @returns {GridChen.MatrixView | Error}
  */
 export function createRowObjectsView(schema, rows) {
     const schemas = schema.columnSchemas;
@@ -352,7 +385,7 @@ export function createRowObjectsView(schema, rows) {
     updateSchema(schemas);
 
     /**
-     * @implements {GridChen.DataView}
+     * @implements {GridChen.MatrixView}
      */
     class RowObjectsView extends MatrixView {
         constructor() {
@@ -452,7 +485,7 @@ export function createColumnMatrixView(schema, columns) {
     }
 
     /**
-     * @extends {GridChen.DataView}
+     * @extends {GridChen.MatrixView}
      */
     class ColumnMatrixView extends MatrixView {
         constructor() {
@@ -569,7 +602,7 @@ export function createColumnObjectView(schema, columns) {
     }
 
     /**
-     * @extends {GridChen.DataView}
+     * @extends {GridChen.MatrixView}
      */
     class ColumnObjectView extends MatrixView {
         constructor() {
@@ -689,7 +722,7 @@ export function createColumnVectorView(schema, column) {
     }
 
     /**
-     * @extends {GridChen.DataView}
+     * @extends {GridChen.MatrixView}
      */
     class ColumnVectorView extends MatrixView {
         constructor() {
@@ -699,6 +732,18 @@ export function createColumnVectorView(schema, column) {
 
         getModel() {
             return column;
+        }
+
+        removeModel() {
+            column = undefined;
+            return [{op: 'remove', path: '/'}];
+        }
+
+        /**
+         * @returns {number}
+         */
+        columnCount() {
+            return 1
         }
 
         /**
@@ -734,6 +779,13 @@ export function createColumnVectorView(schema, column) {
          */
         setCell(rowIndex, colIndex, value) {
             let patches = [];
+
+            if (value == null) {
+                delete column[rowIndex];
+                patches.push({op: 'remove', path: `/${rowIndex}`});
+                return patches
+            }
+
             if (!column) {
                 column = [];
                 patches.push({op: 'add', path: '/', value: []});

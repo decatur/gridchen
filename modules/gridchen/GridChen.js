@@ -62,7 +62,7 @@ export class GridChen extends HTMLElement {
     }
 
     /**
-     * @param {GridChen.DataView} viewModel
+     * @param {GridChen.MatrixView} viewModel
      */
     resetFromView(viewModel) {
         if (this.shadowRoot) {
@@ -314,7 +314,7 @@ const cellPadding = 3;
 
 /**
  * @param {HTMLElement} container
- * @param viewModel
+ * @param {GridChen.MatrixView} viewModel
  * @param {Array<function()>} eventListeners
  */
 function Grid(container, viewModel, eventListeners) {
@@ -774,18 +774,44 @@ function Grid(container, viewModel, eventListeners) {
 
     function deleteSelection() {
         const patches = [];
+        const modifiedRows = new Set();
         for (const r of selection.areas) {
             let rowIndex = r.rowIndex;
             let endRowIndex = Math.min(rowCount, rowIndex + r.rowCount);
             let endColIndex = r.columnIndex + r.columnCount;
 
-            for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {
+            for (; rowIndex < endRowIndex; rowIndex++) {
+                modifiedRows.add(rowIndex);
                 let colIndex = r.columnIndex;
                 for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
                     patches.push(...viewModel.setCell(rowIndex, colIndex, undefined));
                 }
+
+
             }
         }
+
+        /*for (const rowIndex of Array.from(modifiedRows).sort().reverse()) {
+            const row = viewModel.getRow(rowIndex);
+            if (row.every(item => item == null)) {
+                patches.push(...viewModel.deleteRow(rowIndex));
+            }
+        }*/
+
+        let rowIndex = viewModel.rowCount() - 1;
+        while (rowIndex >= 0) {
+            const row = viewModel.getRow(rowIndex);
+            if (row.some(item => item != null)) {
+                break
+            }
+            patches.push(...viewModel.deleteRow(rowIndex));
+            rowIndex--;
+        }
+
+        if (rowIndex === -1) {
+            patches.push(...viewModel.removeModel())
+        }
+
         eventListeners['dataChanged'](patches);
         refresh(viewModel.rowCount());
     }
@@ -798,6 +824,7 @@ function Grid(container, viewModel, eventListeners) {
                 patches.push(...viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
             });
         }
+
         eventListeners['dataChanged'](patches);
         refresh(viewModel.rowCount());
     }

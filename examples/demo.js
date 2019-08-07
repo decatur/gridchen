@@ -35,6 +35,7 @@ export function createInteractiveDemoGrid(container, schema, data) {
             return createView(schema, data);
         }
 
+        container.querySelector('.patch').textContent = '';
         view = newView();
         gridElement.resetFromView(view);
     }

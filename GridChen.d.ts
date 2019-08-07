@@ -40,12 +40,17 @@ declare module GridChen {
         values: () => any[][];
     }
 
-    export interface DataView {
+    export interface MatrixView {
+        schema: any;
+        columnCount: () => number;
         rowCount: () => number;
-        deleteRow: (rowIndex: number) => number;
+        removeModel: () => object[];
+        deleteRow: (rowIndex: number) => object[];
         getCell: (rowIndex: number, colIndex: number) => any;
-        setCell: (rowIndex: number, colIndex: number, value: any) => number;
-        insertRowBefore: (rowIndex: number) => number;
+        getRow: (rowIndex: number) => any;
+        getColumn: (colIndex: number) => any;
+        setCell: (rowIndex: number, colIndex: number, value: any) => object[];
+        splice: (rowIndex: number) => object[];
         sort: (colIndex: number) => number;
         plot: () => void;
     }

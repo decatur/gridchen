@@ -788,7 +788,7 @@ export function createColumnVectorView(schema, column) {
 
             if (!column) {
                 column = [];
-                patches.push({op: 'add', path: '/', value: []});
+                patches.push({op: 'add', path: '/', value: Array.from({length: 1+rowIndex})});
             }
 
             patches.push({op: 'replace', path: `/${rowIndex}`, value: value});

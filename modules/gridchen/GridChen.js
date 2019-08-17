@@ -972,15 +972,14 @@ function Grid(container, viewModel, eventListeners) {
             dialog.id = 'gridchenDialog';
             dialog.style.width = '80%';
             //dialog.innerHTML = '<form method="dialog"><button type="submit">Hide</button></form>';
-            dialog.appendChild(document.createElement('div'));
+
             document.body.appendChild(dialog);
         }
 
         dialog.showModal();
-        const graphElement = dialog.lastElementChild;
 
         if (!eventListeners['plot']) {
-            graphElement.textContent = 'You must set an event listener of type plot.';
+            dialog.textContent = 'You must set an event listener of type plot.';
             return
         }
 
@@ -993,17 +992,21 @@ function Grid(container, viewModel, eventListeners) {
         }
 
         if (columnIndices.length < 2) {
-            graphElement.textContent = `🤮 Please select 2 columns or more, you only selected column ${columnIndices[0]}`;
+            dialog.textContent = `🤮 Please select 2 columns or more, you only selected column ${columnIndices[0]}`;
             return
         }
 
         const columnSchemas = [];
         const columns = [];
         for (const columnIndex of columnIndices) {
-            columnSchemas.push(columnIndex);
+            columnSchemas.push(schemas[columnIndex]);
             columns.push(viewModel.getColumn(columnIndex));
         }
 
+        // Note: We complete erase dialogs content because some frameworks (plotly for example) will cache information
+        // in the HTML element.
+        dialog.textContent = '';
+        const graphElement = dialog.appendChild(document.createElement('div'));
         eventListeners['plot'](graphElement, schema.title, columnSchemas, columns);
     }
 

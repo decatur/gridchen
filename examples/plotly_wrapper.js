@@ -17,7 +17,7 @@ export function renderPlot(container, title, schemas, series) {
     */
 
     if (!window.Plotly) {
-        container.textContent = '🤮 You must add plotly.js to your html page';
+        container.textContent = '🤮 You must add plotly_wrapper.js to your html page';
     }
 
     const layout = {

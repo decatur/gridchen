@@ -3,7 +3,9 @@
 <head>
     <meta charset="utf-8"/>
     <title>Charting Demo</title>
-    <script src="./examples/plotly-latest.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Hack to make it work offline -->
+    <script src="examples/plotly_1.48.3.js"></script>
     <style>
         body {
             font-family: sans-serif;
@@ -23,6 +25,7 @@
         <li>All columns</li>
         <li>Second and third column</li>
     </ul>
+    This demo uses Plotly.js and a small <a href="examples/plotly_wrapper.js">plotly wrapper</a>.
 </div>
 
 <grid-chen style="display:block; height: 400px"></grid-chen>
@@ -30,7 +33,7 @@
 <script type="module">
     import "./modules/gridchen/GridChen.js"
     import {createView} from "./modules/gridchen/DataViews.js"
-    import {renderPlot} from "./examples/plotly.js"
+    import {renderPlot} from "./examples/plotly_wrapper.js"
 
     const schema = {
         title: 'Charting Demo',
@@ -40,7 +43,7 @@
                 title: 'Time t',
                 type: 'object',
                 items: {
-                    type: 'string', format: 'date-time', width: '200'
+                    type: 'Date', format: 'date-time', width: '200'
                 }
             },
             sin: {

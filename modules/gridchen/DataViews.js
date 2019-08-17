@@ -115,7 +115,7 @@ function sortedColumns(properties) {
 
 /**
  * @param {GridChen.JSONSchema} schema
- * @param {Array<object>} matrix
+ * @param {?} matrix
  * @returns {?}
  */
 export function createView(schema, matrix) {

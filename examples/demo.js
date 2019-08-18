@@ -102,7 +102,7 @@ export const REPR = {
             out.push('{' + nl1);
             const a = [];
             for (const [key, value] of Object.entries(v)) {
-                a.push(key + ': ' + REPR.stringify(value, replacer, depth, level + 1));
+                a.push('"' + key + '": ' + REPR.stringify(value, replacer, depth, level + 1));
             }
             out.push(a.join(',' + nl1));
             out.push(nl0 + '}');

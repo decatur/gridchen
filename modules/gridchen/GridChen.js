@@ -405,7 +405,8 @@ function Grid(container, viewModel, eventListeners) {
             }
             header.onclick = function () {
                 // header.textContent = schema.title + ' ' + (header.textContent.substr(-1)==='↑'?'↓':'↑');
-                refresh(viewModel.sort(index));
+                viewModel.sort(index);
+                refresh(viewModel.rowCount);
             };
             headerRow.appendChild(header);
             left = columnEnds[index];

@@ -197,8 +197,10 @@ export function createColumnSchemas(schema) {
     }
 
     if (schema.items && schema.items.constructor === Object) {
+        const title = schema.title || schema.items.title;
+        schema.items.title = title;
         return {
-            title: schema.title,
+            title: title,
             columnSchemas: [schema.items],
             viewCreator: createColumnVectorView
         }
@@ -265,7 +267,6 @@ export function createRowMatrixView(schema, rows) {
         constructor() {
             super();
             this.schema = schema;
-            this.model = rows;
         }
 
         getModel() {
@@ -362,12 +363,10 @@ export function createRowMatrixView(schema, rows) {
 
         /**
          * @param {number} colIndex
-         * @returns {number}
          */
         sort(colIndex) {
             let [, sortDirection] = updateSortDirection(schemas, colIndex);
             rows.sort((row1, row2) => compare(row1[colIndex], row2[colIndex]) * sortDirection);
-            return rows.length;
         }
     }
 
@@ -459,12 +458,10 @@ export function createRowObjectsView(schema, rows) {
 
         /**
          * @param {number} colIndex
-         * @returns {number}
          */
         sort(colIndex) {
             let [, sortDirection] = updateSortDirection(schemas, colIndex);
             rows.sort((row1, row2) => compare(row1[ids[colIndex]], row2[ids[colIndex]]) * sortDirection);
-            return rows.length;
         }
     }
 
@@ -564,7 +561,6 @@ export function createColumnMatrixView(schema, columns) {
 
         /**
          * @param {number} colIndex
-         * @returns {number}
          */
         sort(colIndex) {
             let [, sortDirection] = updateSortDirection(schemas, colIndex);
@@ -579,8 +575,6 @@ export function createColumnMatrixView(schema, columns) {
                 });
                 columns[j] = sortedColumn;
             });
-
-            return getRowCount();
         }
     }
 
@@ -684,7 +678,6 @@ export function createColumnObjectView(schema, columns) {
 
         /**
          * @param {number} colIndex
-         * @returns {number}
          */
         sort(colIndex) {
             const key = ids[colIndex];
@@ -693,15 +686,14 @@ export function createColumnObjectView(schema, columns) {
 
             indexes.sort((a, b) => compare(a[0], b[0]) * sortDirection);
 
-            columns.forEach(function (column, j) {
+            ids.forEach(function (key) {
                 const sortedColumn = Array();
+                const column = columns[key];
                 indexes.forEach(function (index, i) {
                     sortedColumn[i] = column[index[1]];
                 });
-                columns[ids[j]] = sortedColumn;
+                columns[key] = sortedColumn;
             });
-
-            return getRowCount();
         }
     }
 
@@ -808,20 +800,11 @@ export function createColumnVectorView(schema, column) {
 
         /**
          * @param {number} colIndex
-         * @returns {number}
          */
         sort(colIndex) {
             console.assert(colIndex === 0)
             let [, sortDirection] = updateSortDirection([columnSchema], 0);
-            const indexes = column.map((value, rowIndex) => [value, rowIndex]);
-
-            indexes.sort((a, b) => compare(a[0], b[0]) * sortDirection);
-            const sortedColumn = Array();
-            indexes.forEach(function (index, i) {
-                sortedColumn[i] = column[index[1]];
-            });
-            column = sortedColumn;
-            return getRowCount();
+            column.sort((a, b) => compare(a, b) * sortDirection);
         }
     }
 

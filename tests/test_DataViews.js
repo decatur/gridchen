@@ -38,8 +38,9 @@ test('ColumnMatrixView', () => {
 
 });
 
+
 test('Test Invalid Schema', () => {
-    const view = createView({title: 'FooBar', items: {}}, []);
-    assert.equal('Invalid schema: FooBar', view.message);
+    const view = createView({title: 'FooBar'}, []);
+    assert.equal('createView() received undefined schema', view.message);
 });
 

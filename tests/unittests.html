@@ -24,7 +24,7 @@
 
     import {getErrorCount} from './utils.js'
 
-    const modules = ['Gridchen', 'Clipboard', "Converter", "Rectangle", "tsvToMatrix", "DataViews"];
+    const modules = ['Gridchen', 'Clipboard', "Converter", "tsvToMatrix", "DataViews"];
     const match = window.location.search.match(/module=([^&]+)/);
     loadModule(match ? match[1] : modules[0]);
 

@@ -175,7 +175,7 @@ export class DateTimeStringConverter {
      */
     toString(s) {
         if (s == null) return '';
-        return s
+        return String(s)
     }
 
     toEditable(d) {

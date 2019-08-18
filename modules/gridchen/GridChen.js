@@ -630,9 +630,10 @@ function Grid(container, viewModel, eventListeners) {
             spanStyle.display = 'none';
             ee.showInput(spanStyle.top, spanStyle.left, spanStyle.width);
         },
-        enterInputMode: function () {
+        enterInputMode: function (key) {
             this.mode = 'input';
             this.enterMode();
+            ee.input.value = key;
         },
         enterEditMode: function () {
             this.mode = 'edit';
@@ -818,7 +819,6 @@ function Grid(container, viewModel, eventListeners) {
 
     function deleteRows() {
         const patches = [];
-        let rowCount = undefined;
         for (const r of selection.areas) {
             range(r.rowCount).forEach(function (i) {
                 patches.push(...viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
@@ -960,7 +960,12 @@ function Grid(container, viewModel, eventListeners) {
         } else if (evt.key.length === 1 && !evt.ctrlKey && !evt.altKey) {
             // evt.key.length === 1 looks like a bad idea to sniff for character input, but keypress is deprecated.
             if (activeCell.mode === 'display') {
-                activeCell.enterInputMode();
+                // We now focus the input element. This element would receive the key as value in interactive mode, but
+                // not when called as dispatchEvent() from unit tests!
+                // We want to make this unit testable, so we stop the propagation and hand over the key.
+                evt.preventDefault();
+                evt.stopPropagation();
+                activeCell.enterInputMode(evt.key);
             }
         }
     };

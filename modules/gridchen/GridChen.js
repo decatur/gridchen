@@ -422,7 +422,8 @@ function Grid(container, viewModel, eventListeners) {
     body.style.height = (totalHeight - 20) + 'px';
     container.appendChild(body);
 
-    let viewPortHeight = totalHeight - 20;
+    let viewPortRowCount = Math.floor(( totalHeight - 20) / rowHeight);
+    const viewPortHeight = rowHeight * viewPortRowCount;
     let cellParent = /** @type {HTMLElement} */ document.createElement('div');
     cellParent.className = "GRID";
     cellParent.style.position = 'absolute';  // Must be absolute otherwise contentEditable=true produces strange behaviour
@@ -1118,10 +1119,6 @@ function Grid(container, viewModel, eventListeners) {
         container.focus({preventScroll: true});
     }
 
-
-
-
-    let viewPortRowCount = Math.floor(viewPortHeight / rowHeight);
     /** @type {Array<Array<HTMLElement>>} */
     let spanMatrix = Array(viewPortRowCount);
     let pageIncrement = Math.max(1, viewPortRowCount);

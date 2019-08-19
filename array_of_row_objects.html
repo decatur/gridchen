@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Array of Row Objects</title>
+    <link rel="stylesheet" href="types.css">
+</head>
+<body>
+
+<h1><a href="index.html">GridChen Index</a> / Array of Row Objects</h1>
+
+<div>
+    This demo is interactive both ways:
+    <ul>
+        <li>each change in schema or data will reset the grid, and</li>
+        <li>each cell change will update the data.</li>
+    </ul>
+</div>
+
+<div id="container">
+    <label>
+        Schema
+        <textarea class="schema"></textarea>
+    </label>
+    <label>
+        JavaScript Matrix
+        <textarea class="data"></textarea>
+    </label>
+    <label>
+        Grid
+        <grid-chen></grid-chen>
+    </label>
+    <label>
+        JSON Patch
+        <pre class="patch"></pre>
+    </label>
+</div>
+
+<script type="module">
+    import "./modules/GridChen/GridChen.js"
+    import {createInteractiveDemoGrid} from "./demo.js"
+
+    const dates = ["2019-01-01", "2019-01-02", "2019-01-03"];
+
+    createInteractiveDemoGrid(document.getElementById('container'),
+        {
+            title: 'Array of Row Objects',
+            type: 'object',
+            items: {
+                type: 'object',
+                properties: {
+                    timestamp: {title: 'TimeStamp', width: 200, type: 'string', format: 'full-date'},
+                    age: {title: 'Age', width: 100, type: 'number'},
+                    weight: {title: 'Weight', width: 100, type: 'number'}
+                }
+            }
+        },
+        [
+            {timestamp: dates[0], age: 0, weight: 0},
+            {timestamp: dates[1], age: 1, weight: 2},
+            {timestamp: dates[2], age: 2, weight: 4}
+        ]
+    );
+
+</script>
+</body>
+</html>

@@ -18,21 +18,17 @@
 
 <h1><a href="index.html">GridChen Index</a> / Charting Demo</h1>
 
-<div>
+<p>
     Alt+F1 opens a modal chart of the selection. Try to select
-    <ul>
-        <li>First and second column</li>
-        <li>All columns</li>
-        <li>Second and third column</li>
-    </ul>
+    first and second column then Alt+F1, or all columns then Alt+F1, or second and third column then Alt+F1.
     This demo uses Plotly.js and a small <a href="examples/plotly_wrapper.js">plotly wrapper</a>.
-</div>
+</p>
 
 <grid-chen style="display:block; height: 400px"></grid-chen>
 
 <script type="module">
-    import "./modules/gridchen/GridChen.js"
-    import {createView} from "./modules/gridchen/DataViews.js"
+    import "./modules/GridChen/GridChen.js"
+    import {createView} from "./modules/GridChen/DataViews.js"
     import {renderPlot} from "./examples/plotly_wrapper.js"
 
     const schema = {

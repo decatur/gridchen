@@ -1,5 +1,5 @@
-import {createView} from "../modules/gridchen/DataViews.js"
-import {FullDate, FullDateConverter, DatePartialTime, DatePartialTimeConverter} from "../modules/gridchen/converter.js"
+import {createView} from "./modules/GridChen/DataViews.js"
+import {FullDate, FullDateConverter, DatePartialTime, DatePartialTimeConverter} from "./modules/GridChen/converter.js"
 
 export function createInteractiveDemoGrid(container, schema, data) {
     const schemaElement = container.querySelector('.schema');
@@ -40,7 +40,6 @@ export function createInteractiveDemoGrid(container, schema, data) {
         gridElement.resetFromView(view);
     }
 
-    container.querySelector('h2').textContent = schema.title;
     schemaElement.value = JSON.stringify(schema, null, 4);
     dataElement.oninput = schemaElement.oninput = resetHandler;
     gridElement.setEventListener('dataChanged', dataChanged);

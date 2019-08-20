@@ -2,11 +2,11 @@
 Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience.
 Very modern (web components, es6 modules) with **no** dependencies.
 
-If you need to edit mixed hierachical and grid data, please visit sister project https://decatur.github.io/FormChen.
+If you need to edit mixed hierachical and grid data, please visit sister project https://decatur.github.io/form-chen.
 
 # Demos
 
-See https://decatur.github.io/GridChen
+See https://decatur.github.io/grid-chen
 
 # Usage
 

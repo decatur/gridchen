@@ -1,5 +1,5 @@
-import {createView} from "./modules/GridChen/DataViews.js"
-import {FullDate, FullDateConverter, DatePartialTime, DatePartialTimeConverter} from "./modules/GridChen/converter.js"
+import {createView} from "./grid-chen/DataViews.js"
+import {FullDate, FullDateConverter, DatePartialTime, DatePartialTimeConverter} from "./grid-chen/converter.js"
 
 export function createInteractiveDemoGrid(container, schema, data) {
     const schemaElement = container.querySelector('.schema');

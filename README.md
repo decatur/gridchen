@@ -15,19 +15,20 @@ See https://decatur.github.io/grid-chen
 <grid-chen></grid-chen>
 
 <script type="module">
-    import "./modules/GridChen.js"
-    import {createRowMatrixView} from "./modules/DataViews.js"
+    import "./grid-chen/GridChen.js"
+    import {createView} from "./grid-chen/DataViews.js"
 
     const schema = {
-        title: 'Readme',
-        columnSchemas: [
-            {title: 'A', type: 'string', format:'date'},
-            {title: 'B', type: 'number'}
-        ]
+        title: 'Array of Row Arrays',
+        items: {
+            items: [
+                {title: 'SomeDate', type: 'string', format:'full-date'},
+                {title: 'SomeNumber', type: 'number'}
+            ]
+        }
     };
-    const rows = [[new Date('2019'), 1], [new Date('2020'), 2], [new Date('2021'), 3]];
-    document.querySelector('grid-chen').resetFromView(createRowMatrixView(schema, rows));
-</script>
+    const rows = [['2019-01-01', 1], ['2020-01-01', 2], ['2021-01-01', 3]];
+    document.querySelector('grid-chen').resetFromView(createView(schema, rows));
 </script>
 ```
 

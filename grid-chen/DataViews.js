@@ -275,7 +275,7 @@ export function createRowMatrixView(schema, rows) {
 
         removeModel() {
             rows = undefined;
-            return [{op: 'remove', path: '/'}];
+            return [{op: 'remove', path: ''}];
         }
 
         /**
@@ -328,28 +328,28 @@ export function createRowMatrixView(schema, rows) {
          * @returns {object[]}
          */
         setCell(rowIndex, colIndex, value) {
-            let patches = [];
+            let patch = [];
 
             if (value == null) {
                 delete rows[rowIndex][colIndex];
-                patches.push({op: 'remove', path: `/${rowIndex}/${colIndex}`});
-                return patches
+                patch.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: undefined});
+                return patch
             }
 
             if (!rows) {
                 rows = [];
-                patches.push({op: 'add', path: '/', value: []});
+                patch.push({op: 'add', path: '', value: Array.from({length: 1 + rowIndex})});
             }
 
             if (!rows[rowIndex]) {
                 rows[rowIndex] = Array(schemas.length);
-                patches.push({op: 'add', path: `/${rowIndex}`, value: Array(schemas.length)});
+                patch.push({op: 'replace', path: `/${rowIndex}`, value: Array.from({length:schemas.length})});
             }
 
-            patches.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value});
+            patch.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value});
 
             rows[rowIndex][colIndex] = value;
-            return patches;
+            return patch;
         }
 
         /**
@@ -357,8 +357,8 @@ export function createRowMatrixView(schema, rows) {
          * @returns {object[]}
          */
         splice(rowIndex) {
-            rows.splice(rowIndex, 0, Array(schemas.length));
-            return [{op: 'add', path: `/${rowIndex}`}];
+            rows.splice(rowIndex, 0, undefined);
+            return [{op: 'add', path: `/${rowIndex}`, value: undefined}];
         }
 
         /**
@@ -397,6 +397,14 @@ export function createRowObjectsView(schema, rows) {
         }
 
         /**
+         * @returns {object[]}
+         */
+        removeModel() {
+            rows = undefined;
+            return [{op: 'remove', path: ''}];
+        }
+
+        /**
          * @returns {number}
          */
         rowCount() {
@@ -429,21 +437,27 @@ export function createRowObjectsView(schema, rows) {
          * @returns {object[]}
          */
         setCell(rowIndex, colIndex, value) {
-            let patches = [];
+            let patch = [];
 
             if (!rows) {
                 rows = [];
-                patches.push({op: 'add', path: '/', value: []});
+                patch.push({op: 'add', path: '', value: Array.from({length: 1 + rowIndex})});
             }
 
             if (!rows[rowIndex]) {
                 rows[rowIndex] = {};
-                patches.push({op: 'add', path: `/${rowIndex}`, value: {}});
+                patch.push({op: 'replace', path: `/${rowIndex}`, value: {}});
             }
 
-            patches.push({op: 'replace', path: `/${rowIndex}/${ids[colIndex]}`, value: value});
-            rows[rowIndex][ids[colIndex]] = value;
-            return patches;
+            const key = ids[colIndex];
+            if (key in rows[rowIndex]) {
+                patch.push({op: 'replace', path: `/${rowIndex}/${key}`, value: value});
+            } else {
+                patch.push({op: 'add', path: `/${rowIndex}/${key}`, value: value});
+            }
+
+            rows[rowIndex][key] = value;
+            return patch;
         }
 
         /**
@@ -451,8 +465,8 @@ export function createRowObjectsView(schema, rows) {
          * @returns {object[]}
          */
         splice(rowIndex) {
-            rows.splice(rowIndex, 0, {});
-            return [{op: 'add', path: `/${rowIndex}`}];
+            rows.splice(rowIndex, 0, undefined);
+            return [{op: 'add', path: `/${rowIndex}`, value: undefined}];
             ;
         }
 
@@ -495,6 +509,14 @@ export function createColumnMatrixView(schema, columns) {
         }
 
         /**
+         * @returns {object[]}
+         */
+        removeModel() {
+            columns = undefined;
+            return [{op: 'remove', path: ''}];
+        }
+
+        /**
          * @returns {number}
          */
         rowCount() {
@@ -529,21 +551,21 @@ export function createColumnMatrixView(schema, columns) {
          * @returns {object[]}
          */
         setCell(rowIndex, colIndex, value) {
-            let patches = [];
+            let patch = [];
             if (!columns) {
                 columns = [];
-                patches.push({op: 'add', path: '/', value: []});
+                patch.push({op: 'add', path: '', value: Array.from({length: 1 + colIndex})});
             }
 
             if (!columns[colIndex]) {
                 columns[colIndex] = [];
-                patches.push({op: 'add', path: `/${colIndex}`, value: []});
+                patch.push({op: 'replace', path: `/${colIndex}`, value: Array.from({length: 1 + rowIndex})});
             }
 
-            patches.push({op: 'replace', path: `/${colIndex}/${rowIndex}`, value: value});
+            patch.push({op: 'replace', path: `/${colIndex}/${rowIndex}`, value: value});
 
             columns[colIndex][rowIndex] = value;
-            return patches;
+            return patch;
         }
 
         /**
@@ -551,12 +573,12 @@ export function createColumnMatrixView(schema, columns) {
          * @returns {object[]}
          */
         splice(rowIndex) {
-            let patches = [];
+            let patch = [];
             columns.forEach(function (column, colIndex) {
                 column.splice(rowIndex, 0, undefined);
-                patches.push({op: 'add', path: `/${colIndex}/${rowIndex}`});
+                patch.push({op: 'add', path: `/${colIndex}/${rowIndex}`, value: undefined});
             });
-            return patches;
+            return patch;
         }
 
         /**
@@ -609,6 +631,14 @@ export function createColumnObjectView(schema, columns) {
         }
 
         /**
+         * @returns {object[]}
+         */
+        removeModel() {
+            columns = undefined;
+            return [{op: 'remove', path: ''}];
+        }
+
+        /**
          * @returns {number}
          */
         rowCount() {
@@ -645,21 +675,21 @@ export function createColumnObjectView(schema, columns) {
          */
         setCell(rowIndex, colIndex, value) {
             const key = ids[colIndex];
-            let patches = [];
+            let patch = [];
             if (!columns) {
                 columns = {};
-                patches.push({op: 'add', path: '/', value: {}});
+                patch.push({op: 'add', path: '', value: {}});
             }
 
             if (!columns[key]) {
                 columns[key] = [];
-                patches.push({op: 'add', path: `/${key}`, value: []});
+                patch.push({op: 'add', path: `/${key}`, value: Array.from({length: 1 + rowIndex})});
             }
 
-            patches.push({op: 'replace', path: `/${key}/${rowIndex}`, value: value});
+            patch.push({op: 'replace', path: `/${key}/${rowIndex}`, value: value});
 
             columns[key][rowIndex] = value;
-            return patches;
+            return patch;
         }
 
         /**
@@ -667,13 +697,14 @@ export function createColumnObjectView(schema, columns) {
          * @returns {object[]}
          */
         splice(rowIndex) {
-            let patches = [];
+            let patch = [];
             // TODO: Object.values and sort index?
-            Object.values(columns).forEach(function (column, colIndex) {
+            ids.forEach(function (key) {
+                const column = columns[key];
                 column.splice(rowIndex, 0, undefined);
-                patches.push({op: 'add', path: `/${colIndex}/${rowIndex}`});
+                patch.push({op: 'add', path: `/${key}/${rowIndex}`, value: undefined});
             });
-            return patches;
+            return patch;
         }
 
         /**
@@ -726,9 +757,12 @@ export function createColumnVectorView(schema, column) {
             return column;
         }
 
+        /**
+         * @returns {object[]}
+         */
         removeModel() {
             column = undefined;
-            return [{op: 'remove', path: '/'}];
+            return [{op: 'remove', path: ''}];
         }
 
         /**
@@ -770,23 +804,23 @@ export function createColumnVectorView(schema, column) {
          * @returns {object[]}
          */
         setCell(rowIndex, colIndex, value) {
-            let patches = [];
+            let patch = [];
 
             if (value == null) {
                 delete column[rowIndex];
-                patches.push({op: 'remove', path: `/${rowIndex}`});
-                return patches
+                patch.push({op: 'replace', path: `/${rowIndex}`, value: undefined});
+                return patch
             }
 
             if (!column) {
                 column = [];
-                patches.push({op: 'add', path: '/', value: Array.from({length: 1+rowIndex})});
+                patch.push({op: 'add', path: '', value: Array.from({length: 1 + rowIndex})});
             }
 
-            patches.push({op: 'replace', path: `/${rowIndex}`, value: value});
+            patch.push({op: 'replace', path: `/${rowIndex}`, value: value});
 
             column[rowIndex] = value;
-            return patches;
+            return patch;
         }
 
         /**
@@ -795,7 +829,7 @@ export function createColumnVectorView(schema, column) {
          */
         splice(rowIndex) {
             column.splice(rowIndex, 0, undefined);
-            return [{op: 'add', path: `/${rowIndex}`}]
+            return [{op: 'add', path: `/${rowIndex}`, value: undefined}]
         }
 
         /**

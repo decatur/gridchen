@@ -88,10 +88,10 @@ export class GridChen extends HTMLElement {
         if (!filteredKeys) {
             throw new Error('Invalid listener type: ' + type);
         }
-        this.eventListeners[filteredKeys[0]] = function(_) {
+        this.eventListeners[filteredKeys[0]] = function (_) {
             try {
                 listener(...arguments);
-            } catch(err) {
+            } catch (err) {
                 console.error(err);
             }
         };
@@ -138,7 +138,12 @@ class Slider {
         this.element = document.createElement('input');
         this.element.type = "range";
         const style = this.element.style;
-        style['-webkit-appearance'] = 'slider-vertical';
+        if (navigator.userAgent.includes('Firefox')) {
+            this.element.setAttribute('orient', 'vertical');
+        } else {
+            // Setting -webkit-appearance will prevent to set any custom styles on it
+            style['-webkit-appearance'] = 'slider-vertical';
+        }
         style.position = 'absolute';
         style.display = 'inline-block';
         //this.element.style.marginLeft = '10px'
@@ -300,10 +305,10 @@ class Selection extends Range {
      * Synchronizes the convex hull of all areas.
      */
     convexHull() {
-        this.rowIndex = Math.min(...this.areas.map(r=>r.rowIndex));
-        this.rowCount = Math.max(...this.areas.map(r=>r.rowIndex+r.rowCount)) - this.rowIndex;
-        this.columnIndex = Math.min(...this.areas.map(r=>r.columnIndex));
-        this.columnCount = Math.max(...this.areas.map(r=>r.columnIndex+r.columnCount)) - this.columnIndex;
+        this.rowIndex = Math.min(...this.areas.map(r => r.rowIndex));
+        this.rowCount = Math.max(...this.areas.map(r => r.rowIndex + r.rowCount)) - this.rowIndex;
+        this.columnIndex = Math.min(...this.areas.map(r => r.columnIndex));
+        this.columnCount = Math.max(...this.areas.map(r => r.columnIndex + r.columnCount)) - this.columnIndex;
     }
 }
 
@@ -422,7 +427,7 @@ function Grid(container, viewModel, eventListeners) {
     body.style.height = (totalHeight - 20) + 'px';
     container.appendChild(body);
 
-    let viewPortRowCount = Math.floor(( totalHeight - 20) / rowHeight);
+    let viewPortRowCount = Math.floor((totalHeight - 20) / rowHeight);
     const viewPortHeight = rowHeight * viewPortRowCount;
     let cellParent = /** @type {HTMLElement} */ document.createElement('div');
     cellParent.className = "GRID";
@@ -547,8 +552,8 @@ function Grid(container, viewModel, eventListeners) {
             if (schemas[activeCell.col].enum) {
                 this.input.setAttribute('list', 'enum' + activeCell.col);
             } else {
-				this.input.removeAttribute('list');
-			}
+                this.input.removeAttribute('list');
+            }
 
             style.display = 'inline-block';
             // focus on input element, which will then receive this keyboard event.
@@ -993,7 +998,7 @@ function Grid(container, viewModel, eventListeners) {
         /** @type{Array<number>} */
         const columnIndices = [];
         for (const /** @type{Range} */ r of selection.areas) {
-            for (let count=0; count<r.columnCount; count++) {
+            for (let count = 0; count < r.columnCount; count++) {
                 columnIndices.push(r.columnIndex + count);
             }
         }
@@ -1426,7 +1431,9 @@ export function tsvToMatrix(text) {
 
 function normalizeQuotes(text) {
     text = text + '@';
-    const a = text.split(/(".*?"[^"])/s);
+    // Chrome understands s-flag: /(".*?"[^"])/s
+    // Firefox does not. So we use the [\s\S] idiom instead
+    const a = text.split(/("[\s\S]*?"[^"])/);
     const qs = [];
     for (let i = 1; i < a.length; i += 2) {
         let s = a[i];

@@ -1,7 +1,7 @@
 import {test, assert} from './utils.js'
-import {GridChen} from '../modules/gridchen/GridChen.js'
-import {createColumnMatrixView, createRowMatrixView} from "../modules/gridchen/DataViews.js";
-import {NumberConverter} from "../modules/gridchen/converter.js";
+import {GridChen} from '../grid-chen/GridChen.js'
+import {createColumnMatrixView, createRowMatrixView} from "../grid-chen/DataViews.js";
+import {NumberConverter} from "../grid-chen/converter.js";
 
 const decimalSep = new NumberConverter(1).decimalSep;
 

@@ -1,5 +1,5 @@
 import {test, assert} from './utils.js'
-import {tsvToMatrix} from '../modules/gridchen/GridChen.js'
+import {tsvToMatrix} from '../grid-chen/GridChen.js'
 
 test('tsvToMatrix', () => {
     let rows = tsvToMatrix("1\t2\r\n3\t4\r\n");

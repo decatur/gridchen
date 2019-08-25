@@ -1,5 +1,5 @@
 import {test, assert} from './utils.js'
-import {createView} from '../modules/gridchen/DataViews.js'
+import {createView} from '../grid-chen/DataViews.js'
 
 test('RowMatrixView', () => {
     const createMatrix = () => [[1, 'b'], [NaN, undefined], [3, 'c'], [2, 'a']];

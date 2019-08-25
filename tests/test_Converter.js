@@ -1,5 +1,5 @@
 import {test, assert} from './utils.js'
-import {FullDate, DatePartialTime, DateTimeConverter, DateTimeStringConverter, FullDateConverter, DatePartialTimeConverter, NumberConverter} from "../modules/gridchen/converter.js";
+import {FullDate, DatePartialTime, DateTimeConverter, DateTimeStringConverter, FullDateConverter, DatePartialTimeConverter, NumberConverter} from "../grid-chen/converter.js";
 
 test('DateTimeStringConverter', () => {
     let converter = new DateTimeStringConverter();

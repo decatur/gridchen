@@ -392,8 +392,8 @@ export function createRowMatrixView(schema, rows) {
             patch.push(...padArray(rows, 1 + rowIndex, '/-'));
 
             if (!rows[rowIndex]) {
-                rows[rowIndex] = createArray(schemas.length);
-                patch.push({op: 'replace', path: `/${rowIndex}`, value: createArray(schemas.length)});
+                rows[rowIndex] = createArray(colIndex);
+                patch.push({op: 'replace', path: `/${rowIndex}`, value: createArray(colIndex)});
             } else if (rows[rowIndex].length < schemas.length) {
                 patch.push(...padArray(rows[rowIndex], schemas.length, `/${rowIndex}/-`));
             }
@@ -551,7 +551,6 @@ export function createColumnMatrixView(schema, columns) {
     updateSchema(schemas);
 
     function getRowCount() {
-        // throw Error('Make sure that columns are not ragged!');
         if (!columns) return 0;
         return columns.reduce((length, column) => Math.max(length, column?column.length:0), 0);
     }
@@ -621,20 +620,19 @@ export function createColumnMatrixView(schema, columns) {
         setCell(rowIndex, colIndex, value) {
             let patch = [];
             if (!columns) {
-                columns = createArray(schemas.length, ()=>[]);
-                patch.push({op: 'add', path: '', value: createArray(schemas.length, ()=>[])});
+                columns = createArray(schemas.length);
+                patch.push({op: 'add', path: '', value: createArray(schemas.length)});
             }
 
-            if (rowIndex >= getRowCount()) {
-                columns.forEach(function(column, k) {
-                    patch.push(...padArray(column, rowIndex+1, `/${k}/-`));
-                })
+            let column = columns[colIndex];
+            if (!column) {
+                column = columns[colIndex] = [];
+                patch.push({op: 'replace', path: `${colIndex}`, value: []});
             }
 
-            /*if (!columns[colIndex]) {
-                columns[colIndex] = createArray(1 + rowIndex);
-                patch.push({op: 'replace', path: `/${colIndex}`, value: createArray(1 + rowIndex)});
-            }*/
+            if (rowIndex >= column.length) {
+                patch.push(...padArray(column, rowIndex+1, `/${colIndex}/-`));
+            }
 
             patch.push({op: 'replace', path: `/${colIndex}/${rowIndex}`, value: value});
 
@@ -687,7 +685,6 @@ export function createColumnObjectView(schema, columns) {
     updateSchema(schemas);
 
     function getRowCount() {
-        // throw Error('Make sure that columns are not ragged!');
         if (!columns) return 0;
         return Object.values(columns).reduce((length, column) => Math.max(length, column.length), 0);
     }
@@ -756,35 +753,28 @@ export function createColumnObjectView(schema, columns) {
          * @returns {object[]}
          */
         setCell(rowIndex, colIndex, value) {
-            const key = ids[colIndex];
             let patch = [];
+            const key = ids[colIndex];
+
             if (!columns) {
                 const createEmptyObject = function() {
                     const o = {};
-                    ids.forEach(function(key) {
-                        o[key] = [];
-                    });
+                    o[key] = [];
                     return o;
                 };
                 columns = createEmptyObject();
                 patch.push({op: 'add', path: '', value: createEmptyObject()});
             }
 
-            if (rowIndex >= getRowCount()) {
-                ids.forEach(function(key) {
-                    const column = columns[key];
-                    patch.push(...padArray(column, rowIndex+1, `/${key}/-`));
-                })
-            }
+            const column = columns[key];
 
-            if (!columns[key]) {
-                columns[key] = createArray(1 + rowIndex);
-                patch.push({op: 'add', path: `/${key}`, value: createArray(1 + rowIndex)});
+            if (rowIndex >= column.length) {
+                patch.push(...padArray(column, rowIndex+1, `/${key}/-`));
             }
 
             patch.push({op: 'replace', path: `/${key}/${rowIndex}`, value: value});
 
-            columns[key][rowIndex] = value;
+            column[rowIndex] = value;
             return patch;
         }
 

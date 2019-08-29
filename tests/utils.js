@@ -24,7 +24,7 @@ function err(container, err) {
     errCount++;
 }
 
-export async function test(msg, asyncFct) {
+export async function testAsync(msg, asyncFct) {
     const div = log(msg);
     try {
         await asyncFct();

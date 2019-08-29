@@ -1,4 +1,4 @@
-import {assert, test, log} from './utils.js'
+import {assert, testAsync, log} from './utils.js'
 import '../grid-chen/GridChen.js'
 import {createRowMatrixView} from "../grid-chen/DataViews.js";
 import {NumberConverter} from "../grid-chen/converter.js";
@@ -27,7 +27,7 @@ gc.resetFromView(view);
 
 (async function () {
 
-    await test('copy', async function () {
+    await testAsync('copy', async function () {
         gc.getRangeByIndexes(0, 0, 2, 2).select();
         dispatchKey(gc, {code: 'KeyC', ctrlKey: true});
         const text = await navigator.clipboard.readText();
@@ -35,10 +35,10 @@ gc.resetFromView(view);
         assert.equal(`0${decimalSep}00\ta\r\nNaN\tb`, text);
     });
 
-    await test('paste1', async function () {
+    await testAsync('paste1', async function () {
         await navigator.clipboard.writeText(`0\ta\r\nNaN\tb`);
 
-        gc.setEventListener('paste', () => test('should paste cells to (2,1)', function () {
+        gc.setEventListener('paste', () => testAsync('should paste cells to (2,1)', function () {
             assert.equal([[0, 'a'], [0, 'a'], [NaN, 'b']], rows);
         }));
 
@@ -46,10 +46,10 @@ gc.resetFromView(view);
         dispatchKey(gc, {code: 'KeyV', ctrlKey: true});
     });
 
-    await test('paste2', async function () {
+    await testAsync('paste2', async function () {
         await navigator.clipboard.writeText(`3\tc`);
 
-        gc.setEventListener('paste', () => test('tiling', function () {
+        gc.setEventListener('paste', () => testAsync('tiling', function () {
             assert.equal([[3, 'c'],[3, 'c'],[NaN, 'b']], rows);
         }));
 
@@ -57,10 +57,10 @@ gc.resetFromView(view);
         dispatchKey(gc, {code: 'KeyV', ctrlKey: true});
     });
 
-    await test('paste outside of column range', async function () {
+    await testAsync('paste outside of column range', async function () {
         await navigator.clipboard.writeText(`3\tc`);
 
-        gc.setEventListener('paste', () => test('tiling', function () {
+        gc.setEventListener('paste', () => testAsync('tiling', function () {
             assert.equal([[3, '3'],[3, 'c'],[NaN, 'b']], rows);
         }));
 

@@ -1,7 +1,7 @@
-import {test, assert} from './utils.js'
+import {testSync, assert} from './utils.js'
 import {tsvToMatrix} from '../grid-chen/GridChen.js'
 
-test('tsvToMatrix', () => {
+testSync('tsvToMatrix', () => {
     let rows = tsvToMatrix("1\t2\r\n3\t4\r\n");
     assert.equal([['1', '2'], ['3', '4']], rows);
 

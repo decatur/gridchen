@@ -29,7 +29,7 @@ export async function test(msg, asyncFct) {
     try {
         await asyncFct();
     } catch(e) {
-        // console.log(e);
+        //console.log(e);
         err(div, e);
     }
 }

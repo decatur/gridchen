@@ -4,7 +4,7 @@ import {createView} from '../grid-chen/DataViews.js'
 const jsonpatch = window.jsonpatch;
 
 test('RowMatrixView', () => {
-    const createModel = () => [[1, 'b'], [NaN, undefined], [3, 'c'], [2, 'a']];
+    const createModel = () => [[1, 'b'], [NaN], [3, 'c'], [2, 'a']];
     const schema = {
         "title": "Array of Row Arrays",
         "type": "object",
@@ -22,6 +22,30 @@ test('RowMatrixView', () => {
         const view = createView(schema, model);
         const patch = view.setCell(1, 0, 'x');
         assert.equal(view.getModel(), model);
+        const patched = jsonpatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+    });
+
+    test('add', () => {
+        const model = createModel();
+        const view = createView(schema, model);
+        const patch = view.setCell(1, 1, 'x');
+        const patched = jsonpatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+    });
+
+    test('setAfterLast', () => {
+        const model = createModel();
+        const view = createView(schema, model);
+        const patch = view.setCell(4, 0, 'x');
+        const patched = jsonpatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+    });
+
+    test('setSecondAfterLast', () => {
+        const model = createModel();
+        const view = createView(schema, model);
+        const patch = view.setCell(5, 0, 'x');
         const patched = jsonpatch.apply_patch(createModel(), patch);
         assert.equal(patched, model);
     });
@@ -78,9 +102,9 @@ test('RowMatrixView', () => {
         assert.equal('b', rowView.getCell(0, 1));
 
         rowView.sort(0);
-        assert.equal([[1, 'b'], [2, 'a'], [3, 'c'], [NaN, undefined]], rowMatrix);
+        assert.equal([[1, 'b'], [2, 'a'], [3, 'c'], [NaN]], rowMatrix);
         rowView.sort(1);
-        assert.equal([[2, 'a'], [1, 'b'], [3, 'c'], [NaN, undefined]], rowMatrix);
+        assert.equal([[2, 'a'], [1, 'b'], [3, 'c'], [NaN]], rowMatrix);
     });
 
 
@@ -105,6 +129,30 @@ test('RowObjectsView', () => {
         const view = createView(schema, model);
         const patch = view.setCell(1, 0, 'x');
         assert.equal(view.getModel(), model);
+        const patched = jsonpatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+    });
+
+    test('add', () => {
+        const model = createModel();
+        const view = createView(schema, model);
+        const patch = view.setCell(1, 1, 'x');
+        const patched = jsonpatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+    });
+
+    test('setAfterLast', () => {
+        const model = createModel();
+        const view = createView(schema, model);
+        const patch = view.setCell(4, 0, 'x');
+        const patched = jsonpatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+    });
+
+    test('setSecondAfterLast', () => {
+        const model = createModel();
+        const view = createView(schema, model);
+        const patch = view.setCell(5, 0, 'x');
         const patched = jsonpatch.apply_patch(createModel(), patch);
         assert.equal(patched, model);
     });
@@ -195,6 +243,30 @@ test('ColumnMatrixView', () => {
         assert.equal(patched, model);
     });
 
+    test('add', () => {
+        const model = createModel();
+        const view = createView(schema, model);
+        const patch = view.setCell(1, 1, 'x');
+        const patched = jsonpatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+    });
+
+    test('setAfterLast', () => {
+        const model = createModel();
+        const view = createView(schema, model);
+        const patch = view.setCell(4, 0, 'x');
+        const patched = jsonpatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+    });
+
+    test('setSecondAfterLast', () => {
+        const model = createModel();
+        const view = createView(schema, model);
+        const patch = view.setCell(5, 0, 'x');
+        const patched = jsonpatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+    });
+
     test('deleteCell', () => {
         const model = createModel();
         const view = createView(schema, model);
@@ -272,6 +344,30 @@ test('ColumnObjectView', () => {
         const view = createView(schema, model);
         const patch = view.setCell(1, 0, 42);
         assert.equal(view.getModel(), model);
+        const patched = jsonpatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+    });
+
+    test('add', () => {
+        const model = createModel();
+        const view = createView(schema, model);
+        const patch = view.setCell(1, 1, 'x');
+        const patched = jsonpatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+    });
+
+    test('setAfterLast', () => {
+        const model = createModel();
+        const view = createView(schema, model);
+        const patch = view.setCell(4, 0, 'x');
+        const patched = jsonpatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+    });
+
+    test('setSecondAfterLast', () => {
+        const model = createModel();
+        const view = createView(schema, model);
+        const patch = view.setCell(5, 0, 'x');
         const patched = jsonpatch.apply_patch(createModel(), patch);
         assert.equal(patched, model);
     });

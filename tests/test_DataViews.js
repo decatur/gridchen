@@ -1,9 +1,9 @@
-import {test, assert} from './utils.js'
+import {testSync, assert} from './utils.js'
 import {createView} from '../grid-chen/DataViews.js'
 
 const jsonpatch = window.jsonpatch;
 
-test('RowMatrixView', () => {
+testSync('RowMatrixView', () => {
     const createModel = () => [[1, 'b'], [NaN], [3, 'c'], [2, 'a']];
     const schema = {
         "title": "Array of Row Arrays",
@@ -17,7 +17,7 @@ test('RowMatrixView', () => {
         }
     };
 
-    test('set', () => {
+    testSync('set', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(1, 0, 'x');
@@ -26,7 +26,7 @@ test('RowMatrixView', () => {
         assert.equal(patched, model);
     });
 
-    test('add', () => {
+    testSync('add', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(1, 1, 'x');
@@ -34,7 +34,7 @@ test('RowMatrixView', () => {
         assert.equal(patched, model);
     });
 
-    test('setAfterLast', () => {
+    testSync('setAfterLast', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(4, 0, 'x');
@@ -42,7 +42,7 @@ test('RowMatrixView', () => {
         assert.equal(patched, model);
     });
 
-    test('setSecondAfterLast', () => {
+    testSync('setSecondAfterLast', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(5, 0, 'x');
@@ -50,7 +50,7 @@ test('RowMatrixView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteCell', () => {
+    testSync('deleteCell', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(1, 0, undefined);
@@ -58,14 +58,14 @@ test('RowMatrixView', () => {
         assert.equal(patched, model);
     });
 
-    test('set-from-scratch', () => {
+    testSync('set-from-scratch', () => {
         const view = createView(schema, undefined);
         const patch = view.setCell(1, 1, 42);
         const patched = jsonpatch.apply_patch(undefined, patch);
         assert.equal(patched, view.getModel());
     });
 
-    test('splice', () => {
+    testSync('splice', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.splice(1);
@@ -73,7 +73,7 @@ test('RowMatrixView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteRow', () => {
+    testSync('deleteRow', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.deleteRow(1);
@@ -81,21 +81,21 @@ test('RowMatrixView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteSingleRemainingRow', () => {
+    testSync('deleteSingleRemainingRow', () => {
         const view = createView(schema, [[1, 'b']]);
         const patch = view.deleteRow(0);
         const patched = jsonpatch.apply_patch([[1, 'b']], patch);
         assert.equal(patched, []);
     });
 
-    test('remove', () => {
+    testSync('remove', () => {
         const view = createView(schema, createModel());
         const patch = view.removeModel();
         const patched = jsonpatch.apply_patch(createModel(), patch);
         assert.equal(patched, undefined);
     });
 
-    test('sort', () => {
+    testSync('sort', () => {
         const rowMatrix = createModel();
         const rowView = createView(schema, rowMatrix);
         assert.equal(1, rowView.getCell(0, 0));
@@ -110,7 +110,7 @@ test('RowMatrixView', () => {
 
 });
 
-test('RowObjectsView', () => {
+testSync('RowObjectsView', () => {
     const createModel = () => [{c1: 1, c2: 'b'}, {c1: NaN}, {c1: 3, c2: 'c'}, {c1: 2, c2: 'a'}];
     const schema = {
         "title": "Array of Row Objects",
@@ -124,7 +124,7 @@ test('RowObjectsView', () => {
         }
     };
 
-    test('set', () => {
+    testSync('set', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(1, 0, 'x');
@@ -133,7 +133,7 @@ test('RowObjectsView', () => {
         assert.equal(patched, model);
     });
 
-    test('add', () => {
+    testSync('add', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(1, 1, 'x');
@@ -141,7 +141,7 @@ test('RowObjectsView', () => {
         assert.equal(patched, model);
     });
 
-    test('setAfterLast', () => {
+    testSync('setAfterLast', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(4, 0, 'x');
@@ -149,7 +149,7 @@ test('RowObjectsView', () => {
         assert.equal(patched, model);
     });
 
-    test('setSecondAfterLast', () => {
+    testSync('setSecondAfterLast', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(5, 0, 'x');
@@ -157,7 +157,7 @@ test('RowObjectsView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteCell', () => {
+    testSync('deleteCell', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(1, 0, undefined);
@@ -165,14 +165,14 @@ test('RowObjectsView', () => {
         assert.equal(patched, model);
     });
 
-    test('set-from-scratch', () => {
+    testSync('set-from-scratch', () => {
         const view = createView(schema, undefined);
         const patch = view.setCell(1, 1, 42);
         const patched = jsonpatch.apply_patch(undefined, patch);
         assert.equal(patched, view.getModel());
     });
 
-    test('splice', () => {
+    testSync('splice', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.splice(1);
@@ -180,7 +180,7 @@ test('RowObjectsView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteRow', () => {
+    testSync('deleteRow', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.deleteRow(1);
@@ -188,21 +188,21 @@ test('RowObjectsView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteSingleRemainingRow', () => {
+    testSync('deleteSingleRemainingRow', () => {
         const view = createView(schema, [{c1: 1, c2: 'b'}]);
         const patch = view.deleteRow(0);
         const patched = jsonpatch.apply_patch([{c1: 1, c2: 'b'}], patch);
         assert.equal(patched, []);
     });
 
-    test('remove', () => {
+    testSync('remove', () => {
         const view = createView(schema, createModel());
         const patch = view.removeModel();
         const patched = jsonpatch.apply_patch(createModel(), patch);
         assert.equal(patched, undefined);
     });
 
-    test('sort', () => {
+    testSync('sort', () => {
         const rowMatrix = createModel();
         const rowView = createView(schema, rowMatrix);
         assert.equal(1, rowView.getCell(0, 0));
@@ -217,7 +217,7 @@ test('RowObjectsView', () => {
 
 });
 
-test('ColumnMatrixView', () => {
+testSync('ColumnMatrixView', () => {
     const createModel = () => [[1, NaN, 3, 2], ['b', undefined, 'c', 'a']];
     const schema = {
         "title": "Array of Column Array",
@@ -234,7 +234,7 @@ test('ColumnMatrixView', () => {
         ]
     };
 
-    test('set', () => {
+    testSync('set', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(1, 0, 'x');
@@ -243,7 +243,7 @@ test('ColumnMatrixView', () => {
         assert.equal(patched, model);
     });
 
-    test('add', () => {
+    testSync('add', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(1, 1, 'x');
@@ -251,7 +251,7 @@ test('ColumnMatrixView', () => {
         assert.equal(patched, model);
     });
 
-    test('setAfterLast', () => {
+    testSync('setAfterLast', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(4, 0, 'x');
@@ -259,7 +259,7 @@ test('ColumnMatrixView', () => {
         assert.equal(patched, model);
     });
 
-    test('setSecondAfterLast', () => {
+    testSync('setSecondAfterLast', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(5, 0, 'x');
@@ -267,7 +267,7 @@ test('ColumnMatrixView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteCell', () => {
+    testSync('deleteCell', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(1, 0, undefined);
@@ -275,14 +275,14 @@ test('ColumnMatrixView', () => {
         assert.equal(patched, model);
     });
 
-    test('set-from-scratch', () => {
+    testSync('set-from-scratch', () => {
         const view = createView(schema, undefined);
         const patch = view.setCell(1, 1, 42);
         const patched = jsonpatch.apply_patch(undefined, patch);
         assert.equal(patched, view.getModel());
     });
 
-    test('splice', () => {
+    testSync('splice', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.splice(1);
@@ -290,7 +290,7 @@ test('ColumnMatrixView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteRow', () => {
+    testSync('deleteRow', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.deleteRow(1);
@@ -298,21 +298,21 @@ test('ColumnMatrixView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteSingleRemainingRow', () => {
+    testSync('deleteSingleRemainingRow', () => {
         const view = createView(schema, [[1], ['b']]);
         const patch = view.deleteRow(0);
         const patched = jsonpatch.apply_patch([[1], ['b']], patch);
         assert.equal(patched, [[],[]]);
     });
 
-    test('remove', () => {
+    testSync('remove', () => {
         const view = createView(schema, createModel());
         const patch = view.removeModel();
         const patched = jsonpatch.apply_patch(createModel(), patch);
         assert.equal(patched, undefined);
     });
 
-    test('sort', () => {
+    testSync('sort', () => {
         const model = createModel();
         const colView = createView(schema, model);
         colView.sort(0);
@@ -323,7 +323,7 @@ test('ColumnMatrixView', () => {
 
 });
 
-test('ColumnObjectView', () => {
+testSync('ColumnObjectView', () => {
     const createModel = function () {
         return {
             col1: [1, NaN, 3, 2],
@@ -331,7 +331,7 @@ test('ColumnObjectView', () => {
         };
     };
     const schema = {
-        title: 'test',
+        title: 'testSync',
         type: 'object',
         properties: {
             col1: {"type": "object", items: {title: 'number', type: 'number', width: 0}},
@@ -339,7 +339,7 @@ test('ColumnObjectView', () => {
         }
     };
 
-    test('set', () => {
+    testSync('set', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(1, 0, 42);
@@ -348,7 +348,7 @@ test('ColumnObjectView', () => {
         assert.equal(patched, model);
     });
 
-    test('add', () => {
+    testSync('add', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(1, 1, 'x');
@@ -356,7 +356,7 @@ test('ColumnObjectView', () => {
         assert.equal(patched, model);
     });
 
-    test('setAfterLast', () => {
+    testSync('setAfterLast', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(4, 0, 'x');
@@ -364,7 +364,7 @@ test('ColumnObjectView', () => {
         assert.equal(patched, model);
     });
 
-    test('setSecondAfterLast', () => {
+    testSync('setSecondAfterLast', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(5, 0, 'x');
@@ -372,7 +372,7 @@ test('ColumnObjectView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteCell', () => {
+    testSync('deleteCell', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(1, 0, undefined);
@@ -380,14 +380,14 @@ test('ColumnObjectView', () => {
         assert.equal(patched, model);
     });
 
-    test('set-from-scratch', () => {
+    testSync('set-from-scratch', () => {
         const view = createView(schema, undefined);
         const patch = view.setCell(1, 1, 'x');
         const patched = jsonpatch.apply_patch(undefined, patch);
         assert.equal(patched, view.getModel());
     });
 
-    test('splice', () => {
+    testSync('splice', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.splice(1);
@@ -395,7 +395,7 @@ test('ColumnObjectView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteRow', () => {
+    testSync('deleteRow', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.deleteRow(1);
@@ -403,21 +403,21 @@ test('ColumnObjectView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteSingleRemainingRow', () => {
+    testSync('deleteSingleRemainingRow', () => {
         const view = createView(schema, {col1: [1], col2: ['b']});
         const patch = view.deleteRow(0);
         const patched = jsonpatch.apply_patch({col1: [1], col2: ['b']}, patch);
         assert.equal(patched, {col1: [], col2: []});
     });
 
-    test('remove', () => {
+    testSync('remove', () => {
         const view = createView(schema, createModel());
         const patch = view.removeModel();
         const patched = jsonpatch.apply_patch(createModel(), patch);
         assert.equal(patched, undefined);
     });
 
-    test('sort', () => {
+    testSync('sort', () => {
         const model = createModel();
         const colView = createView(schema, model);
         colView.sort(0);
@@ -428,7 +428,7 @@ test('ColumnObjectView', () => {
 
 });
 
-test('ColumnVectorView', () => {
+testSync('ColumnVectorView', () => {
     const createModel = () => [1, NaN, 3, 2];
     const schema = {
         "title": "Single Column",
@@ -439,7 +439,7 @@ test('ColumnVectorView', () => {
         }
     };
 
-    test('set', () => {
+    testSync('set', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(1, 0, 42);
@@ -448,7 +448,7 @@ test('ColumnVectorView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteCell', () => {
+    testSync('deleteCell', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(1, 0, undefined);
@@ -456,14 +456,14 @@ test('ColumnVectorView', () => {
         assert.equal(patched, model);
     });
 
-    test('set-from-scratch', () => {
+    testSync('set-from-scratch', () => {
         const view = createView(schema, undefined);
         const patch = view.setCell(1, 0, 42);
         const patched = jsonpatch.apply_patch(undefined, patch);
         assert.equal(patched, view.getModel());
     });
 
-    test('splice', () => {
+    testSync('splice', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.splice(1);
@@ -471,7 +471,7 @@ test('ColumnVectorView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteRow', () => {
+    testSync('deleteRow', () => {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.deleteRow(1);
@@ -479,21 +479,21 @@ test('ColumnVectorView', () => {
         assert.equal(patched, model);
     });
 
-    test('deleteSingleRemainingRow', () => {
+    testSync('deleteSingleRemainingRow', () => {
         const view = createView(schema, [1]);
         const patch = view.deleteRow(0);
         const patched = jsonpatch.apply_patch([1], patch);
         assert.equal(patched, []);
     });
 
-    test('remove', () => {
+    testSync('remove', () => {
         const view = createView(schema, createModel());
         const patch = view.removeModel();
         const patched = jsonpatch.apply_patch(createModel(), patch);
         assert.equal(patched, undefined);
     });
 
-    test('sort', () => {
+    testSync('sort', () => {
         const column = createModel();
         const view = createView(schema, column);
         view.sort(0);
@@ -502,7 +502,7 @@ test('ColumnVectorView', () => {
 
 });
 
-test('Test Invalid Schema', () => {
+testSync('Test Invalid Schema', () => {
     const view = createView({title: 'FooBar'}, []);
     assert.equal('createView() received undefined schema', view.message);
 });

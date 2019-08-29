@@ -34,6 +34,16 @@ export async function test(msg, asyncFct) {
     }
 }
 
+export function testSync(msg, syncFct) {
+    const div = log(msg);
+    try {
+        syncFct();
+    } catch(e) {
+        console.error(e);
+        err(div, e);
+    }
+}
+
 function error(a, b) {
     const err = Error('assertEqual failed');
     console.error(err);

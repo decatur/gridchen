@@ -392,8 +392,8 @@ export function createRowMatrixView(schema, rows) {
             patch.push(...padArray(rows, 1 + rowIndex, '/-'));
 
             if (!rows[rowIndex]) {
-                rows[rowIndex] = createArray(colIndex);
-                patch.push({op: 'replace', path: `/${rowIndex}`, value: createArray(colIndex)});
+                rows[rowIndex] = createArray(1+colIndex);
+                patch.push({op: 'replace', path: `/${rowIndex}`, value: createArray(1+colIndex)});
             } else if (rows[rowIndex].length < schemas.length) {
                 patch.push(...padArray(rows[rowIndex], schemas.length, `/${rowIndex}/-`));
             }
@@ -627,7 +627,7 @@ export function createColumnMatrixView(schema, columns) {
             let column = columns[colIndex];
             if (!column) {
                 column = columns[colIndex] = [];
-                patch.push({op: 'replace', path: `${colIndex}`, value: []});
+                patch.push({op: 'replace', path: `/${colIndex}`, value: []});
             }
 
             if (rowIndex >= column.length) {

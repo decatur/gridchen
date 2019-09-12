@@ -46,11 +46,11 @@
     createInteractiveDemoGrid(document.getElementById('container'),
         {
             title: 'Array of Column Arrays',
-            type: 'object',
+            type: 'array',
             items: [ // tuple schema
-                {type: 'object', items: {title: 'TimeStamp', width: 200, type: 'string', format: 'full-date'}},
-                {type: 'object', items: {title: 'Age', width: 100, type: 'number'}},
-                {type: 'object', items: {title: 'Weight', width: 100, type: 'number'}}
+                {type: 'array', items: {title: 'TimeStamp', width: 200, type: 'string', format: 'full-date'}},
+                {type: 'array', items: {title: 'Age', width: 100, type: 'number'}},
+                {type: 'array', items: {title: 'Weight', width: 100, type: 'number'}}
             ]
         },
         [

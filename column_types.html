@@ -94,9 +94,9 @@
         span.textContent = `Generated ${rowCount} Rows`;
         const schema = {
             title: 'demo',
-            type: 'object',
+            type: 'array',
             items: {
-                type: 'object',
+                type: 'array',
                 items: [  // tuple schema
                     {title: 'FullDateString', width: 100, type: 'string', format: 'full-date'},
                     {title: 'FullDate', width: 100, type: 'FullDate'},

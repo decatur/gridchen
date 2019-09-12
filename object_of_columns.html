@@ -49,11 +49,15 @@
             type: 'object',
             properties: {
                 timestamp: {
-                    type: 'object',
+                    type: 'array',
                     items: {title: 'TimeStamp', type: 'string', format: 'full-date', width: 200}
                 },
-                age: {type: 'object', items: {title: 'Age', width: 100, type: 'number'}},
-                weight: {type: 'object', items: {title: 'Weight', width: 100, type: 'number'}}
+                age: {
+                    type: 'array', items: {title: 'Age', width: 100, type: 'number'}
+                },
+                weight: {
+                    type: 'array', items: {title: 'Weight', width: 100, type: 'number'}
+                }
             }
         },
         {

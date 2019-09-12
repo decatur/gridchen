@@ -20,7 +20,9 @@ See https://decatur.github.io/grid-chen
 
     const schema = {
         title: 'Array of Row Arrays',
+        type: 'array',
         items: {
+            type: 'array',
             items: [
                 {title: 'SomeDate', type: 'string', format:'full-date'},
                 {title: 'SomeNumber', type: 'number'}

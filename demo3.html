@@ -29,7 +29,7 @@
     document.querySelectorAll('grid-chen')[0].resetFromView(createView(
         {
             title: 'demo',
-            type: 'object',
+            type: 'array',
             items: {
                 type: 'object',
                 properties: {
@@ -46,8 +46,8 @@
             title: 'demo',
             type: 'object',
             properties: {
-                a: {type: 'object', title: 'a', columnIndex: 0, items: { type: 'number' }},
-                1: {type: 'object', title: '1', columnIndex: 1, items: { type: 'number' }}
+                a: {type: 'array', title: 'a', columnIndex: 0, items: { type: 'number' }},
+                1: {type: 'array', title: '1', columnIndex: 1, items: { type: 'number' }}
             }
         },
         {a: [1, 2], 1: [3, 4]}

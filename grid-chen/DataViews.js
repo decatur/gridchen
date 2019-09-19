@@ -125,6 +125,8 @@ export function createView(schema, matrix) {
         console.error(err);
         return err
     }
+
+    columnSchemas.readOnly = (typeof schema.readOnly==='boolean')?schema.readOnly:false;
     return columnSchemas.viewCreator(columnSchemas, matrix);
 }
 
@@ -136,6 +138,7 @@ export function createColumnSchemas(schema) {
     if (!schema) {
         return new Error('selectViewCreator() received undefined schema')
     }
+
 
     const invalidError = new Error('Invalid schema: ' + schema.title);
 

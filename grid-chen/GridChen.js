@@ -492,11 +492,6 @@ function Grid(container, viewModel, eventListeners) {
                 evt.preventDefault();
                 evt.stopPropagation();
                 navigateCell(evt, 0, 1);
-            } else if (false && evt.code === 'Enter' && evt.altKey) {
-                evt.preventDefault();
-                evt.stopPropagation();
-                //editor.dispatchEvent(new KeyboardEvent('keydown', {code: 'Enter'}));
-                editor.setRangeText('\n', editor.selectionStart, editor.selectionEnd, 'end');
             } else if (evt.code === 'Enter' && evt.altKey) {
                 evt.preventDefault();
                 evt.stopPropagation();
@@ -555,6 +550,8 @@ function Grid(container, viewModel, eventListeners) {
                 this.input.removeAttribute('list');
             }
 
+            this.input.readOnly = activeCell.isReadOnly();  // Must not use disabled!
+
             style.display = 'inline-block';
             // focus on input element, which will then receive this keyboard event.
             // Note: focus after display!
@@ -570,6 +567,9 @@ function Grid(container, viewModel, eventListeners) {
             this.textarea.style.left = style.left;
             this.textarea.style.top = style.top;
             this.textarea.style.display = 'inline-block';
+
+            this.textarea.readOnly = activeCell.isReadOnly();  // Must not use disabled!
+
             this.textarea.value = this.input.value;
             this.textarea.focus();
             //window.setTimeout(()=>textarea.focus(), 10);
@@ -637,10 +637,10 @@ function Grid(container, viewModel, eventListeners) {
             spanStyle.display = 'none';
             ee.showInput(spanStyle.top, spanStyle.left, spanStyle.width);
         },
-        enterInputMode: function (key) {
+        enterInputMode: function (value) {
             this.mode = 'input';
             this.enterMode();
-            ee.input.value = key;
+            ee.input.value = value;
         },
         enterEditMode: function () {
             this.mode = 'edit';
@@ -652,6 +652,9 @@ function Grid(container, viewModel, eventListeners) {
                 value = schemas[this.col].converter.toEditable(value);
             }
             ee.setValue(value);
+        },
+        isReadOnly: function() {
+            return isColumnReadOnly(this.col)
         }
     };
 
@@ -780,22 +783,37 @@ function Grid(container, viewModel, eventListeners) {
         selection.show();
     };
 
+    function isColumnReadOnly(columnIndex) {
+        const readOnly = schemas[columnIndex].readOnly
+        return readOnly === undefined?schema.readOnly:readOnly;
+    }
+
+    function isSelectionReadOnly() {
+        for (const r of selection.areas) {
+            for (let colIndex = r.columnIndex; colIndex < r.columnIndex + r.columnCount; colIndex++) {
+                if (isColumnReadOnly(colIndex)) return true
+            }
+        }
+        return false
+    }
+
     function deleteSelection() {
+        if (isSelectionReadOnly()) {
+            alert('Parts of the cells are locked!');
+            return
+        }
         const patches = [];
-        const modifiedRows = new Set();
+        // const modifiedRows = new Set();
         for (const r of selection.areas) {
             let rowIndex = r.rowIndex;
             let endRowIndex = Math.min(rowCount, rowIndex + r.rowCount);
             let endColIndex = r.columnIndex + r.columnCount;
 
             for (; rowIndex < endRowIndex; rowIndex++) {
-                modifiedRows.add(rowIndex);
-                let colIndex = r.columnIndex;
-                for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
+                //modifiedRows.add(rowIndex);
+                for (let colIndex = r.columnIndex; colIndex < endColIndex; colIndex++) {
                     patches.push(...viewModel.setCell(rowIndex, colIndex, undefined));
                 }
-
-
             }
         }
 
@@ -837,6 +855,11 @@ function Grid(container, viewModel, eventListeners) {
     }
 
     function insertRow() {
+        /* TODO: Should we restrict?
+        if (isSelectionReadOnly()) {
+            alert('Parts of the cells are locked!');
+            return
+        }*/
         const patches = viewModel.splice(activeCell.row);
         eventListeners['dataChanged'](patches);
         refresh(viewModel.rowCount());
@@ -911,6 +934,11 @@ function Grid(container, viewModel, eventListeners) {
         } else if (evt.code === 'KeyV' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation(); // Prevent that text is pasted into editable container.
+            const cond = pastePrecondition();
+            if (cond) {
+                alert(cond);
+                return
+            }
             window.navigator.clipboard.readText()
                 .then(text => {
                     //console.log('Pasted content: ', text);
@@ -966,7 +994,7 @@ function Grid(container, viewModel, eventListeners) {
             activeCell.enterEditMode();
         } else if (evt.key.length === 1 && !evt.ctrlKey && !evt.altKey) {
             // evt.key.length === 1 looks like a bad idea to sniff for character input, but keypress is deprecated.
-            if (activeCell.mode === 'display') {
+            if (activeCell.mode === 'display' && !activeCell.isReadOnly()) {
                 // We now focus the input element. This element would receive the key as value in interactive mode, but
                 // not when called as dispatchEvent() from unit tests!
                 // We want to make this unit testable, so we stop the propagation and hand over the key.
@@ -1103,21 +1131,25 @@ function Grid(container, viewModel, eventListeners) {
         activeCell.span.style.display = 'inline-block';
 
         if (activeCell.mode !== 'display') {
-            const rowIndex = activeCell.row;
-            const colIndex = activeCell.col;
-            let value = ee.getValue().trim();
-            ee.hide();
-            // activeCell.span.textContent = value;
-            if (value === '') {
-                value = undefined;
+            if (activeCell.isReadOnly()) {
+                ee.hide();
             } else {
-                value = schemas[colIndex].converter.fromString(value);
-                //value = value.replace(/\\n/g, '\n');
+                const rowIndex = activeCell.row;
+                const colIndex = activeCell.col;
+                let value = ee.getValue().trim();
+                ee.hide();
+                // activeCell.span.textContent = value;
+                if (value === '') {
+                    value = undefined;
+                } else {
+                    value = schemas[colIndex].converter.fromString(value);
+                    //value = value.replace(/\\n/g, '\n');
+                }
+                const patches = viewModel.setCell(rowIndex, colIndex, value);
+                refresh(viewModel.rowCount());
+                // Must be called AFTER model is updated.
+                eventListeners['dataChanged'](patches);
             }
-            const patches = viewModel.setCell(rowIndex, colIndex, value);
-            refresh(viewModel.rowCount());
-            // Must be called AFTER model is updated.
-            eventListeners['dataChanged'](patches);
         }
 
         activeCell.mode = 'display';
@@ -1255,22 +1287,29 @@ function Grid(container, viewModel, eventListeners) {
         }
     }
 
+    function pastePrecondition() {
+        if (selection.areas.length > 1) {
+            return 'This action is not possible with multi-selections.'
+        }
+
+        if (isSelectionReadOnly()) {
+            return 'Parts of the cells are locked!'
+        }
+    }
+
     /**
      * If paste target selection is multiple of source row matrix, then tile target with source,
      * otherwise just paste source
-     * @@param {Array<Array<string>>} matrix
+     * @param {Array<Array<string>>} matrix
+     * @returns {number}
      */
     function paste(matrix) {
-        if (selection.areas.length > 1) {
-            alert('This action is not possible with multi-selections.');
-            return
-        }
-
         const r = selection.areas[0];
 
         if (!matrix[0].length) {
             alert('You have nothing to paste')
         }
+
         const sourceRows = matrix.length;
         const sourceColumns = matrix[0].length;
         const targetRows = r.rowCount;

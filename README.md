@@ -34,20 +34,14 @@ See https://decatur.github.io/grid-chen
 </script>
 ```
 
-# Fixed
-
 # Issues
 
 * Paste must select pasted region (pasted region differs from selection if selection cannot be tiled by source); easy
-* Using slider must not blur grid; easy
 * Type violation of cell value must align left; easy
 * Empty URI cell must not contain a link; medium -> simply do not set href?
 * Slow click on URI must select the cell, not follow the link; hard
-* Ctrl+A must first select the smallest isolated rectangle containing the cell, the second Ctrl+A must then select the complete grid; hard
 * Modal context must not hide selection.
 * Float Titles must be locale aware.
-* Grid must only scroll if selected, not when simply hovering over it.
-* Single column matrix must be supported.
 
 # TODOs
 
@@ -292,7 +286,7 @@ Note: Currently we only support dblclick to enter edit mode. So it it not possib
 
 1. Sort must toggle. Only one column must show sort direction.
 
-1. Bluring grid in EDIT mode must hide row menu, active cell and selection.
+1. Bluring grid in EDIT mode must exit editor (read only or not), active cell and selection.
 
 1.  WheelScroll with selected GridChen must not scroll any surrounding HTML element.
 

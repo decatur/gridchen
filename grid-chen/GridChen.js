@@ -817,13 +817,6 @@ function Grid(container, viewModel, eventListeners) {
             }
         }
 
-        /*for (const rowIndex of Array.from(modifiedRows).sort().reverse()) {
-            const row = viewModel.getRow(rowIndex);
-            if (row.every(item => item == null)) {
-                patches.push(...viewModel.deleteRow(rowIndex));
-            }
-        }*/
-
         let rowIndex = viewModel.rowCount() - 1;
         while (rowIndex >= 0) {
             const row = viewModel.getRow(rowIndex);
@@ -843,6 +836,10 @@ function Grid(container, viewModel, eventListeners) {
     }
 
     function deleteRows() {
+        if (schema.readOnly) {
+            alert('This grid is locked!');
+            return
+        }
         const patches = [];
         for (const r of selection.areas) {
             range(r.rowCount).forEach(function (i) {
@@ -855,11 +852,10 @@ function Grid(container, viewModel, eventListeners) {
     }
 
     function insertRow() {
-        /* TODO: Should we restrict?
-        if (isSelectionReadOnly()) {
-            alert('Parts of the cells are locked!');
+        if (schema.readOnly) {
+            alert('This grid is locked!');
             return
-        }*/
+        }
         const patches = viewModel.splice(activeCell.row);
         eventListeners['dataChanged'](patches);
         refresh(viewModel.rowCount());

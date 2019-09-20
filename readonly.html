@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Read Only</title>
+    <link rel="stylesheet" href="types.css">
+</head>
+<body>
+
+<h1><a href="index.html">grid-chen Index</a> / Read Only</h1>
+
+<div>
+    This demo is interactive both ways:
+    <ul>
+        <li>each change in schema or data will reset the grid, and</li>
+        <li>each cell change will update the data.</li>
+    </ul>
+</div>
+
+<div id="container">
+    <label>
+        Schema
+        <textarea class="schema"></textarea>
+    </label>
+    <label>
+        JavaScript Matrix
+        <textarea class="data"></textarea>
+    </label>
+    <label>
+        Grid
+        <grid-chen></grid-chen>
+    </label>
+    <label>
+        JSON Patch
+        <pre class="patch"></pre>
+    </label>
+</div>
+</body>
+
+<script type="module">
+    import "./grid-chen/GridChen.js"
+    import {createInteractiveDemoGrid} from "./demo.js"
+
+    const dates = ["2019-01-01", "2019-01-02", "2019-01-03"];
+
+    createInteractiveDemoGrid(document.getElementById('container'),
+        {
+            title: 'Object of Columns',
+            _readOnly: true,
+            type: 'object',
+            properties: {
+                timestamp: {
+                    type: 'array',
+                    items: {title: 'TimeStamp', type: 'string', format: 'full-date', width: 200}
+                },
+                age: {
+                    type: 'array', items: {title: 'Age', width: 100, type: 'number', readOnly: true}
+                },
+                weight: {
+                    type: 'array', items: {title: 'Weight', width: 100, type: 'number'}
+                }
+            }
+        },
+        {
+            timestamp: dates,
+            age: [0, 2, 4],
+            weight: [0, 1, 2]
+        }
+    );
+
+</script>
+</html>

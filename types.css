@@ -19,11 +19,6 @@ textarea {
     width: 100%;
 }
 
-.patch {
-    width: 100%;
-    overflow: scroll;
-}
-
 grid-chen {
     display: block;
     height: 200px;

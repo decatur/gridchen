@@ -9,38 +9,15 @@
 
 <h1><a href="index.html">grid-chen Index</a> / Array of Row Objects</h1>
 
-<div>
-    This demo is interactive both ways:
-    <ul>
-        <li>each change in schema or data will reset the grid, and</li>
-        <li>each cell change will update the data.</li>
-    </ul>
-</div>
+<p>
+    The data is an array of row objects.
+</p>
 
-<div id="container">
-    <label>
-        Schema
-        <textarea class="schema"></textarea>
-    </label>
-    <label>
-        JavaScript Matrix
-        <textarea class="data"></textarea>
-    </label>
-    <label>
-        Grid
-        <grid-chen></grid-chen>
-    </label>
-    <label>
-        JSON Patch
-        <pre class="patch"></pre>
-    </label>
-</div>
+<div id="container"></div>
 
 <script type="module">
     import "./grid-chen/GridChen.js"
     import {createInteractiveDemoGrid} from "./demo.js"
-
-    const dates = ["2019-01-01", "2019-01-02", "2019-01-03"];
 
     createInteractiveDemoGrid(document.getElementById('container'),
         {
@@ -56,9 +33,9 @@
             }
         },
         [
-            {timestamp: dates[0], age: 0, weight: 0},
-            {timestamp: dates[1], age: 1, weight: 2},
-            {timestamp: dates[2], age: 2, weight: 4}
+            {timestamp: "2019-01-01", age: 0, weight: 0},
+            {timestamp: "2019-01-02", age: 1, weight: 2},
+            {timestamp: "2019-01-03", age: 2, weight: 4}
         ]
     );
 

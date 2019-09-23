@@ -1,7 +1,9 @@
 import {createView} from "./grid-chen/DataViews.js"
 import {FullDate, FullDateConverter, DatePartialTime, DatePartialTimeConverter} from "./grid-chen/converter.js"
 
-export function createInteractiveDemoGrid(container, schema, data) {
+export function createInteractiveDemoGrid(schema, data) {
+    const container = document.body.appendChild(document.createElement('div'));
+
     function html(html) {
         container.innerHTML = html;
     }

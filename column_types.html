@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <title>Column Types</title>
-    <link rel="stylesheet" href="types.css">
+    <link rel="stylesheet" href="demo.css">
 </head>
 <body>
 
@@ -17,7 +17,6 @@
     Number of rows: <input value="100"> <span style="margin-left:1em"></span>
 </div>
 
-<div id="container"></div>
 </body>
 
 <script type="module">
@@ -129,7 +128,7 @@
             return rows
         }
 
-        createInteractiveDemoGrid(document.getElementById('container'), schema, simulateRows());
+        createInteractiveDemoGrid(schema, simulateRows());
     }
 
 

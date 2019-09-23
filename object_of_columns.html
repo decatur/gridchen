@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <title>Object of Columns</title>
-    <link rel="stylesheet" href="types.css">
+    <link rel="stylesheet" href="demo.css">
 </head>
 <body>
 
@@ -13,14 +13,13 @@
     The data is an object of column arrays.
 </p>
 
-<div id="container"></div>
 </body>
 
 <script type="module">
     import "./grid-chen/GridChen.js"
     import {createInteractiveDemoGrid} from "./demo.js"
 
-    createInteractiveDemoGrid(document.getElementById('container'),
+    createInteractiveDemoGrid(
         {
             title: 'Object of Columns',
             type: 'object',

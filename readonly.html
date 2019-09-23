@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <title>Read Only</title>
-    <link rel="stylesheet" href="types.css">
+    <link rel="stylesheet" href="demo.css">
 </head>
 <body>
 
@@ -14,14 +14,13 @@
     Observe the behaviour after marking the whole grid readOnly.
 </p>
 
-<div id="container"></div>
 </body>
 
 <script type="module">
     import "./grid-chen/GridChen.js"
     import {createInteractiveDemoGrid} from "./demo.js"
 
-    createInteractiveDemoGrid(document.getElementById('container'),
+    createInteractiveDemoGrid(
         {
             title: 'Object of Columns',
             _readOnly: true,

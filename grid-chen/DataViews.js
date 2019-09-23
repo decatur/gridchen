@@ -102,8 +102,8 @@ function updateSchema(schemas) {
 function sortedColumns(properties) {
     const entries = Object.entries(properties);
     entries.sort(function (e1, e2) {
-        const o1 = e1[1]['columnOrder'];
-        const o2 = e2[1]['columnOrder'];
+        const o1 = e1[1]['columnIndex'];
+        const o2 = e2[1]['columnIndex'];
         if (o1 !== undefined && o2 !== undefined) {
             return o1 - o2;
         }

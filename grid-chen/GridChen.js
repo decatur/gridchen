@@ -48,6 +48,18 @@ function intersectInterval(i1, i2) {
     return {min, sup};
 }
 
+function openDialog() {
+    let dialog = document.getElementById('gridchenDialog');
+    if (!dialog) {
+        dialog = document.createElement('dialog');
+        dialog.id = 'gridchenDialog';
+        document.body.appendChild(dialog);
+    }
+    dialog.textContent = '';
+    dialog.showModal();
+    return dialog;
+}
+
 // We export for testability.
 export class GridChen extends HTMLElement {
     constructor() {
@@ -73,6 +85,7 @@ export class GridChen extends HTMLElement {
         }
         let totalHeight = this.clientHeight || 100;  // Default value needed for unit testing.
         const container = document.createElement('div');
+        container.style.position = 'relative';
         container.style.height = totalHeight + 'px';
         this.shadowRoot.appendChild(container);
         if (viewModel instanceof Error) {
@@ -355,13 +368,27 @@ function Grid(container, viewModel, eventListeners) {
 
     const headerRow = document.createElement('div');
     let style = headerRow.style;
-    style.position = 'relative';
+    style.display = 'block';
+    style.position = 'absolute';
     style.width = columnEnds[columnEnds.length - 1] + 'px';
     style.height = rowHeight + 'px';
     style.textAlign = 'center';
     style.fontWeight = 'bold';
     style.backgroundColor = 'khaki';
     container.appendChild(headerRow);
+
+    const info = document.createElement('button');
+    info.innerText = '🛈';
+    style = info.style;
+    style.padding = '2px';
+    //style.height = '22px';
+    //style.border = 'none';
+    style.left = columnEnds[columnEnds.length - 1] + 'px';
+    style.position = 'absolute';
+    style.fontWeight = 'bold';
+    //style.fontSize = 'large';
+    info.onclick = showInfo;
+    container.appendChild(info);
 
     function refresh(_rowCount) {
         rowCount = _rowCount;
@@ -422,7 +449,8 @@ function Grid(container, viewModel, eventListeners) {
     container.style.width = totalWidth + 'px';
 
     const body = document.createElement('div');
-    body.style.position = 'relative';
+    body.style.position = 'absolute';
+    body.style.top = '23px';
     body.style.width = '100%';
     body.style.height = (totalHeight - 20) + 'px';
     container.appendChild(body);
@@ -653,7 +681,7 @@ function Grid(container, viewModel, eventListeners) {
             }
             ee.setValue(value);
         },
-        isReadOnly: function() {
+        isReadOnly: function () {
             return isColumnReadOnly(this.col)
         }
     };
@@ -785,7 +813,7 @@ function Grid(container, viewModel, eventListeners) {
 
     function isColumnReadOnly(columnIndex) {
         const readOnly = schemas[columnIndex].readOnly
-        return readOnly === undefined?schema.readOnly:readOnly;
+        return readOnly === undefined ? schema.readOnly : readOnly;
     }
 
     function isSelectionReadOnly() {
@@ -1001,18 +1029,57 @@ function Grid(container, viewModel, eventListeners) {
         }
     };
 
-    function plot() {
-        let dialog = document.getElementById('gridchenDialog');
-        if (!dialog) {
-            dialog = document.createElement('dialog');
-            dialog.id = 'gridchenDialog';
-            dialog.style.width = '80%';
-            //dialog.innerHTML = '<form method="dialog"><button type="submit">Hide</button></form>';
-
-            document.body.appendChild(dialog);
+    function showInfo() {
+        let dialog = openDialog();
+        const div = document.createElement('div');
+        const actions = [
+            ['Key', 'Action'],
+            ['Arrows', 'Move active cell up/down/left/right (not in edit mode)'],
+            ['Tab', 'Move active cell right (non-rolling)'],
+            ['Enter', 'Move active cell down (non-rolling)'],
+            ['Shift + Enter', 'Move active cell up (non-rolling)'],
+            ['Shift + Tab', 'Move active cell left (non-rolling)'],
+            ['SHIFT + Arrows', 'Select a range of cells'],
+            ['Ctrl + Space', 'Select entire column'],
+            ['Shift + Space', 'Select entire row'],
+            ['Shift + MouseClick', 'Expand selection'],
+            ['Ctrl + MouseClick', 'Multi-select cells'],
+            ['Ctrl + "-"', 'Delete selected row'],
+            ['Ctrl + "+"', 'Insert row before selection'],
+            ['Alt + Enter', 'In edit mode, insert newline'],
+            ['Page Down', 'Move one page down'],
+            ['Page Up', 'Move one page up'],
+            ['Ctrl + A', 'Select all grid cells (same as Ctrl+A in a Excel List Object)'],
+            ['Ctrl + A Ctrl+A', 'Select the entire grid including header (same as Ctrl+A Ctrl+A in a Excel List Object)'],
+            ['ESC', 'Cancel edit or input mode'],
+            ['Delete', 'Remove selected cells contents'],
+            ['Ctrl + C', 'Copy selected cells to clipboard'],
+            ['Ctrl + V', 'Paste clipboard into selected cells'],
+            ['Ctrl + X', 'Cut'],
+            ['F2', 'Enter edit mode; In input or edit mode, toggle between input and edit.'],
+            ['Alt + F1', 'Open a modal chart of the selection.'],
+            ['Backspace', 'In input or edit mode, deletes one character to the left'],
+            ['Delete', 'In input or edit mode, deletes one character to the right'],
+            ['End', 'In input or edit mode, move to the end of the text'],
+            ['Home', 'In input or edit mode, move to the beginning of the text']];
+        for (const action of actions) {
+            const key = document.createElement('span');
+            key.textContent = action[0];
+            div.appendChild(key);
+            const desc = document.createElement('span');
+            desc.textContent = action[1];
+            div.appendChild(desc);
         }
 
-        dialog.showModal();
+        div.style.display = 'grid';
+        div.style.gridTemplateColumns = 'auto auto';
+        div.style.columnGap = '5px';
+        dialog.appendChild(div);
+    }
+
+    function plot() {
+        let dialog = openDialog();
+        dialog.style.width = '80%';
 
         if (!eventListeners['plot']) {
             dialog.textContent = 'You must set an event listener of type plot.';

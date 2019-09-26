@@ -60,6 +60,31 @@ function openDialog() {
     return dialog;
 }
 
+/**
+ * Creates the display for an anchor cell mimicking MS-Excel. It supports entering edit mode via slow click and
+ * cursor management.
+ * @returns {HTMLAnchorElement}
+ */
+function createAnchorElement() {
+    const elem = document.createElement('a');
+    elem.target = '_blank';
+    elem.onmousedown = function (evt) {
+        window.setTimeout(function () {
+            elem.style.cursor = 'cell';
+            elem.onclick = function (evt) {
+                evt.preventDefault();
+                elem.onclick = undefined;
+            };
+            elem.onmouseup = elem.onmouseout = function () {
+                elem.onmouseup = elem.onmouseout = undefined;
+                elem.style.cursor = 'pointer';
+            };
+        }, 500);
+    };
+
+    return elem
+}
+
 // We export for testability.
 export class GridChen extends HTMLElement {
     constructor() {
@@ -386,6 +411,7 @@ function Grid(container, viewModel, eventListeners) {
     style.left = columnEnds[columnEnds.length - 1] + 'px';
     style.position = 'absolute';
     style.fontWeight = 'bold';
+    style.cursor = 'help';
     //style.fontSize = 'large';
     info.onclick = showInfo;
     container.appendChild(info);
@@ -628,8 +654,6 @@ function Grid(container, viewModel, eventListeners) {
         }
     }
 
-
-    /** @type {{span?:{HTMLSpanElement}, editor:{HTMLInputElement}, row:number, col:number, mode:string}} */
     const activeCell = {
         span: undefined,
         row: 0,
@@ -776,8 +800,7 @@ function Grid(container, viewModel, eventListeners) {
 
     cellParent.onmousewheel = function (_evt) {
         console.log('onmousewheel');
-
-        if (container.parentNode.activeElement !== container) return;
+        if ((/** @type {DocumentOrShadowRoot} */container.parentNode).activeElement !== container) return;
 
         let evt = /** @type {WheelEvent} */ _evt;
         // Do not disable zoom. Both Excel and Browsers zoom on ctrl-wheel.
@@ -812,7 +835,7 @@ function Grid(container, viewModel, eventListeners) {
     };
 
     function isColumnReadOnly(columnIndex) {
-        const readOnly = schemas[columnIndex].readOnly
+        const readOnly = schemas[columnIndex].readOnly;
         return readOnly === undefined ? schema.readOnly : readOnly;
     }
 
@@ -870,7 +893,7 @@ function Grid(container, viewModel, eventListeners) {
         }
         const patches = [];
         for (const r of selection.areas) {
-            range(r.rowCount).forEach(function (i) {
+            range(r.rowCount).forEach(function () {
                 patches.push(...viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
             });
         }
@@ -1253,10 +1276,10 @@ function Grid(container, viewModel, eventListeners) {
         /** @type {HTMLElement} */
         let elem;
         if (schema.format === 'uri') {
-            elem = document.createElement('a');
-            elem.target = '_blank';
+            elem = createAnchorElement();
         } else {
             elem = document.createElement('span');
+            elem.style.cursor = 'cell';
         }
 
         let style = elem.style;
@@ -1413,7 +1436,13 @@ function Grid(container, viewModel, eventListeners) {
                         elem.textContent = m[1];
                         elem.href = m[2];
                     } else {
-                        elem.href = elem.textContent = value;
+                        if (value === '') {
+                            // This will also remove the pointer cursor.
+                            elem.removeAttribute('href');
+                        } else {
+                            elem.href = value;
+                        }
+                        elem.textContent = value;
                     }
                 } else {
                     elem.textContent = value;

@@ -71,6 +71,7 @@ function createAnchorElement() {
     elem.onmousedown = function (evt) {
         window.setTimeout(function () {
             elem.style.cursor = 'cell';
+            // Note the transient event handler technique.
             elem.onclick = function (evt) {
                 evt.preventDefault();
                 elem.onclick = undefined;

@@ -38,19 +38,12 @@ See https://decatur.github.io/grid-chen
 
 * Paste must select pasted region (pasted region differs from selection if selection cannot be tiled by source); easy
 * Type violation of cell value must align left; easy
-* Empty URI cell must not contain a link; medium -> simply do not set href?
-* Slow click on URI must select the cell, not follow the link; hard
-* Modal context must not hide selection.
-* Float Titles must be locale aware.
 
 # TODOs
 
 * Show 1 empty row at end (Slider issue)
 * Avoid refreshing complete viewport on cell change
-* Use document.activeElement instead of activeCell.span?
 * Write more unit tests
-* Test Firefox
-* URIs with display text are not supported
 * Handling of Infinity and NaN (#NV in de-de)
 
 # Alternatives

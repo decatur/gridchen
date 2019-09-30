@@ -109,7 +109,7 @@ export const REPR = {
             out.push('null');
         } else if (v.constructor === String) {
             out.push('"');
-            out.push(v);
+            out.push(v.replace('\n', '\\n'));
             out.push('"');
         } else if (v.constructor === FullDate) {
             out.push(fullDateConverter.toREPR(v));

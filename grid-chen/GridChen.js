@@ -16,6 +16,33 @@ let IInterval;
 
 window.console.log('Executing GridChen ...');
 
+let cellBorderStyle;
+let selectionBackgroundColor;
+let activeCellBackgroundColor;
+let headerRowBackgroundColor;
+let headerRowSelectedBackgroundColor;
+let inputColor;
+let inputBackgroundColor;
+const theme = window.getComputedStyle(document.body).getPropertyValue('background-color')==='rgb(0, 0, 0)'?'dark':'light';
+
+if (theme === 'dark') {
+    cellBorderStyle = '1px solid white';
+    selectionBackgroundColor = 'slategrey';
+    activeCellBackgroundColor = 'dimgrey';
+    headerRowBackgroundColor = 'dimgrey';
+    headerRowSelectedBackgroundColor = 'slategrey';
+    inputColor = 'white';
+    inputBackgroundColor = 'black';
+} else {
+    cellBorderStyle = '1px solid black';
+    selectionBackgroundColor = 'LightBlue';
+    activeCellBackgroundColor = 'mistyrose';
+    headerRowBackgroundColor = 'khaki';
+    headerRowSelectedBackgroundColor = 'red';
+    inputColor = 'black';
+    inputBackgroundColor = 'white';
+}
+
 //const numeric = new Set(['number', 'integer']);
 
 function range(count) {
@@ -71,7 +98,7 @@ function createAnchorElement() {
     elem.onmousedown = function (evt) {
         window.setTimeout(function () {
             elem.style.cursor = 'cell';
-            // Note the transient event handler technique.
+            // Note the transient event handler style.
             elem.onclick = function (evt) {
                 evt.preventDefault();
                 elem.onclick = undefined;
@@ -284,7 +311,7 @@ class Selection extends Range {
     show() {
         for (const /** @type{Range} */ r of this.areas) {
             console.log('show: ' + r.toString());
-            this.repainter('LightBlue', r);
+            this.repainter(selectionBackgroundColor, r);
         }
     }
 
@@ -400,7 +427,7 @@ function Grid(container, viewModel, eventListeners) {
     style.height = rowHeight + 'px';
     style.textAlign = 'center';
     style.fontWeight = 'bold';
-    style.backgroundColor = 'khaki';
+    style.backgroundColor = headerRowBackgroundColor;
     container.appendChild(headerRow);
 
     const info = document.createElement('button');
@@ -453,7 +480,7 @@ function Grid(container, viewModel, eventListeners) {
             style.width = schema.width + 'px';
             style.height = innerHeight;
             style.padding = cellPadding + 'px';
-            style.border = '1px solid black';
+            style.border = cellBorderStyle;
             style.overflow = 'hidden';
             header.textContent = schema.title;
             header.title = schema.title;
@@ -498,6 +525,8 @@ function Grid(container, viewModel, eventListeners) {
             /** @type{HTMLInputElement} */
             this.input = document.createElement('input');
             this.input.id = 'editor';
+            this.input.style.color = inputColor;
+            this.input.style.backgroundColor = inputBackgroundColor;
             this.input.style.position = 'absolute';
             this.input.style.display = 'none';
             this.input.style.height = innerHeight;
@@ -506,6 +535,8 @@ function Grid(container, viewModel, eventListeners) {
             /** @type{HTMLTextAreaElement} */
             this.textarea = document.createElement('textarea');
             this.textarea.id = 'textarea';
+            this.textarea.style.color = inputColor;
+            this.textarea.style.backgroundColor = inputBackgroundColor;
             this.textarea.style.position = 'absolute';
             this.textarea.style.display = 'none';
             this.textarea.style.height = innerHeight;
@@ -552,6 +583,7 @@ function Grid(container, viewModel, eventListeners) {
                 evt.stopPropagation();
                 if (ee.input.style.display !== 'none') {
                     ee.showTextArea();
+                    ee.textarea.value += '\n';
                 } else {
                     ee.textarea.setRangeText('\n', ee.textarea.selectionStart, ee.textarea.selectionEnd, 'end');
                 }
@@ -661,14 +693,11 @@ function Grid(container, viewModel, eventListeners) {
         col: 0,
         mode: 'display',
         hide: function () {
-            if (this.span) this.span.style.backgroundColor = 'white';
-            headerRow.style.backgroundColor = 'khaki';//removeProperty('background-color');
-            //rowMenu.style.display = 'none';
+            if (this.span) this.span.style.removeProperty('background-color');
+            headerRow.style.backgroundColor = headerRowBackgroundColor;
         },
         show: function () {
-            if (this.span) this.span.style.backgroundColor = 'mistyrose';
-            //rowMenu.style.top = this.span.offsetTop + 'px';
-            //rowMenu.style.display = 'block';
+            if (this.span) this.span.style.backgroundColor = activeCellBackgroundColor;
         },
         move: function (rowIndex, colIndex) {
             this.hide();
@@ -727,7 +756,7 @@ function Grid(container, viewModel, eventListeners) {
                 if (spanMatrix[row][col] === activeCell.span) {
                     // Do not change color of active cell.
                 } else if (backgroundColor === undefined) {
-                    style.backgroundColor = 'white'; //removeProperty('background-color');
+                    style.removeProperty('background-color');
                 } else {
                     style.backgroundColor = backgroundColor;
                 }
@@ -966,7 +995,7 @@ function Grid(container, viewModel, eventListeners) {
             if (selection.rowIndex === 0 && selection.columnIndex === 0
                 && selection.rowCount === rowCount && selection.columnCount === colCount) {
                 // Already all data cells selected.
-                headerRow.style.backgroundColor = 'red';
+                headerRow.style.backgroundColor = headerRowSelectedBackgroundColor;
             } else {
                 selection.set(0, 0);
                 selection.expand(rowCount - 1, colCount - 1);
@@ -978,7 +1007,7 @@ function Grid(container, viewModel, eventListeners) {
                 alert('This action is not possible with multi-selections.');
                 return
             }
-            copySelection(evt.code === 'KeyX', headerRow.style.backgroundColor === 'red');
+            copySelection(evt.code === 'KeyX', headerRow.style.backgroundColor === headerRowSelectedBackgroundColor);
         } else if (evt.code === 'KeyV' && evt.ctrlKey) {
             evt.preventDefault();
             evt.stopPropagation(); // Prevent that text is pasted into editable container.
@@ -1294,9 +1323,9 @@ function Grid(container, viewModel, eventListeners) {
         style.whiteSpace = 'nowrap';
         style.overflow = 'hidden';
         style.textOverflow = 'ellipsis';
-        style.border = '1px solid black';
+        style.border = cellBorderStyle;
         style.padding = cellPadding + 'px';
-        style.backgroundColor = 'white';
+        //style.backgroundColor = 'white';
 
         if (schema.type !== 'string' || schema.format) {
             elem.className = 'non_string'

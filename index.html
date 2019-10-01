@@ -22,6 +22,10 @@
     For documentation see <a href="https://github.com/decatur/grid-chen">grid-chen Repository</a>
 </p>
 
+<h2>Theme Support</h2>
+
+Yes, I want to use dark mode: <input id="darktheme" type="checkbox">
+
 <h2>Demos</h2>
 
 <p>
@@ -75,4 +79,14 @@
 </p>
 
 </body>
+<script>
+    let theme = 'light';
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
+    if (window.localStorage.getItem('theme')) theme = window.localStorage.getItem('theme');
+    document.getElementById('darktheme').checked = theme==='dark';
+    document.getElementById('darktheme').onchange = function(evt) {
+        window.localStorage.setItem('theme', evt.target.checked?'dark':'light');
+    }
+
+</script>
 </html>

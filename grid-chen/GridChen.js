@@ -16,31 +16,39 @@ let IInterval;
 
 window.console.log('Executing GridChen ...');
 
-let cellBorderStyle;
 let selectionBackgroundColor;
 let activeCellBackgroundColor;
 let headerRowBackgroundColor;
 let headerRowSelectedBackgroundColor;
-let inputColor;
-let inputBackgroundColor;
-const theme = window.getComputedStyle(document.body).getPropertyValue('background-color')==='rgb(0, 0, 0)'?'dark':'light';
 
-if (theme === 'dark') {
-    cellBorderStyle = '1px solid white';
+
+/**
+ * Returns a numerical vector from a CSS color of the form rgb(1,2,3).
+ * @param {string} color
+ * @returns {number[]}
+ */
+function colorVector(color) {
+    return color.substr(4).split(',').map(part=>parseInt(part))
+}
+
+// We use document.body style for theming.
+// TODO: Maybe use CSS custom properties https://developers.google.com/web/fundamentals/web-components/shadowdom#stylehooks
+const bodyStyle = window.getComputedStyle(document.body);
+const inputColor = bodyStyle.color;
+const inputBackgroundColor = bodyStyle.backgroundColor;
+const cellBorderStyle = '1px solid ' + inputColor;
+const intensity = colorVector(bodyStyle.backgroundColor).reduce((a,b) => a + b, 0) / 3;
+
+if (intensity < 10) {
     selectionBackgroundColor = 'slategrey';
     activeCellBackgroundColor = 'dimgrey';
     headerRowBackgroundColor = 'dimgrey';
     headerRowSelectedBackgroundColor = 'slategrey';
-    inputColor = 'white';
-    inputBackgroundColor = 'black';
 } else {
-    cellBorderStyle = '1px solid black';
     selectionBackgroundColor = 'LightBlue';
     activeCellBackgroundColor = 'mistyrose';
     headerRowBackgroundColor = 'khaki';
     headerRowSelectedBackgroundColor = 'red';
-    inputColor = 'black';
-    inputBackgroundColor = 'white';
 }
 
 //const numeric = new Set(['number', 'integer']);
@@ -398,7 +406,15 @@ function Grid(container, viewModel, eventListeners) {
         .GRID textarea {
             background-color: white; border: {cellBorderWidth}px solid black; padding: {cellPadding}px;
         }
-        .GRID .non_string { text-align: right; }
+        .GRID .non_string {
+            text-align: right;
+        }
+        #headerRow {
+            position: absolute;
+            text-align: center;
+            font-weight: normal;
+            background-color: ${headerRowBackgroundColor};
+        }
     `;
     container.appendChild(styleSheet);
 
@@ -420,14 +436,10 @@ function Grid(container, viewModel, eventListeners) {
     });
 
     const headerRow = document.createElement('div');
+    headerRow.id = 'headerRow';
     let style = headerRow.style;
-    style.display = 'block';
-    style.position = 'absolute';
     style.width = columnEnds[columnEnds.length - 1] + 'px';
     style.height = rowHeight + 'px';
-    style.textAlign = 'center';
-    style.fontWeight = 'bold';
-    style.backgroundColor = headerRowBackgroundColor;
     container.appendChild(headerRow);
 
     const info = document.createElement('button');
@@ -694,7 +706,7 @@ function Grid(container, viewModel, eventListeners) {
         mode: 'display',
         hide: function () {
             if (this.span) this.span.style.removeProperty('background-color');
-            headerRow.style.backgroundColor = headerRowBackgroundColor;
+            headerRow.style.removeProperty('background-color');
         },
         show: function () {
             if (this.span) this.span.style.backgroundColor = activeCellBackgroundColor;

@@ -16,6 +16,13 @@ textarea {
     margin: 0 2em 0 0;
     height: 200px;
     width: 100%;
+    background-color: inherit;
+    color: inherit;
+}
+
+input {
+    background-color: inherit;
+    color: inherit;
 }
 
 grid-chen {

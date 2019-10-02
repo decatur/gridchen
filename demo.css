@@ -45,6 +45,19 @@ grid-chen {
         color: inherit;
         background-color: rgb(50, 50, 50);
     }
+
+    ::-webkit-scrollbar {
+        background-color: inherit;
+        width: 15px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #444;
+    }
+
+    ::-webkit-scrollbar-corner {
+        background: inherit;
+    }
 }
 
 @media (prefers-color-scheme: light) {

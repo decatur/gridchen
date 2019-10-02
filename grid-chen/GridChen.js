@@ -36,7 +36,7 @@ function colorVector(color) {
 const bodyStyle = window.getComputedStyle(document.body);
 const inputColor = bodyStyle.color;
 const inputBackgroundColor = bodyStyle.backgroundColor;
-const cellBorderStyle = '1px solid ' + inputColor;
+const cellBorderStyle = '0.5px solid ' + inputColor;
 const intensity = colorVector(bodyStyle.backgroundColor).reduce((a,b) => a + b, 0) / 3;
 
 if (intensity < 0xff/2) {
@@ -203,27 +203,16 @@ customElements.define('grid-chen', GridChen);
 class Slider {
 
     /**
-     * @param {number} left
-     * @param {number} height
      * @param handler
      */
-    constructor(left, height, handler) {
+    constructor(handler) {
         this.handler = handler;
         this.element = document.createElement('input');
+        this.element.id = "slider";
         this.element.type = "range";
         const style = this.element.style;
-        if (navigator.userAgent.includes('Firefox')) {
-            this.element.setAttribute('orient', 'vertical');
-        } else {
-            // Setting -webkit-appearance will prevent to set any custom styles on it
-            style['-webkit-appearance'] = 'slider-vertical';
-        }
         style.position = 'absolute';
         style.display = 'inline-block';
-        //this.element.style.marginLeft = '10px'
-        style.height = height + 'px';
-        style.left = left + 'px';
-        style.width = '20px';
         this.element.min = '0';
 
         // When this.element gains focus, container.parentElement.parentElement will loose is, so re-focus.
@@ -401,7 +390,22 @@ function Grid(container, viewModel, eventListeners) {
     const schemas = schema.columnSchemas;
     let totalHeight = parseInt(container.style.height);
 
+    const rowHeight = 22;
+    const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
+
+    let total = 0;
+    const columnEnds = [];
+    for (const [index, schema] of schemas.entries()) {
+        total += schema.width + 2 * cellBorderWidth + 2 * cellPadding;
+        columnEnds[index] = total;
+    }
+
+    let viewPortRowCount = Math.floor((totalHeight - 20) / rowHeight);
+    const viewPortHeight = rowHeight * viewPortRowCount;
+
     let styleSheet = document.createElement('style');
+    const xOffset = columnEnds[columnEnds.length - 1] - (viewPortHeight-15)/2 - 1;
+    const yOffset = (viewPortHeight-15)/2 - 3;
     styleSheet.textContent = `
         .GRID textarea {
             background-color: white; border: {cellBorderWidth}px solid black; padding: {cellPadding}px;
@@ -415,18 +419,37 @@ function Grid(container, viewModel, eventListeners) {
             font-weight: normal;
             background-color: ${headerRowBackgroundColor};
         }
+        
+        /* See http://twiggle-web-design.com/tutorials/Custom-Vertical-Input-Range-CSS3.html */
+        #slider {
+             cursor: pointer;
+             width: ${viewPortHeight}px !important;
+             transform:translate(${xOffset}px,${yOffset}px) rotate(-90deg);
+             -webkit-appearance: none;
+             border: 0.5px solid #888;
+             background-color: inherit;
+        }
+        
+        #slider:focus {
+            border: 0 !imporant;
+            outline: none !important;
+        }
+
+        #slider::-webkit-slider-thumb {
+             -webkit-appearance: none;
+             width: 15px;
+             height: 15px;
+             background-color: #888;
+        }
+        
+        #info {
+            color: inherit;
+            background-color: inherit;
+            cursor: help;
+            font-size: large;
+        }
     `;
     container.appendChild(styleSheet);
-
-    const rowHeight = 22;
-    const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
-
-    let total = 0;
-    const columnEnds = [];
-    for (const [index, schema] of schemas.entries()) {
-        total += schema.width + 2 * cellBorderWidth + 2 * cellPadding;
-        columnEnds[index] = total;
-    }
 
     // Only honour first columns sortDirection.
     schemas
@@ -442,17 +465,13 @@ function Grid(container, viewModel, eventListeners) {
     style.height = rowHeight + 'px';
     container.appendChild(headerRow);
 
-    const info = document.createElement('button');
+    const info = document.createElement('span');
+    info.id = 'info';
     info.innerText = '🛈';
     style = info.style;
-    style.color = 'inherit';
-    style.backgroundColor = 'var(--button-background-color)';
-    style.padding = '2px';
-    //style.height = '22px';
-    //style.border = 'none';
     style.left = columnEnds[columnEnds.length - 1] + 'px';
+    //style.top = '-3px';
     style.position = 'absolute';
-    style.cursor = 'help';
     info.onclick = showInfo;
     container.appendChild(info);
 
@@ -521,8 +540,7 @@ function Grid(container, viewModel, eventListeners) {
     body.style.height = (totalHeight - 20) + 'px';
     container.appendChild(body);
 
-    let viewPortRowCount = Math.floor((totalHeight - 20) / rowHeight);
-    const viewPortHeight = rowHeight * viewPortRowCount;
+
     let cellParent = /** @type {HTMLElement} */ document.createElement('div');
     cellParent.className = "GRID";
     cellParent.style.position = 'absolute';  // Must be absolute otherwise contentEditable=true produces strange behaviour
@@ -1242,7 +1260,7 @@ function Grid(container, viewModel, eventListeners) {
         }
     }
 
-    let slider = new Slider(totalWidth - 20, viewPortHeight, (n) => setFirstRow(n, this));
+    let slider = new Slider((n) => setFirstRow(n, this));
     // Note that the slider must before the cells (we avoid using z-order)
     // so that the textarea-resize handle is in front of the slider.
     body.appendChild(slider.element);

@@ -1,37 +1,28 @@
+// Must be loaded as script, not module!
+
 (function () {
-
+    "use strict"
     function applyScheme() {
-        // We avoid a https://en.wikipedia.org/wiki/Flash_of_unstyled_content
-        let colorScheme = window.localStorage.getItem('colorScheme') || 'preferred';
-
-        if (colorScheme === 'preferred' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            colorScheme = 'dark';
-        }
-
-        let style;
-        if (colorScheme === 'dark') {
-            style = `
-                body, option {
-                    background-color: rgb(5, 5, 5);
-                    color: rgb(200, 250, 250);
+         // We avoid a https://en.wikipedia.org/wiki/Flash_of_unstyled_content
+        let colorScheme = window.localStorage.getItem('colorScheme');
+        if (colorScheme === 'dark' || colorScheme === 'light') {
+            const styleSheet = /** @type {CSSStyleSheet} */ document.styleSheets[0];
+            const m = {};
+            for (let index = styleSheet.cssRules.length - 1; index >= 0; index--) {
+                const rule = styleSheet.cssRules[index];
+                if (rule.conditionText && rule.conditionText.startsWith("(prefers-color-scheme:")) {
+                    styleSheet.deleteRule(index);
+                    m[rule.conditionText] = rule;
                 }
-            `;
-        } else {
-            style = `
-                body, option {
-                    color: rgb(5, 5, 5);
-                    background-color: rgb(250, 250, 250);
-                }
-            `;
+            }
+
+            const feature = `(prefers-color-scheme: ${colorScheme})`;
+            if (!(feature in m)) return
+
+            for (const rule of m[feature].cssRules) {
+                styleSheet.insertRule(rule.cssText);
+            }
         }
-
-        let styleSheet = document.createElement('style');
-        styleSheet.textContent = style;
-        document.head.appendChild(styleSheet);
-    }
-
-    if (!document.body) {
-        applyScheme();
     }
 
     window.onload = function () {
@@ -42,9 +33,12 @@
         colorSchemeElement.namedItem(colorScheme).selected = true;
         colorSchemeElement.onchange = function () {
             window.localStorage.setItem('colorScheme', colorSchemeElement.value);
-            applyScheme();
+            //applyScheme();
+            location.reload();
         }
     };
+
+    applyScheme();
 
 })();
 

@@ -1,7 +1,6 @@
 body {
     font-family: sans-serif;
     margin: 2em;
-    background-color: aliceblue;
 }
 
 label {
@@ -20,7 +19,7 @@ textarea {
     color: inherit;
 }
 
-input {
+input, select {
     background-color: inherit;
     color: inherit;
 }
@@ -28,4 +27,32 @@ input {
 grid-chen {
     display: block;
     height: 200px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --button-background-color: rgb(50, 50, 50);
+    }
+
+    /* For some reason, background-color cannot be inherited by option elements correctly in Chrome.
+       So we set it explicitly. */
+    body, option {
+        background-color: rgb(10, 10, 10);
+        color: rgb(250, 250, 250);
+    }
+
+    button {
+        color: inherit;
+        background-color: rgb(50, 50, 50);
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --button-background-color: initial;
+    }
+
+    body {
+        background-color: rgb(250, 250, 250);
+    }
 }

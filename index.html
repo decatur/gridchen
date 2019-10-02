@@ -3,17 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <title>grid-chen Demos</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            margin: 2em;
-        }
-
-        select {
-            background-color: inherit;
-            color: inherit;
-        }
-    </style>
+    <link rel="stylesheet" href="demo.css">
     <script src="./theme.js"></script>
 </head>
 <body>
@@ -37,6 +27,15 @@
     </select>
     color scheme.
 </label>
+
+<p>
+    Option <code>preferred</code> means the OS theme setting. Both Firefox 67 and Chrome 76 support
+    reading this setting via the media query <code>prefers-color-scheme</code>.
+</p>
+<p>
+    <span style="font-size: x-large;">⚠</span> Some dark reader (for example <a href="https://darkreader.org">Dark Reader</a>) extensions may show inferior
+    results than grid-chen's native dark mode support.
+</p>
 
 <h2>Demos</h2>
 

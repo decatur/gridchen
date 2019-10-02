@@ -39,7 +39,7 @@ const inputBackgroundColor = bodyStyle.backgroundColor;
 const cellBorderStyle = '1px solid ' + inputColor;
 const intensity = colorVector(bodyStyle.backgroundColor).reduce((a,b) => a + b, 0) / 3;
 
-if (intensity < 10) {
+if (intensity < 0xff/2) {
     selectionBackgroundColor = 'slategrey';
     activeCellBackgroundColor = 'dimgrey';
     headerRowBackgroundColor = 'dimgrey';
@@ -445,14 +445,14 @@ function Grid(container, viewModel, eventListeners) {
     const info = document.createElement('button');
     info.innerText = '🛈';
     style = info.style;
+    style.color = 'inherit';
+    style.backgroundColor = 'var(--button-background-color)';
     style.padding = '2px';
     //style.height = '22px';
     //style.border = 'none';
     style.left = columnEnds[columnEnds.length - 1] + 'px';
     style.position = 'absolute';
-    style.fontWeight = 'bold';
     style.cursor = 'help';
-    //style.fontSize = 'large';
     info.onclick = showInfo;
     container.appendChild(info);
 

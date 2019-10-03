@@ -24,5 +24,6 @@
       <exclude classes="Math" />
     </inspection_tool>
     <inspection_tool class="JSUnusedGlobalSymbols" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="RegExpRedundantEscape" enabled="false" level="WARNING" enabled_by_default="false" />
   </profile>
 </component>

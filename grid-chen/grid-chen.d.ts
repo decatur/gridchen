@@ -20,6 +20,7 @@ declare module GridChen {
     export interface IGridSchema {
         title: string;
         columnSchemas: IColumnSchema[];
+        ids: string[];
     }
 
     export interface JSONSchema {
@@ -27,6 +28,7 @@ declare module GridChen {
         type?: string;
         properties?: Object;
         items?: Object | Object[];
+        readOnly?: boolean;
     }
 
     export interface Range {
@@ -41,7 +43,7 @@ declare module GridChen {
     }
 
     export interface MatrixView {
-        schema: any;
+        schema: object;
         columnCount: () => number;
         rowCount: () => number;
         removeModel: () => object[];
@@ -52,10 +54,9 @@ declare module GridChen {
         setCell: (rowIndex: number, colIndex: number, value: any) => object[];
         splice: (rowIndex: number) => object[];
         sort: (colIndex: number) => number;
-        plot: () => void;
     }
 
-    export interface IInterval {
+    export interface Interval {
         min: number;
         sup: number;
     }

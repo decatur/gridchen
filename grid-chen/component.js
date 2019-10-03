@@ -1,6 +1,6 @@
 /**
  * Author: Wolfgang Kühn 2019
- * https://github.com/decatur/grid-chen/grid-chen/component.js
+ * Source https://github.com/decatur/grid-chen/grid-chen/component.js
  *
  * See README.md
  */
@@ -73,9 +73,9 @@ const logger = {
 };
 
 /**
- * @param {GridChen.IInterval} i1
- * @param {GridChen.IInterval} i2
- * @returns {GridChen.IInterval}
+ * @param {GridChen.Interval} i1
+ * @param {GridChen.Interval} i2
+ * @returns {GridChen.Interval}
  */
 function intersectInterval(i1, i2) {
     const min = Math.max(i1.min, i2.min);
@@ -83,7 +83,7 @@ function intersectInterval(i1, i2) {
     if (sup <= min) {
         return undefined;
     }
-    return {min, sup};
+    return /**@type{GridChen.Interval}*/ {min, sup}
 }
 
 function openDialog() {
@@ -106,7 +106,7 @@ function openDialog() {
 function createAnchorElement() {
     const elem = document.createElement('a');
     elem.target = '_blank';
-    elem.onmousedown = function (evt) {
+    elem.onmousedown = function () {
         window.setTimeout(function () {
             elem.style.cursor = 'cell';
             // Note the transient event handler style.
@@ -245,7 +245,6 @@ class ScrollBar {
         this.element = document.createElement('input');
         this.element.id = "slider";
         this.element.type = "range";
-        const style = this.element.style;
         this.element.min = '0';
         domParent.appendChild(this.element);
 
@@ -273,6 +272,12 @@ class ScrollBar {
 }
 
 class Range {
+    /**
+     * @param {number} rowIndex
+     * @param {number} columnIndex
+     * @param {number} rowCount
+     * @param {number} columnCount
+     */
     constructor(rowIndex, columnIndex, rowCount, columnCount) {
         this.rowIndex = rowIndex;
         this.columnIndex = columnIndex;
@@ -292,11 +297,11 @@ class Range {
      */
     intersect(other) {
         const row = intersectInterval(
-            {min: this.rowIndex, sup: this.rowIndex + this.rowCount},
-            {min: other.rowIndex, sup: other.rowIndex + other.rowCount});
+            /**@type{GridChen.Interval}*/{min: this.rowIndex, sup: this.rowIndex + this.rowCount},
+            /**@type{GridChen.Interval}*/{min: other.rowIndex, sup: other.rowIndex + other.rowCount});
         const col = intersectInterval(
-            {min: this.columnIndex, sup: this.columnIndex + this.columnCount},
-            {min: other.columnIndex, sup: other.columnIndex + other.columnCount});
+            /**@type{GridChen.Interval}*/{min: this.columnIndex, sup: this.columnIndex + this.columnCount},
+            /**@type{GridChen.Interval}*/{min: other.columnIndex, sup: other.columnIndex + other.columnCount});
         if (col === undefined || row === undefined) {
             return undefined;
         }

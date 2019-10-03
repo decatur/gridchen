@@ -1,6 +1,6 @@
 /**
  * Author: Wolfgang Kühn 2019
- * https://github.com/decatur/grid-chen/grid-chen/grid-data-view.js
+ * Source https://github.com/decatur/grid-chen/grid-chen/grid-data-view.js
  */
 
 import {
@@ -246,7 +246,7 @@ class MatrixView {
     }
 
     /**
-     * @param {number} columnIndex
+     * @param {number} rowIndex
      * @returns {*[]}
      */
     getRow(rowIndex) {
@@ -283,7 +283,8 @@ class MatrixView {
 //     {op:'add', path:'/-', value:value}
 
 /**
- * @param length
+ * @param {number} length
+ * @param {function?} mapfn
  * @returns {undefined[]}
  */
 function createArray(length, mapfn) {
@@ -315,6 +316,7 @@ export function createRowMatrixView(schema, rows) {
      * @implements {GridChen.MatrixView}
      */
     class RowMatrixView extends MatrixView {
+        schema;
         constructor() {
             super();
             this.schema = schema;
@@ -344,7 +346,7 @@ export function createRowMatrixView(schema, rows) {
         }
 
         /**
-         * @param {IInterval} rowsRange
+         * @param {GridChen.Interval} rowsRange
          * @param {number} colIndex
          * @returns {?[]}
          */
@@ -442,6 +444,7 @@ export function createRowObjectsView(schema, rows) {
      * @implements {GridChen.MatrixView}
      */
     class RowObjectsView extends MatrixView {
+        schema;
         constructor() {
             super();
             this.schema = schema;
@@ -562,6 +565,7 @@ export function createColumnMatrixView(schema, columns) {
      * @extends {GridChen.MatrixView}
      */
     class ColumnMatrixView extends MatrixView {
+        schema;
         constructor() {
             super();
             this.schema = schema;
@@ -696,6 +700,7 @@ export function createColumnObjectView(schema, columns) {
      * @extends {GridChen.MatrixView}
      */
     class ColumnObjectView extends MatrixView {
+        schema;
         constructor() {
             super();
             this.schema = schema;
@@ -829,7 +834,7 @@ export function createColumnVectorView(schema, column) {
     updateSchema(schema.columnSchemas);
 
     function getRowCount() {
-        if (!column) return 0
+        if (!column) return 0;
         return column.length
     }
 
@@ -837,6 +842,7 @@ export function createColumnVectorView(schema, column) {
      * @extends {GridChen.MatrixView}
      */
     class ColumnVectorView extends MatrixView {
+        schema;
         constructor() {
             super();
             this.schema = schema;
@@ -925,7 +931,7 @@ export function createColumnVectorView(schema, column) {
          * @param {number} colIndex
          */
         sort(colIndex) {
-            console.assert(colIndex === 0)
+            console.assert(colIndex === 0);
             let [, sortDirection] = updateSortDirection([columnSchema], 0);
             column.sort((a, b) => compare(a, b) * sortDirection);
         }

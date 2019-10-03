@@ -54,4 +54,9 @@ declare module GridChen {
         sort: (colIndex: number) => number;
         plot: () => void;
     }
+
+    export interface IInterval {
+        min: number;
+        sup: number;
+    }
 }

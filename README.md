@@ -96,6 +96,7 @@ Home            	| In input or edit mode, move to the beginning of the text
 
 grid-chen has a light and dark mode. 
 The desired mode is sniffed through the background color intensity of the body element.
+There are no explicit CSS hooks.
 
 ⚠ Some dark reader (for example <a href="https://darkreader.org">Dark Reader</a>) extensions may show inferior
 results when converting light to dark mode than grid-chen's native dark mode.

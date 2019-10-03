@@ -5,27 +5,31 @@
  * See README.md
  */
 
+//////////////////////
+// Start Configuration
+const DEBUG = false;
 const cellPadding = 3;
 const scrollBarBorderWidth = 1;
 const scrollBarThumbWidth = 15;
 const lineHeight = 22;
-
-/** @typedef {{row: number, col:number}} */
-let IPosition;
-
-/**
- * Right open interval.
- * @typedef {{min: number, sup:number}}
- */
-let IInterval;
+const dark = {
+    selectionBackgroundColor: 'slategrey',
+    activeCellBackgroundColor: 'dimgrey',
+    headerRowBackgroundColor: 'dimgrey',
+    headerRowSelectedBackgroundColor: 'slategrey',
+    cellBorderWidth: 0.5
+};
+const light = {
+    selectionBackgroundColor: '#c6c6c6',
+    activeCellBackgroundColor: '#e6e6e6',
+    headerRowBackgroundColor: '#e6e6e6',
+    headerRowSelectedBackgroundColor: '#c6c6c6',
+    cellBorderWidth: 1
+};
+// End Configuration
+//////////////////////
 
 window.console.log('Executing GridChen ...');
-
-let selectionBackgroundColor;
-let activeCellBackgroundColor;
-let headerRowBackgroundColor;
-let headerRowSelectedBackgroundColor;
-
 
 /**
  * Returns a numerical vector from a CSS color of the form rgb(1,2,3).
@@ -41,24 +45,14 @@ function colorVector(color) {
 const bodyStyle = window.getComputedStyle(document.body);
 const inputColor = bodyStyle.color;
 const inputBackgroundColor = bodyStyle.backgroundColor;
-let cellBorderWidth;
-
-
 const intensity = colorVector(bodyStyle.backgroundColor).reduce((a, b) => a + b, 0) / 3;
-
-if (intensity < 0xff / 2) {
-    selectionBackgroundColor = 'slategrey';
-    activeCellBackgroundColor = 'dimgrey';
-    headerRowBackgroundColor = 'dimgrey';
-    headerRowSelectedBackgroundColor = selectionBackgroundColor;
-    cellBorderWidth = 0.5;
-} else {
-    selectionBackgroundColor = '#c6c6c6'; // MS-Excel value
-    activeCellBackgroundColor = '#e6e6e6';
-    headerRowBackgroundColor = '#e6e6e6';
-    headerRowSelectedBackgroundColor = selectionBackgroundColor;
-    cellBorderWidth = 1;
-}
+let {
+    selectionBackgroundColor,
+    activeCellBackgroundColor,
+    headerRowBackgroundColor,
+    headerRowSelectedBackgroundColor,
+    cellBorderWidth
+} = (intensity < 0xff / 2?dark:light);
 
 const cellBorderStyle = `${cellBorderWidth}px solid ` + inputColor;
 const scrollBarWidth = scrollBarThumbWidth + 2 * scrollBarBorderWidth;
@@ -69,22 +63,19 @@ function range(count) {
     return Array.from({length: count}, (_, i) => i);
 }
 
+
 let logCounter = 0;
-// TODO: Rename to logger.
-const console = {
-    assert: window.console.assert,
-    log: function (a, b) {
-        window.console.log(logCounter++ + ': ' + a, b);
-    },
+const logger = {
+    log: (DEBUG ? (a, b) => window.console.log(logCounter++ + ': ' + a, b) : () => undefined),
     error: function (a, b) {
         window.console.error(logCounter++ + ': ' + a, b);
     }
 };
 
 /**
- * @param {IInterval} i1
- * @param {IInterval} i2
- * @returns {IInterval}
+ * @param {GridChen.IInterval} i1
+ * @param {GridChen.IInterval} i2
+ * @returns {GridChen.IInterval}
  */
 function intersectInterval(i1, i2) {
     const min = Math.max(i1.min, i2.min);
@@ -179,7 +170,7 @@ export class GridChen extends HTMLElement {
             try {
                 listener(...arguments);
             } catch (err) {
-                console.error(err);
+                logger.error(err);
             }
         };
         return this
@@ -260,7 +251,7 @@ class ScrollBar {
 
         // When this.element gains focus, container.parentElement.parentElement will loose is, so re-focus.
         this.element.oninput = () => {
-            console.log('slider oninput');
+            logger.log('slider oninput');
             this.handler(Math.round(this.element.max - this.element.value));
         };
     }
@@ -269,7 +260,7 @@ class ScrollBar {
      * @param {number} max
      */
     setMax(max) {
-        console.assert(max > 0, `Invalid max slider value: ${max}`);
+        window.console.assert(max > 0, `Invalid max slider value: ${max}`);
         this.element.max = String(max);
     }
 
@@ -279,16 +270,6 @@ class ScrollBar {
     setValue(value) {
         this.element.value = String(Number(this.element.max) - value);
     }
-}
-
-
-/**
- * @param {number} row
- * @param {number} col
- * @returns {IPosition}
- */
-function pos(row, col) {
-    return {row: row, col: col}
 }
 
 class Range {
@@ -338,8 +319,8 @@ class Range {
 class Selection extends Range {
     constructor(repainter, eventListeners) {
         super(0, 0, 1, 1);
-        this.initial = pos(0, 0);
-        this.head = pos(0, 0); // Cell opposite the initial.
+        this.initial = {row: 0, col: 0};
+        this.head = {row: 0, col: 0}; // Cell opposite the initial.
         this.repainter = repainter;
         this.eventListeners = eventListeners;
         /** @type{Array<Range>} */
@@ -350,7 +331,7 @@ class Selection extends Range {
      */
     show() {
         for (const /** @type{Range} */ r of this.areas) {
-            console.log('show: ' + r.toString());
+            logger.log('show: ' + r.toString());
             this.repainter(selectionBackgroundColor, r);
         }
     }
@@ -366,7 +347,7 @@ class Selection extends Range {
      * @param {number} columnIndex
      */
     set(rowIndex, columnIndex) {
-        console.log('Selection.set');
+        logger.log('Selection.set');
         this.hide(); // TODO: Why?
         this.initial = {row: rowIndex, col: columnIndex};
         this.head = {row: rowIndex, col: columnIndex};
@@ -380,7 +361,7 @@ class Selection extends Range {
      * @param {number} columnIndex
      */
     expand(rowIndex, columnIndex) {
-        console.log('Selection.expand');
+        logger.log('Selection.expand');
         this.hide();
 
         this.head = {row: rowIndex, col: columnIndex};
@@ -400,7 +381,7 @@ class Selection extends Range {
      * @param {number} columnIndex
      */
     add(rowIndex, columnIndex) {
-        console.log('Selection.add');
+        logger.log('Selection.add');
         this.hide(); // TODO: Why?
         this.areas.push(new Range(rowIndex, columnIndex, 1, 1));
         this.convexHull();
@@ -607,7 +588,7 @@ function createGrid(container, viewModel, eventListeners) {
          * @param {KeyboardEvent} evt
          */
         keydownHandler(evt) {
-            console.log('editor.onkeydown: ' + evt.code);
+            logger.log('editor.onkeydown: ' + evt.code);
             // Clicking editor should invoke default: move caret. It should not delegate to containers action.
             evt.stopPropagation();
 
@@ -652,7 +633,7 @@ function createGrid(container, viewModel, eventListeners) {
         }
 
         blurHandler(evt) {
-            console.log('editor.onblur');
+            logger.log('editor.onblur');
             commit();
 
             if (!container.contains(evt.relatedTarget)) {
@@ -812,7 +793,7 @@ function createGrid(container, viewModel, eventListeners) {
     }
 
     cellParent.onmousedown = function (evt) {
-        console.log('onmousedown');
+        logger.log('onmousedown');
         // But we do not want it to propagate as we want to avoid side effects.
         evt.stopPropagation();
         // The evt default is (A) to focus container element, and (B) start selecting text.
@@ -856,7 +837,7 @@ function createGrid(container, viewModel, eventListeners) {
 
         cellParent.onmousemove = function (evt) {
             let {rowIndex, colIndex} = index(evt);
-            console.log(`onmousemove ${rowIndex} ${colIndex}`);
+            logger.log(`onmousemove ${rowIndex} ${colIndex}`);
 
             if (rowIndex - firstRow < spanMatrix.length) {
                 selection.expand(rowIndex, colIndex);
@@ -864,19 +845,19 @@ function createGrid(container, viewModel, eventListeners) {
         };
 
         cellParent.onmouseleave = function () {
-            console.log('onmouseleave');
+            logger.log('onmouseleave');
             resetHandlers();
         };
 
         cellParent.onmouseup = function () {
-            console.log('onmouseup');
+            logger.log('onmouseup');
             resetHandlers();
             cellParent.focus(); // So that we receive keyboard events.
         }
     };
 
     cellParent.onmousewheel = function (_evt) {
-        console.log('onmousewheel');
+        logger.log('onmousewheel');
         if ((/** @type {DocumentOrShadowRoot} */container.parentNode).activeElement !== container) return;
 
         let evt = /** @type {WheelEvent} */ _evt;
@@ -885,7 +866,7 @@ function createGrid(container, viewModel, eventListeners) {
         evt.stopPropagation();
         evt.preventDefault();  // Prevents scrolling of any surrounding HTML element.
 
-        console.assert(evt.deltaMode === evt.DOM_DELTA_PIXEL);  // We only support Chrome. FireFox will have evt.deltaMode = 1.
+        logger.assert(evt.deltaMode === evt.DOM_DELTA_PIXEL);  // We only support Chrome. FireFox will have evt.deltaMode = 1.
         // TODO: Chrome seems to always give evt.deltaY +-150 pixels. Why?
         // Excel scrolls about 3 lines per wheel tick.
         let newFirstRow = firstRow + 3 * Math.sign(evt.deltaY);
@@ -895,7 +876,7 @@ function createGrid(container, viewModel, eventListeners) {
     };
 
     container.onblur = function (evt) {
-        console.log('container.onblur: ' + evt);
+        logger.log('container.onblur: ' + evt);
         if (!container.contains(/** @type {HTMLElement} */ evt.relatedTarget)) {
             // We are leaving the component.
             activeCell.hide();
@@ -904,7 +885,7 @@ function createGrid(container, viewModel, eventListeners) {
     };
 
     container.onfocus = function (evt) {
-        console.log('container.onfocus: ' + evt);
+        logger.log('container.onfocus: ' + evt);
         evt.stopPropagation();
         evt.preventDefault();
         activeCell.show();
@@ -992,19 +973,19 @@ function createGrid(container, viewModel, eventListeners) {
     function copySelection(doCut, withHeaders) {
         window.navigator.clipboard.writeText(rangeToTSV(selection.areas[0], '\t', withHeaders))
             .then(() => {
-                console.log('Text copied to clipboard');
+                logger.log('Text copied to clipboard');
                 if (doCut) {
                     deleteSelection();
                 }
             })
             .catch(err => {
                 // This can happen if the user denies clipboard permissions:
-                console.error('Could not copy text: ', err);
+                logger.error('Could not copy text: ', err);
             });
     }
 
     container.onkeydown = function (evt) {
-        console.log('container.onkeydown ' + evt.code);
+        logger.log('container.onkeydown ' + evt.code);
         //if (activeCell.mode === 'edit') throw Error();
         // Note 1: All handlers call both preventDefault() and stopPropagation().
         //         The reason is documented in the handler code.
@@ -1073,7 +1054,7 @@ function createGrid(container, viewModel, eventListeners) {
                     }
                 })
                 .catch(err => {
-                    console.error('Failed to read clipboard contents: ', err);
+                    logger.error('Failed to read clipboard contents: ', err);
                 })
         } else if (evt.code === 'Escape') {
             // Leave edit mode.
@@ -1214,7 +1195,7 @@ function createGrid(container, viewModel, eventListeners) {
     }
 
     function navigateCell(evt, rowOffset, colOffset) {
-        console.log('navigateCell');
+        logger.log('navigateCell');
 
         if (activeCell.mode !== 'display') {
             commit();
@@ -1251,7 +1232,7 @@ function createGrid(container, viewModel, eventListeners) {
             selection.set(rowIndex, colIndex);
         }
 
-        console.log(`rowIndex ${rowIndex} colIndex ${colIndex}`);
+        logger.log(`rowIndex ${rowIndex} colIndex ${colIndex}`);
 
         const viewRow = rowIndex - firstRow;
 
@@ -1290,7 +1271,7 @@ function createGrid(container, viewModel, eventListeners) {
     let rowCount = 0;
 
     function commit() {
-        console.log('commit');
+        logger.log('commit');
         activeCell.span.style.display = 'inline-block';
 
         if (activeCell.mode !== 'display') {

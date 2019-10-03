@@ -5,6 +5,11 @@
  * See README.md
  */
 
+const cellPadding = 3;
+const scrollBarBorderWidth = 1;
+const scrollBarThumbWidth = 15;
+const lineHeight = 22;
+
 /** @typedef {{row: number, col:number}} */
 let IPosition;
 
@@ -37,24 +42,26 @@ const bodyStyle = window.getComputedStyle(document.body);
 const inputColor = bodyStyle.color;
 const inputBackgroundColor = bodyStyle.backgroundColor;
 let cellBorderWidth;
-const cellPadding = 3;
+
+
 const intensity = colorVector(bodyStyle.backgroundColor).reduce((a, b) => a + b, 0) / 3;
 
 if (intensity < 0xff / 2) {
     selectionBackgroundColor = 'slategrey';
     activeCellBackgroundColor = 'dimgrey';
     headerRowBackgroundColor = 'dimgrey';
-    headerRowSelectedBackgroundColor = 'slategrey';
+    headerRowSelectedBackgroundColor = selectionBackgroundColor;
     cellBorderWidth = 0.5;
 } else {
-    selectionBackgroundColor = 'LightBlue';
-    activeCellBackgroundColor = 'mistyrose';
-    headerRowBackgroundColor = 'khaki';
-    headerRowSelectedBackgroundColor = 'red';
+    selectionBackgroundColor = '#c6c6c6'; // MS-Excel value
+    activeCellBackgroundColor = '#e6e6e6';
+    headerRowBackgroundColor = '#e6e6e6';
+    headerRowSelectedBackgroundColor = selectionBackgroundColor;
     cellBorderWidth = 1;
 }
 
 const cellBorderStyle = `${cellBorderWidth}px solid ` + inputColor;
+const scrollBarWidth = scrollBarThumbWidth + 2 * scrollBarBorderWidth;
 
 //const numeric = new Set(['number', 'integer']);
 
@@ -158,7 +165,8 @@ export class GridChen extends HTMLElement {
             container.innerText = String(viewModel);
             return null
         }
-        this.grid = Grid(container, viewModel, this.eventListeners);
+        this.grid = createGrid(container, viewModel, this.eventListeners);
+        this.style.width = container.style.width;
         return this
     }
 
@@ -205,12 +213,12 @@ export class GridChen extends HTMLElement {
 
 customElements.define('grid-chen', GridChen);
 
-class Slider {
+class ScrollBar {
 
     /**
      * @param {HTMLElement} domParent
-     * @param {number} xOffset the x-offset for the slider.
-     * @param {number} height the height of the vertical slider.
+     * @param {number} xOffset the x-offset for the scroll bar.
+     * @param {number} height the height of the vertical scroll bar.
      * @param handler
      */
     constructor(domParent, xOffset, height, handler) {
@@ -219,26 +227,24 @@ class Slider {
             Styling emulates a scroll bar for element overflow,
             See http://twiggle-web-design.com/tutorials/Custom-Vertical-Input-Range-CSS3.html
         */
-        const width = 15;
-        const borderWidth = 1;
-        const offset = (height - width) / 2 - borderWidth;
+        const offset = (height - scrollBarWidth) / 2;
         const styleSheet = document.createElement('style');
         styleSheet.textContent = `
             #slider {
                  position: absolute;
                  cursor: pointer;
-                 width: ${height - 2 * borderWidth}px !important;
+                 width: ${height - 2 * scrollBarBorderWidth}px !important;
                  transform:translate(${xOffset - offset}px,${offset}px) rotate(-90deg);
                  -webkit-appearance: unset;
-                 border: ${borderWidth}px solid #888;
+                 border: ${scrollBarBorderWidth}px solid #888;
                  margin: unset;
                  background-color: inherit;
             }
     
             #slider::-webkit-slider-thumb {
                  -webkit-appearance: none;
-                 width: ${width}px;
-                 height: ${width}px;
+                 width: ${scrollBarThumbWidth}px;
+                 height: ${scrollBarThumbWidth}px;
                  background-color: #888;
             }
         `;
@@ -417,12 +423,12 @@ class Selection extends Range {
  * @param {GridChen.MatrixView} viewModel
  * @param {Array<function()>} eventListeners
  */
-function Grid(container, viewModel, eventListeners) {
+function createGrid(container, viewModel, eventListeners) {
     const schema = viewModel.schema;
     const schemas = schema.columnSchemas;
     let totalHeight = parseInt(container.style.height);
 
-    const rowHeight = 20 + 2 * cellBorderWidth;
+    const rowHeight = lineHeight + 2 * cellBorderWidth;
     const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
 
     let total = 0;
@@ -432,7 +438,7 @@ function Grid(container, viewModel, eventListeners) {
         columnEnds[index] = total;
     }
 
-    let viewPortRowCount = Math.floor((totalHeight - 20) / rowHeight);
+    let viewPortRowCount = Math.floor((totalHeight) / rowHeight) - 1;
     const viewPortHeight = rowHeight * viewPortRowCount + cellBorderWidth;
     const gridWidth = columnEnds[columnEnds.length - 1] + cellBorderWidth;
     const styleSheet = document.createElement('style');
@@ -539,14 +545,13 @@ function Grid(container, viewModel, eventListeners) {
         }
     }
 
-    let totalWidth = gridWidth + 20;
-    container.style.width = totalWidth + 'px';
+    container.style.width = (gridWidth + scrollBarWidth) + 'px';
 
     const body = document.createElement('div');
     body.style.position = 'absolute';
     body.style.top = rowHeight + 'px';
     body.style.width = '100%';
-    body.style.height = (totalHeight - 20) + 'px';
+    body.style.height = (viewPortHeight) + 'px';
     container.appendChild(body);
 
 
@@ -670,7 +675,7 @@ function Grid(container, viewModel, eventListeners) {
             const style = this.input.style;
             style.top = top;
             style.left = left;
-            style.width = (parseInt(width) + 20) + 'px';  // Account for the resize handle, which is about 20px
+            style.width = (parseInt(width) + lineHeight) + 'px';  // Account for the resize handle, which is about 20px
             //style.height = innerHeight;
             if (schemas[activeCell.col].enum) {
                 this.input.setAttribute('list', 'enum' + activeCell.col);
@@ -1274,7 +1279,7 @@ function Grid(container, viewModel, eventListeners) {
 
     // Note that the slider must before the cells (we avoid using z-order)
     // so that the textarea-resize handle is in front of the slider.
-    let slider = new Slider(body, gridWidth, viewPortHeight, (n) => setFirstRow(n, this));
+    let scrollBar = new ScrollBar(body, gridWidth, viewPortHeight, (n) => setFirstRow(n, this));
 
     body.appendChild(cellParent);
 
@@ -1328,13 +1333,13 @@ function Grid(container, viewModel, eventListeners) {
         //    rowCount = firstRow + viewPortRowCount;
         //}
 
-        if (caller !== slider) {
+        if (caller !== scrollBar) {
             // TODO: remove caller.
-            if (slider.max !== rowCount - viewPortRowCount) {
+            if (scrollBar.max !== rowCount - viewPortRowCount) {
                 // Note that rowCount - viewPortRowCount may be 0.
-                slider.setMax(Math.max(viewPortRowCount, rowCount - viewPortRowCount));
+                scrollBar.setMax(Math.max(viewPortRowCount, rowCount - viewPortRowCount));
             }
-            slider.setValue(firstRow)
+            scrollBar.setValue(firstRow)
         }
 
         updateViewportRows(getSelection(

@@ -9,21 +9,21 @@ export function createInteractiveDemoGrid(schema, data) {
     }
 
     html`
-    <label>
+    <label class="demo">
         Edit JSON Schema
-        <textarea class="schema"></textarea>
+        <textarea class="demo schema"></textarea>
     </label>
-    <label>
+    <label class="demo">
         Edit JavaScript Matrix
-        <textarea class="data"></textarea>
+        <textarea class="demo data"></textarea>
     </label>
-    <label class="grid">
+    <label class="demo grid">
         Grid
         <grid-chen></grid-chen>
     </label>
-    <label class="patch">
+    <label class="demo patch">
         JSON Patch <button>Clear</button>
-        <textarea readonly></textarea>
+        <textarea class="demo" readonly></textarea>
     </label>`;
 
     const schemaElement = container.querySelector('.schema');

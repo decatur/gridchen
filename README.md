@@ -2,7 +2,7 @@
 Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience.
 Very modern (web components, es6 modules) with **no** dependencies.
 
-If you need to edit mixed hierachical and grid data, please visit sister project https://decatur.github.io/form-chen.
+If you need to edit mixed hierarchical and grid data, please visit sister project https://decatur.github.io/form-chen.
 
 # Demos
 
@@ -12,8 +12,9 @@ See https://decatur.github.io/grid-chen
 
 ```HTML
 <!DOCTYPE html>
+<body>
 <grid-chen></grid-chen>
-
+</body>
 <script type="module">
     import "./grid-chen/GridChen.js"
     import {createView} from "./grid-chen/DataViews.js"
@@ -54,7 +55,7 @@ See https://decatur.github.io/grid-chen
 
 # Expected Behaviour
 
-We try to mimic MSE as close as possible.
+We try to mimic MS-Excel as close as possible.
 
 ## Keyboard Shortcuts
 
@@ -86,11 +87,18 @@ Ctrl+V          	| Paste clipboard into selected cells
 Ctrl+X          	| Cut
 F2              	| Enter edit mode; In input or edit mode, toggle between input and edit.
 Alt+F1              | Open a modal chart of the selection.
-~~Shift+F10~~       | Display context menu (GridChen politely does not alter the right mouse click or oncontextmenu event)
 Backspace       	| In input or edit mode, deletes one character to the left
 Delete          	| In input or edit mode, deletes one character to the right
 End            	 	| In input or edit mode, move to the end of the text
 Home            	| In input or edit mode, move to the beginning of the text
+
+## Light / Dark Mode
+
+grid-chen has a light and dark mode. 
+The desired mode is sniffed through the background color intensity of the body element.
+
+⚠ Some dark reader (for example <a href="https://darkreader.org">Dark Reader</a>) extensions may show inferior
+results when converting light to dark mode than grid-chen's native dark mode.
 
 ## Invalid Cell Values
 The input value is honored and stored, even if it does not comply with the schema.

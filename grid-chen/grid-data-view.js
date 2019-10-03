@@ -1,6 +1,6 @@
 /**
  * Author: Wolfgang Kühn 2019
- * https://github.com/decatur/grid-chen/grid-chen/DataViews.js
+ * https://github.com/decatur/grid-chen/grid-chen/grid-data-view.js
  */
 
 import {

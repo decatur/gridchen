@@ -1,6 +1,6 @@
 import {assert, testAsync, log} from './utils.js'
-import '../grid-chen/GridChen.js'
-import {createRowMatrixView} from "../grid-chen/DataViews.js";
+import '../grid-chen/component.js'
+import {createRowMatrixView} from "../grid-chen/grid-data-view.js";
 import {NumberConverter} from "../grid-chen/converter.js";
 
 

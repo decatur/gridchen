@@ -1,4 +1,4 @@
-import {createView} from "./grid-chen/DataViews.js"
+import {createView} from "./grid-chen/grid-data-view.js"
 import {FullDate, FullDateConverter, DatePartialTime, DatePartialTimeConverter} from "./grid-chen/converter.js"
 
 export function createInteractiveDemoGrid(schema, data) {

@@ -1,6 +1,6 @@
 /**
  * Author: Wolfgang Kühn 2019
- * https://github.com/decatur/GridChen
+ * https://github.com/decatur/grid-chen/grid-chen/component.js
  *
  * See README.md
  */

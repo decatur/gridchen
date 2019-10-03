@@ -1,6 +1,6 @@
 import {testSync, assert} from './utils.js'
-import {GridChen} from '../grid-chen/GridChen.js'
-import {createColumnMatrixView, createRowMatrixView} from "../grid-chen/DataViews.js";
+import {GridChen} from '../grid-chen/component.js'
+import {createColumnMatrixView, createRowMatrixView} from "../grid-chen/grid-data-view.js";
 import {NumberConverter} from "../grid-chen/converter.js";
 
 const decimalSep = new NumberConverter(1).decimalSep;

@@ -16,8 +16,8 @@ See https://decatur.github.io/grid-chen
 <grid-chen></grid-chen>
 </body>
 <script type="module">
-    import "./grid-chen/GridChen.js"
-    import {createView} from "./grid-chen/DataViews.js"
+    import "./grid-chen/component.js"
+    import {createView} from "./grid-chen/grid-data-view.js"
 
     const schema = {
         title: 'Array of Row Arrays',

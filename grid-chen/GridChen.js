@@ -28,7 +28,7 @@ let headerRowSelectedBackgroundColor;
  * @returns {number[]}
  */
 function colorVector(color) {
-    return color.substr(4).split(',').map(part=>parseInt(part))
+    return color.substr(4).split(',').map(part => parseInt(part))
 }
 
 // We use document.body style for theming.
@@ -36,20 +36,25 @@ function colorVector(color) {
 const bodyStyle = window.getComputedStyle(document.body);
 const inputColor = bodyStyle.color;
 const inputBackgroundColor = bodyStyle.backgroundColor;
-const cellBorderStyle = '0.5px solid ' + inputColor;
-const intensity = colorVector(bodyStyle.backgroundColor).reduce((a,b) => a + b, 0) / 3;
+let cellBorderWidth;
+const cellPadding = 3;
+const intensity = colorVector(bodyStyle.backgroundColor).reduce((a, b) => a + b, 0) / 3;
 
-if (intensity < 0xff/2) {
+if (intensity < 0xff / 2) {
     selectionBackgroundColor = 'slategrey';
     activeCellBackgroundColor = 'dimgrey';
     headerRowBackgroundColor = 'dimgrey';
     headerRowSelectedBackgroundColor = 'slategrey';
+    cellBorderWidth = 0.5;
 } else {
     selectionBackgroundColor = 'LightBlue';
     activeCellBackgroundColor = 'mistyrose';
     headerRowBackgroundColor = 'khaki';
     headerRowSelectedBackgroundColor = 'red';
+    cellBorderWidth = 1;
 }
+
+const cellBorderStyle = `${cellBorderWidth}px solid ` + inputColor;
 
 //const numeric = new Set(['number', 'integer']);
 
@@ -203,17 +208,49 @@ customElements.define('grid-chen', GridChen);
 class Slider {
 
     /**
+     * @param {HTMLElement} domParent
+     * @param {number} xOffset the x-offset for the slider.
+     * @param {number} height the height of the vertical slider.
      * @param handler
      */
-    constructor(handler) {
+    constructor(domParent, xOffset, height, handler) {
+        /*
+            We use a range input element to represent the scroll bar.
+            Styling emulates a scroll bar for element overflow,
+            See http://twiggle-web-design.com/tutorials/Custom-Vertical-Input-Range-CSS3.html
+        */
+        const width = 15;
+        const borderWidth = 1;
+        const offset = (height - width) / 2 - borderWidth;
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+            #slider {
+                 position: absolute;
+                 cursor: pointer;
+                 width: ${height - 2 * borderWidth}px !important;
+                 transform:translate(${xOffset - offset}px,${offset}px) rotate(-90deg);
+                 -webkit-appearance: unset;
+                 border: ${borderWidth}px solid #888;
+                 margin: unset;
+                 background-color: inherit;
+            }
+    
+            #slider::-webkit-slider-thumb {
+                 -webkit-appearance: none;
+                 width: ${width}px;
+                 height: ${width}px;
+                 background-color: #888;
+            }
+        `;
+        domParent.appendChild(styleSheet);
+
         this.handler = handler;
         this.element = document.createElement('input');
         this.element.id = "slider";
         this.element.type = "range";
         const style = this.element.style;
-        style.position = 'absolute';
-        style.display = 'inline-block';
         this.element.min = '0';
+        domParent.appendChild(this.element);
 
         // When this.element gains focus, container.parentElement.parentElement will loose is, so re-focus.
         this.element.oninput = () => {
@@ -375,11 +412,6 @@ class Selection extends Range {
     }
 }
 
-
-const cellBorderWidth = 1;
-const cellPadding = 3;
-
-
 /**
  * @param {HTMLElement} container
  * @param {GridChen.MatrixView} viewModel
@@ -390,22 +422,21 @@ function Grid(container, viewModel, eventListeners) {
     const schemas = schema.columnSchemas;
     let totalHeight = parseInt(container.style.height);
 
-    const rowHeight = 22;
+    const rowHeight = 20 + 2 * cellBorderWidth;
     const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
 
     let total = 0;
     const columnEnds = [];
     for (const [index, schema] of schemas.entries()) {
-        total += schema.width + 2 * cellBorderWidth + 2 * cellPadding;
+        total += schema.width + cellBorderWidth + 2 * cellPadding;
         columnEnds[index] = total;
     }
 
     let viewPortRowCount = Math.floor((totalHeight - 20) / rowHeight);
-    const viewPortHeight = rowHeight * viewPortRowCount;
+    const viewPortHeight = rowHeight * viewPortRowCount + cellBorderWidth;
+    const gridWidth = columnEnds[columnEnds.length - 1] + cellBorderWidth;
+    const styleSheet = document.createElement('style');
 
-    let styleSheet = document.createElement('style');
-    const xOffset = columnEnds[columnEnds.length - 1] - (viewPortHeight-15)/2 - 1;
-    const yOffset = (viewPortHeight-15)/2 - 3;
     styleSheet.textContent = `
         .GRID textarea {
             background-color: white; border: {cellBorderWidth}px solid black; padding: {cellPadding}px;
@@ -419,29 +450,7 @@ function Grid(container, viewModel, eventListeners) {
             font-weight: normal;
             background-color: ${headerRowBackgroundColor};
         }
-        
-        /* See http://twiggle-web-design.com/tutorials/Custom-Vertical-Input-Range-CSS3.html */
-        #slider {
-             cursor: pointer;
-             width: ${viewPortHeight}px !important;
-             transform:translate(${xOffset}px,${yOffset}px) rotate(-90deg);
-             -webkit-appearance: none;
-             border: 0.5px solid #888;
-             background-color: inherit;
-        }
-        
-        #slider:focus {
-            border: 0 !imporant;
-            outline: none !important;
-        }
 
-        #slider::-webkit-slider-thumb {
-             -webkit-appearance: none;
-             width: 15px;
-             height: 15px;
-             background-color: #888;
-        }
-        
         #info {
             color: inherit;
             background-color: inherit;
@@ -461,7 +470,7 @@ function Grid(container, viewModel, eventListeners) {
     const headerRow = document.createElement('div');
     headerRow.id = 'headerRow';
     let style = headerRow.style;
-    style.width = columnEnds[columnEnds.length - 1] + 'px';
+    style.width = gridWidth + 'px';
     style.height = rowHeight + 'px';
     container.appendChild(headerRow);
 
@@ -469,7 +478,7 @@ function Grid(container, viewModel, eventListeners) {
     info.id = 'info';
     info.innerText = '🛈';
     style = info.style;
-    style.left = columnEnds[columnEnds.length - 1] + 'px';
+    style.left = gridWidth + 'px';
     //style.top = '-3px';
     style.position = 'absolute';
     info.onclick = showInfo;
@@ -530,12 +539,12 @@ function Grid(container, viewModel, eventListeners) {
         }
     }
 
-    let totalWidth = columnEnds[columnEnds.length - 1] + 20;
+    let totalWidth = gridWidth + 20;
     container.style.width = totalWidth + 'px';
 
     const body = document.createElement('div');
     body.style.position = 'absolute';
-    body.style.top = '23px';
+    body.style.top = rowHeight + 'px';
     body.style.width = '100%';
     body.style.height = (totalHeight - 20) + 'px';
     container.appendChild(body);
@@ -544,8 +553,8 @@ function Grid(container, viewModel, eventListeners) {
     let cellParent = /** @type {HTMLElement} */ document.createElement('div');
     cellParent.className = "GRID";
     cellParent.style.position = 'absolute';  // Must be absolute otherwise contentEditable=true produces strange behaviour
-    cellParent.style.display = 'inline-block';
-    cellParent.style.width = columnEnds[columnEnds.length - 1] + 'px';
+    //cellParent.style.display = 'inline-block';
+    cellParent.style.width = gridWidth + 'px';
     cellParent.style.height = viewPortHeight + 'px';
     container.tabIndex = 0;
 
@@ -561,6 +570,7 @@ function Grid(container, viewModel, eventListeners) {
             this.input.style.display = 'none';
             this.input.style.height = innerHeight;
             this.input.style.padding = cellPadding + 'px';
+            this.input.style.borderWidth = cellBorderWidth + 'px';
 
             /** @type{HTMLTextAreaElement} */
             this.textarea = document.createElement('textarea');
@@ -571,6 +581,7 @@ function Grid(container, viewModel, eventListeners) {
             this.textarea.style.display = 'none';
             this.textarea.style.height = innerHeight;
             this.textarea.style.padding = cellPadding + 'px';
+            this.textarea.style.borderWidth = cellBorderWidth + 'px';
 
             function foo(evt) {
                 // Clicking editor should invoke default: move the caret. It should not delegate to containers action.
@@ -683,6 +694,7 @@ function Grid(container, viewModel, eventListeners) {
             this.input.removeEventListener('blur', this.blurHandler);
             this.textarea.style.left = style.left;
             this.textarea.style.top = style.top;
+            this.textarea.style.width = style.width;
             this.textarea.style.display = 'inline-block';
 
             this.textarea.readOnly = activeCell.isReadOnly();  // Must not use disabled!
@@ -1260,10 +1272,10 @@ function Grid(container, viewModel, eventListeners) {
         }
     }
 
-    let slider = new Slider((n) => setFirstRow(n, this));
     // Note that the slider must before the cells (we avoid using z-order)
     // so that the textarea-resize handle is in front of the slider.
-    body.appendChild(slider.element);
+    let slider = new Slider(body, gridWidth, viewPortHeight, (n) => setFirstRow(n, this));
+
     body.appendChild(cellParent);
 
     let colCount = schemas.length;

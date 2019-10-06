@@ -42,6 +42,8 @@ See https://decatur.github.io/grid-chen
 
 # TODOs
 
+* Wrap ALL event handlers
+* Improve encapsulation of JavaScript API 
 * Show 1 empty row at end (Slider issue)
 * Avoid refreshing complete viewport on cell change
 * Write more unit tests
@@ -96,7 +98,7 @@ Home            	| In input or edit mode, move to the beginning of the text
 
 grid-chen has a light and dark mode. 
 The desired mode is sniffed through the background color intensity of the body element.
-There are no explicit CSS hooks.
+There are currently no other explicit CSS hooks, such as CSS custom properties.
 
 ⚠ Some dark reader (for example <a href="https://darkreader.org">Dark Reader</a>) extensions may show inferior
 results when converting light to dark mode than grid-chen's native dark mode.

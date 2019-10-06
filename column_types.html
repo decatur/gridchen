@@ -23,7 +23,7 @@
 <script type="module">
     import "./grid-chen/component.js"
     import {createInteractiveDemoGrid} from "./demo.js"
-    import {DatePartialTimeConverter, FullDateConverter, FullDate, DatePartialTime} from './grid-chen/converter.js'
+    import {toUTCDateString, toUTCDatePartialTimeString, toUTCDateTimeString} from './grid-chen/converter.js'
 
 
     const input = document.querySelector('input');
@@ -54,21 +54,21 @@
             items: {
                 type: 'array',
                 items: [  // tuple schema
-                    {title: 'FullDateString', width: 100, type: 'string', format: 'full-date', readOnly: true},
+                    {title: 'FullDateString', width: 100, type: 'string', format: 'full-date'},
                     {title: 'FullDate', width: 100, type: 'FullDate'},
                     {
                         title: 'DatePartialTimeString',
                         width: 200,
                         type: 'string',
                         format: 'date-partial-time',
-                        frequency: 'T1M'
+                        frequency: 'M'
                     },
-                    {title: 'DatePartialTime', width: 200, type: 'DatePartialTime', frequency: 'T1M'},
-                    {title: 'DateTimeString', width: 200, type: 'string', format: 'date-time', frequency: 'T1M'},
-                    {title: 'DateTime', width: 200, type: 'Date', frequency: 'T1M'},
+                    {title: 'DatePartialTime', width: 200, type: 'DatePartialTime', frequency: 'M'},
+                    {title: 'DateTimeString', width: 200, type: 'string', format: 'date-time', frequency: 'H'},
+                    {title: 'DateTime', width: 200, type: 'Date', frequency: 'M'},
                     {title: 'Integer', width: 50, type: 'integer'},
                     {title: 'Digits1', width: 50, type: 'number', fractionDigits: 1},
-                    {title: 'Digits2', width: 100, type: 'number', fractionDigits: 2},
+                    {title: 'Digits2', width: 100, type: 'number', fractionDigits: 2, format:"%"},
                     {title: 'String', width: 100, type: 'string'},
                     {title: 'Enum', width: 50, type: 'string', enum: ['foo', 'bar']},
                     {title: 'Boolean', width: 100, type: 'boolean'},
@@ -79,37 +79,28 @@
 
         // We simulate the data. Most likely this will come from the server via the Fetch API.
         let startDate = new Date('2019-01-01T00:00Z');
-        const fullDateConverter = new FullDateConverter();
-        const datePartialTimeConverter = new DatePartialTimeConverter();
 
         const simulate = {
             FullDateString: function (row) {
-                const foo = new Date(startDate.getTime() + row * 1000 * 60 * 15);
-                const d = new FullDate(foo.getUTCFullYear(), foo.getUTCMonth(), foo.getUTCDate());
-                return fullDateConverter.toString(d);
+                const d = new Date(startDate.getTime() + row * 1000 * 60 * 15);
+                return toUTCDateString(d)
             },
             FullDate: function (row) {
-                const foo = new Date(startDate.getTime() + row * 1000 * 60 * 15);
-                const d = new FullDate(foo.getUTCFullYear(), foo.getUTCMonth(), foo.getUTCDate());
-                return d
+                return new Date(startDate.getTime() + row * 1000 * 60 * 15);
             },
             DatePartialTimeString: function (row) {
-                const foo = new Date(startDate.getTime() + row * 1000 * 60 * 15);
-                const d = new DatePartialTime(foo.getUTCFullYear(), foo.getUTCMonth(), foo.getUTCDate(), foo.getUTCMinutes(), foo.getUTCMinutes());
-                return datePartialTimeConverter.toString(d)
+                const d = new Date(startDate.getTime() + row * 1000 * 60 * 15);
+                return toUTCDatePartialTimeString(d, {M:1})
             },
             DatePartialTime: function (row) {
-                const foo = new Date(startDate.getTime() + row * 1000 * 60 * 15);
-                const d = new DatePartialTime(foo.getUTCFullYear(), foo.getUTCMonth(), foo.getUTCDate(), foo.getUTCMinutes(), foo.getUTCMinutes());
-                return d
+                return new Date(startDate.getTime() + row * 1000 * 60 * 15);
             },
             DateTimeString: function (row) {
                 const d = new Date(startDate.getTime() + row * 1000 * 60 * 15);
-                return d.toISOString().replace(':00.000Z', 'Z');
+                return toUTCDateTimeString(d, {M:1})
             },
             DateTime: function (row) {
-                const d = new Date(startDate.getTime() + row * 1000 * 60 * 15);
-                return d;
+                return new Date(startDate.getTime() + row * 1000 * 60 * 15);
             },
             Integer: (row) => row % 4 ? row : null,
             Digits1: (row) => row,

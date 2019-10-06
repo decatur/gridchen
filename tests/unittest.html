@@ -6,8 +6,10 @@
     <script src="../theme.js"></script>
 </head>
 <body>
-
-<p>Open JavaScript console for details</p>
+<h1><a href="../index.html">GridChen Index</a> / Running Unit Test <span id="moduleName"/></h1>
+<p>
+    Open JavaScript console for details
+</p>
 
 </body>
 
@@ -15,11 +17,13 @@
 
 <script type="module">
     const match = window.location.search.match(/module=([^&]+)/);
-    loadModule(match[1]);
+    const moduleName = match[1];
+    document.getElementById('moduleName').textContent = moduleName;
+    loadModule(moduleName);
 
     function loadModule(module) {
         document.title = module;
-        import(`./test_${module}.js`)
+        import(`./${module}.js`)
             .then(() => null)
             .catch(e => alert(e));
     }

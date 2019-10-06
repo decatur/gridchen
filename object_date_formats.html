@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Object Date Formats</title>
+    <link rel="stylesheet" href="demo.css">
+    <script src="./theme.js"></script>
+</head>
+<body>
+
+<h1><a href="index.html">grid-chen Index</a> / Object Date Formats</h1>
+
+<p>
+    Same as string dates, but dates are stored as JavaScript Date objects
+</p>
+
+</body>
+
+<script type="module">
+    import "./grid-chen/component.js"
+    import {createInteractiveDemoGrid} from "./demo.js"
+
+    createInteractiveDemoGrid(
+        {
+            title: 'Array of Row Arrays',
+            type: 'array',
+            items: {
+                type: 'array',
+                items: [  // tuple schema
+                    {title: 'full-date', type: 'object', format:'full-date', width: 100},
+                    {title: 'date-partial-time', type: 'object', format:'date-partial-time', width: 150},
+                    {title: 'date-time', type: 'object', format:'date-time', width: 200, }
+                ]
+            }
+        },
+        [
+            [new Date(Date.UTC(2019, 9, 27)), new Date('2019-10-27T01:13Z'), new Date('2019-10-27T01:13+02:00')],
+            ['not_a_date', 'not_a_date', 'not_a_date']
+        ]
+    );
+
+</script>
+</html>

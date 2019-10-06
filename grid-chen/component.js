@@ -30,6 +30,9 @@ const light = {
 //////////////////////
 
 window.console.log('Executing GridChen ...');
+/*window.onerror = function(evt) {
+    alert(evt);
+}*/
 
 /**
  * Returns a numerical vector from a CSS color of the form rgb(1,2,3).
@@ -59,10 +62,9 @@ const scrollBarWidth = scrollBarThumbWidth + 2 * scrollBarBorderWidth;
 
 //const numeric = new Set(['number', 'integer']);
 
-function range(count) {
+function rangeIterator(count) {
     return Array.from({length: count}, (_, i) => i);
 }
-
 
 let logCounter = 0;
 const logger = {
@@ -86,6 +88,29 @@ function intersectInterval(i1, i2) {
     return /**@type{GridChen.Interval}*/ {min, sup}
 }
 
+/**
+ * Each event handler must be wrapped so that unhandled errors are reported to user.
+ * TODO: Do this for all .on... and .addEventListener occurrences.
+ * @param {Function} fnc
+ * @returns {Function}
+ */
+function wrap(fnc) {
+    return function(evt) {
+        try {
+            fnc(evt)
+        } catch (e) {
+            const dialog = openDialog();
+            dialog.innerHTML = `
+            <p>Oops, grid-chen has experienced an unexpected error!</p>
+            <p>See console for more details...</p>`;
+            console.error(e)
+        }
+    }
+}
+
+/**
+ * @returns {HTMLElement}
+ */
 function openDialog() {
     let dialog = document.getElementById('gridchenDialog');
     if (!dialog) {
@@ -154,7 +179,7 @@ export class GridChen extends HTMLElement {
         this.shadowRoot.appendChild(container);
         if (viewModel instanceof Error) {
             container.innerText = String(viewModel);
-            return null
+            return this
         }
         this.grid = createGrid(container, viewModel, this.eventListeners);
         this.style.width = container.style.width;
@@ -199,6 +224,10 @@ export class GridChen extends HTMLElement {
      */
     getActiveCell() {
         return this.grid.getActiveCell();
+    }
+
+    _toTSV() {
+        return this.grid.toTSV();
     }
 }
 
@@ -433,8 +462,15 @@ function createGrid(container, viewModel, eventListeners) {
         .GRID textarea {
             background-color: white; border: {cellBorderWidth}px solid black; padding: {cellPadding}px;
         }
-        .GRID .non_string {
+        .GRID .string {
+            text-align: left;
+        }
+        .GRID .non-string {
             text-align: right;
+        }
+        .GRID .error {
+            text-align: left;
+            background-color: red;
         }
         #headerRow {
             position: absolute;
@@ -638,6 +674,7 @@ function createGrid(container, viewModel, eventListeners) {
         }
 
         blurHandler(evt) {
+            wrap(function() {
             logger.log('editor.onblur');
             commit();
 
@@ -645,7 +682,7 @@ function createGrid(container, viewModel, eventListeners) {
                 container.blur();
                 activeCell.hide();
                 selection.hide();
-            }
+            }})()
         }
 
         hide() {
@@ -797,7 +834,7 @@ function createGrid(container, viewModel, eventListeners) {
         }
     }
 
-    cellParent.onmousedown = function (evt) {
+    cellParent.onmousedown = wrap(function (evt) {
         logger.log('onmousedown');
         // But we do not want it to propagate as we want to avoid side effects.
         evt.stopPropagation();
@@ -859,9 +896,9 @@ function createGrid(container, viewModel, eventListeners) {
             resetHandlers();
             cellParent.focus(); // So that we receive keyboard events.
         }
-    };
+    });
 
-    cellParent.onmousewheel = function (_evt) {
+    cellParent.onmousewheel = wrap(function(_evt) {
         logger.log('onmousewheel');
         if ((/** @type {DocumentOrShadowRoot} */container.parentNode).activeElement !== container) return;
 
@@ -871,14 +908,14 @@ function createGrid(container, viewModel, eventListeners) {
         evt.stopPropagation();
         evt.preventDefault();  // Prevents scrolling of any surrounding HTML element.
 
-        logger.assert(evt.deltaMode === evt.DOM_DELTA_PIXEL);  // We only support Chrome. FireFox will have evt.deltaMode = 1.
+        window.console.assert(evt.deltaMode === evt.DOM_DELTA_PIXEL);  // We only support Chrome. FireFox will have evt.deltaMode = 1.
         // TODO: Chrome seems to always give evt.deltaY +-150 pixels. Why?
         // Excel scrolls about 3 lines per wheel tick.
         let newFirstRow = firstRow + 3 * Math.sign(evt.deltaY);
         if (newFirstRow >= 0) {
             setFirstRow(newFirstRow);
         }
-    };
+    });
 
     container.onblur = function (evt) {
         logger.log('container.onblur: ' + evt);
@@ -956,7 +993,7 @@ function createGrid(container, viewModel, eventListeners) {
         }
         const patches = [];
         for (const r of selection.areas) {
-            range(r.rowCount).forEach(function () {
+            rangeIterator(r.rowCount).forEach(function () {
                 patches.push(...viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
             });
         }
@@ -1291,7 +1328,7 @@ function createGrid(container, viewModel, eventListeners) {
                 if (value === '') {
                     value = undefined;
                 } else {
-                    value = schemas[colIndex].converter.fromString(value);
+                    value = schemas[colIndex].converter.fromEditable(value.trim());
                     //value = value.replace(/\\n/g, '\n');
                 }
                 const patches = viewModel.setCell(rowIndex, colIndex, value);
@@ -1328,7 +1365,7 @@ function createGrid(container, viewModel, eventListeners) {
             scrollBar.setValue(firstRow)
         }
 
-        updateViewportRows(getSelection(
+        updateViewportRows(getRangeData(
             new Range(firstRow, 0, viewPortRowCount, colCount)));
         activeCell.move(activeCell.row, activeCell.col);
         selection.show();
@@ -1358,27 +1395,21 @@ function createGrid(container, viewModel, eventListeners) {
         style.textOverflow = 'ellipsis';
         style.border = cellBorderStyle;
         style.padding = cellPadding + 'px';
-        //style.backgroundColor = 'white';
-
-        if (schema.type !== 'string' || schema.format) {
-            elem.className = 'non_string'
-        }
 
         elem.addEventListener('dblclick', () => activeCell.enterEditMode());
         cellParent.appendChild(elem);
     }
 
     /**
-     * TODO: Rename to getData
-     * @param {Range} selection
+     * @param {Range} range
      * @returns {Array<Array<?>>}
      */
-    function getSelection(selection) {
-        let matrix = Array(selection.rowCount);
-        for (let i = 0, rowIndex = selection.rowIndex; rowIndex < selection.rowIndex + selection.rowCount; i++, rowIndex++) {
-            matrix[i] = Array(selection.columnCount);
+    function getRangeData(range) {
+        let matrix = Array(range.rowCount);
+        for (let i = 0, rowIndex = range.rowIndex; rowIndex < range.rowIndex + range.rowCount; i++, rowIndex++) {
+            matrix[i] = Array(range.columnCount);
             if (rowIndex >= rowCount) continue;
-            for (let j = 0, colIndex = selection.columnIndex; colIndex < selection.columnIndex + selection.columnCount; colIndex++, j++) {
+            for (let j = 0, colIndex = range.columnIndex; colIndex < range.columnIndex + range.columnCount; colIndex++, j++) {
                 matrix[i][j] = viewModel.getCell(rowIndex, colIndex);
             }
         }
@@ -1392,15 +1423,15 @@ function createGrid(container, viewModel, eventListeners) {
      * @returns {string}
      */
     function rangeToTSV(r, sep, withHeaders) {
-        const rowMatrix = getSelection(r);
+        const rowMatrix = getRangeData(r);
         let tsvRows = Array(rowMatrix.length);
         for (const [i, row] of rowMatrix.entries()) {
             tsvRows[i] = row.map(function (value, j) {
                 let schema = schemas[r.columnIndex + j];
-                if (value === undefined || value === null) {
+                if (value == null) {
                     return undefined;
                 }
-                value = schema.converter.toString(value);
+                value = schema.converter.toTSV(value).trim();
                 if (value.includes('\t') || value.includes('\n')) {
                     value = '"' + value + '"';
                 }
@@ -1411,6 +1442,11 @@ function createGrid(container, viewModel, eventListeners) {
             tsvRows.unshift(schemas.map(schema => schema.title).join(sep));
         }
         return tsvRows.join('\r\n')
+    }
+
+    function toTSV() {
+        const range = new Range(0, 0, rowCount, colCount);
+        return rangeToTSV(range,'\t', true)
     }
 
     /**
@@ -1429,7 +1465,7 @@ function createGrid(container, viewModel, eventListeners) {
 
             for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
                 let value = matrix[i][j];
-                if (value !== undefined) value = schemas[colIndex].converter.fromString(value);
+                if (value !== undefined) value = schemas[colIndex].converter.fromEditable(value.trim());
                 const patches = viewModel.setCell(rowIndex, colIndex, value);
                 eventListeners['dataChanged'](patches);
             }
@@ -1486,30 +1522,12 @@ function createGrid(container, viewModel, eventListeners) {
             for (let colIndex = 0; colIndex < colCount; colIndex++) {
                 let elem = elemRow[colIndex];
                 let value = (row ? row[colIndex] : undefined);
-                if (value === undefined || value === null) {
-                    value = '';
-                } else {
-                    value = schemas[colIndex].converter.toString(value);
+                if (value == null) { // JavaScript hack: checks also for undefined
+                    elem.textContent = '';
+                    continue;
                 }
 
-                if (elem.tagName === 'A') {
-                    // Check for markdown link, i.e. [sdsd](http://sdsd)
-                    const m = value.match(/^\[(.+)\]\((.+)\)$/);
-                    if (m) {
-                        elem.textContent = m[1];
-                        elem.href = m[2];
-                    } else {
-                        if (value === '') {
-                            // This will also remove the pointer cursor.
-                            elem.removeAttribute('href');
-                        } else {
-                            elem.href = value;
-                        }
-                        elem.textContent = value;
-                    }
-                } else {
-                    elem.textContent = value;
-                }
+                schemas[colIndex].converter.render(elem, value);
             }
         }
     }
@@ -1568,6 +1586,9 @@ function createGrid(container, viewModel, eventListeners) {
          */
         getRange(rowIndex, columnIndex, rowCount, columnCount) {
             return new Range1(rowIndex, columnIndex, rowCount, columnCount);
+        },
+        toTSV() {
+            return toTSV()
         }
     };
 }

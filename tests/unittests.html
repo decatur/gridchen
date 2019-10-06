@@ -27,14 +27,14 @@
 
     import {getErrorCount} from './utils.js'
 
-    const modules = ['GridChen', 'Clipboard', "Converter", "tsvToMatrix", "DataViews"];
+    const modules = ['test_date', 'test_GridChen', 'test_Clipboard', "test_Converter", "test_tsvToMatrix", "test_DataViews"];
     const match = window.location.search.match(/module=([^&]+)/);
     loadModule(match ? match[1] : modules[0]);
 
     function loadModule(module) {
         document.title = module;
         document.getElementById('singletest').href = 'unittest.html?module=' + module;
-        import(`./test_${module}.js`)
+        import(`./${module}.js`)
             .then(function () {
                 window.setTimeout(
                     function () {

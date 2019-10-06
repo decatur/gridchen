@@ -12,7 +12,8 @@ import {
     DateTimeStringConverter,
     NumberConverter,
     BooleanStringConverter,
-    StringConverter
+    StringConverter,
+    URIConverter
 } from "./converter.js";
 
 const numeric = new Set(['number', 'integer']);
@@ -74,20 +75,25 @@ function updateSchema(schemas) {
                 fractionDigits = 0;
             }
             schema.converter = new NumberConverter(fractionDigits);
+            if (schema.format === '%') {
+                schema.converter.isPercent = true;
+            }
         } else if (schema.type === 'string' && schema.format === 'full-date') {
             schema.converter = new FullDateStringConverter();
-        } else if (schema.type === 'FullDate') {
-            schema.converter = new FullDateConverter();
         } else if (schema.type === 'string' && schema.format === 'date-partial-time') {
             schema.converter = new DatePartialTimeStringConverter();
-        } else if (schema.type === 'DatePartialTime') {
-            schema.converter = new DatePartialTimeConverter(schema.frequency || 'T1M');
         } else if (schema.type === 'string' && schema.format === 'date-time') {
-            schema.converter = new DateTimeStringConverter(schema.frequency || 'T1M');
-        } else if (schema.type === 'Date') {
-            schema.converter = new DateTimeConverter(schema.frequency || 'T1M');
+            schema.converter = new DateTimeStringConverter(schema.frequency || 'M');
+        } else if (schema.type === 'object' && schema.format === 'full-date') {
+            schema.converter = new FullDateConverter();
+        } else if (schema.type === 'object' && schema.format === 'date-partial-time') {
+            schema.converter = new DatePartialTimeConverter(schema.frequency || 'M');
+        } else if (schema.type === 'object' && schema.format === 'date-time') {
+            schema.converter = new DateTimeConverter(schema.frequency || 'M');
         } else if (schema.type === 'boolean') {
             schema.converter = new BooleanStringConverter();
+        } else if (schema.type === 'string' && schema.format === 'uri') {
+            schema.converter = new URIConverter();
         } else {
             // string and others
             schema.converter = new StringConverter();
@@ -186,7 +192,7 @@ export function createColumnSchemas(schema) {
         for (const entry of entries) {
             const property = entry[1];
             const colSchema = property.items;
-            if (typeof colSchema !== 'object' || colSchema.type === 'object') {
+            if (typeof colSchema !== 'object') {
                 // TODO: Be much more strict!
                 return invalidError
             }
@@ -384,6 +390,7 @@ export function createRowMatrixView(schema, rows) {
             let patch = [];
 
             if (value == null) {
+                if (!rows[rowIndex]) return
                 delete rows[rowIndex][colIndex];
                 patch.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: undefined});
                 return patch

@@ -1,7 +1,6 @@
 import {createView} from "./grid-chen/grid-data-view.js"
-import {FullDate, FullDateConverter, DatePartialTime, DatePartialTimeConverter} from "./grid-chen/converter.js"
 
-export function createInteractiveDemoGrid(schema, data) {
+export function createInteractiveDemoGrid(schema, orgData) {
     const container = document.body.appendChild(document.createElement('div'));
 
     function html(html) {
@@ -22,24 +21,21 @@ export function createInteractiveDemoGrid(schema, data) {
         <grid-chen></grid-chen>
     </label>
     <label class="demo patch">
-        JSON Patch <button>Clear</button>
+        JSON Patch of Last Edit
+        <textarea class="demo" readonly></textarea>
+    </label>
+    <label class="demo tsv">
+        TabularSeparatedValues (as of clipboard)
         <textarea class="demo" readonly></textarea>
     </label>`;
 
     const schemaElement = container.querySelector('.schema');
     const dataElement = container.querySelector('.data');
     const patchElement = document.querySelector('.patch textarea');
+    const tsvElement = document.querySelector('.tsv textarea');
     const gridElement = container.querySelector('grid-chen');
-    let view;
 
-    document.querySelector('.patch button').onclick = () => patchElement.value = '';
-
-    function dataChanged(patch) {
-        dataElement.value = REPR.stringify(view.getModel(), null, 2);
-        patchElement.value = REPR.stringify(patch, null, 2);
-    }
-
-    function resetHandler() {
+    function resetGrid() {
 
         function newView() {
             try {
@@ -49,8 +45,7 @@ export function createInteractiveDemoGrid(schema, data) {
                 return e;
             }
 
-            data = null;
-            view = null;
+            let data;
 
             try {
                 data = REPR.parse(dataElement.value);
@@ -63,19 +58,21 @@ export function createInteractiveDemoGrid(schema, data) {
         }
 
         patchElement.value = '';
-        view = newView();
+        const view = newView();
         gridElement.resetFromView(view);
+        gridElement.setEventListener('dataChanged', function (patch) {
+            dataElement.value = REPR.stringify(view.getModel(), null, 2);
+            patchElement.value = REPR.stringify(patch, null, 2);
+            tsvElement.value = gridElement._toTSV();
+        });
+        tsvElement.value = gridElement._toTSV();
     }
 
     schemaElement.value = JSON.stringify(schema, null, 4);
-    dataElement.oninput = schemaElement.oninput = resetHandler;
-    gridElement.setEventListener('dataChanged', dataChanged);
-    dataElement.value = REPR.stringify(data, null, 2);
-    resetHandler();
+    dataElement.oninput = schemaElement.oninput = resetGrid;
+    dataElement.value = REPR.stringify(orgData, null, 2);
+    resetGrid();
 }
-
-const fullDateConverter = new FullDateConverter();
-const datePartialTimeConverter = new DatePartialTimeConverter();
 
 /**
  * Same as the global JSON object, but representation is JavaScript, not JSON.
@@ -111,10 +108,6 @@ export const REPR = {
             out.push('"');
             out.push(v.replace('\n', '\\n'));
             out.push('"');
-        } else if (v.constructor === FullDate) {
-            out.push(fullDateConverter.toREPR(v));
-        } else if (v.constructor === DatePartialTime) {
-            out.push(datePartialTimeConverter.toREPR(v));
         } else if (v.constructor === Date) {
             out.push('new Date("' + v.toISOString().replace(':00.000Z', 'Z') + '")');
         } else if (Array.isArray(v)) {

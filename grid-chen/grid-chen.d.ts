@@ -2,8 +2,9 @@ declare module GridChen {
 
     export interface StringConverter {
         fromString: (a: string) => (number | Date | string | boolean);
-        toString: (a: (number | Date | string | boolean)) => string;
+        toTSV: (a: (number | Date | string | boolean)) => string;
         toEditable: (a: (number | Date | string | boolean)) => string;
+        render: (element: HTMLElement, value: any) => undefined;
     }
 
     export interface IColumnSchema {
@@ -59,5 +60,11 @@ declare module GridChen {
     export interface Interval {
         min: number;
         sup: number;
+    }
+
+    export interface LocalDateParser {
+        fullDate: (s: string) => number[] | SyntaxError;
+        datePartialTime: (s: string) => number[] | SyntaxError;
+        dateTime: (s: string) => number[] | SyntaxError;
     }
 }

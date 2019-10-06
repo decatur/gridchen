@@ -32,7 +32,7 @@ gc.resetFromView(view);
         dispatchKey(gc, {code: 'KeyC', ctrlKey: true});
         const text = await navigator.clipboard.readText();
         log('should copy cells (0,0) ... (1,1) to clipboard');
-        assert.equal(`0${decimalSep}00\ta\r\nNaN\tb`, text);
+        assert.equal(`0\ta\r\nNaN\tb`, text);
     });
 
     await testAsync('paste1', async function () {

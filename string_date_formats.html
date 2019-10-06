@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>String Date Formats</title>
+    <link rel="stylesheet" href="demo.css">
+    <script src="./theme.js"></script>
+</head>
+<body>
+
+<h1><a href="index.html">grid-chen Index</a> / String Date Formats</h1>
+
+<p>
+    Supported date formats are TODO:??  <code>full-date</code>, <code>date-partial-time</code> and <code>date-time</code>.
+</p>
+
+<p>
+    Dates are displayed and copied to clipboard in ISO format with local time zone offset.
+    Edit mode also allows dates in the default locale, for example 27.10.2019 de-locale.
+</p>
+
+</body>
+
+<script type="module">
+    import "./grid-chen/component.js"
+    import {createInteractiveDemoGrid} from "./demo.js"
+
+    createInteractiveDemoGrid(
+        {
+            title: 'Array of Row Arrays',
+            type: 'array',
+            items: {
+                type: 'array',
+                items: [  // tuple schema
+                    {title: 'full-date', type: 'string', format:'full-date', width: 100},
+                    {title: 'date-partial-time', type: 'string', format:'date-partial-time', width: 150},
+                    {title: 'date-time', type: 'string', format:'date-time', width: 200, }
+                ]
+            }
+        },
+        [
+            ['2019-10-27', '2019-10-27T01:13', '2019-10-27T01:13+02:00'],
+            ['not_a_date', 'not_a_date', 'not_a_date']
+        ]
+    );
+
+</script>
+</html>

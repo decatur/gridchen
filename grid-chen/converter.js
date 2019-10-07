@@ -540,7 +540,11 @@ export class DatePartialTimeConverter {
             element.textContent = String(value);
             element.className = 'error';
         } else {
-            element.textContent = this.toTSV(value);
+
+            element.textContent =
+                value.toISOString()
+                    .substr(0, this.displayResolution==='H'?13:16)
+                    .replace('T', ' ');
             element.className = 'non-string';
         }
     }

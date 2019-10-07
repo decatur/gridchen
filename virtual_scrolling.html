@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Virtual Scrolling</title>
+    <link rel="stylesheet" href="demo.css">
+    <script src="./theme.js"></script>
+</head>
+<body>
+
+<h1><a href="index.html">GridChen Index</a> / Performance Through Virtual Scrolling</h1>
+
+<p>
+    grid-chen only renders to the DOM the rows fitting into the view port.
+    This makes it fast.
+</p>
+
+<label>
+    Number of rows: <input id="rowCount" value="100"> <span style="margin-left:1em"></span>
+</label>
+
+<grid-chen style="display:block; margin-top: 1em;height: 400px"></grid-chen>
+
+<script type="module">
+    import "./grid-chen/component.js"
+    import {createView} from "./grid-chen/grid-data-view.js"
+
+    const schema = {
+        title: 'Charting Demo',
+        type: 'object',
+        properties: {
+            index: {
+                title: 'index',
+                type: 'array',
+                items: {
+                    type: 'integer', width: '50'
+                }
+            },
+            sin: {
+                title: 'sin(t/7)',
+                type: 'array',
+                items: {
+                    type: 'number', width: '70'
+                }
+            },
+            cos: {
+                title: 'cos(t/5)',
+                type: 'array',
+                items: {
+                    type: 'number', width: '70'
+                }
+            }
+        }
+    };
+
+    const rowCountElem = document.getElementById('rowCount');
+
+    function render() {
+        const data = {
+            index: [], sin: [], cos: []
+        };
+
+        const rowCount = parseInt(rowCountElem.value.trim());
+        for (let index = 0; index < rowCount; index++) {
+            data.index.push(index);
+            data.sin.push(Math.sin(index / 7));
+            data.cos.push(Math.cos(index / 5));
+        }
+
+        document.querySelector('grid-chen')
+            .resetFromView(createView(schema, data));
+    }
+
+    rowCountElem.onchange = render;
+    render();
+
+</script>
+</body>
+</html>

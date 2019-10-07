@@ -37,16 +37,15 @@ See https://decatur.github.io/grid-chen
 
 # Issues
 
+* onselectionchanged fires too often
 * Paste must select pasted region (pasted region differs from selection if selection cannot be tiled by source); easy
 * Type violation of cell value must align left; easy
 
 # TODOs
 
-* Wrap ALL event handlers
 * Improve encapsulation of JavaScript API 
 * Show 1 empty row at end (Slider issue)
 * Avoid refreshing complete viewport on cell change
-* Write more unit tests
 * Handling of Infinity and NaN (#NV in de-de)
 
 # Alternatives

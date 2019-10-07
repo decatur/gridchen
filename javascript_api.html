@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8"/>
+    <title>JavaScript API</title>
+    <link rel="stylesheet" href="demo.css">
+    <script src="./theme.js"></script>
+    <style>
+        textarea {
+            display: inline-block;
+            margin: 0 2em 0 0;
+            height: 200px;
+            width: 50%;
+            background-color: inherit;
+            color: inherit;
+        }
+    </style>
+</head>
+<body>
+<h1><a href="index.html">GridChen Index</a> / JavaScript API</h1>
+
+<p>
+    The HTML code of this page shows the usage of the JavaScript API.
+</p>
+
+<ul>
+    <li><code>GridChen.resetFromView()</code></li>
+    <li><code>GridChen.setEventListener()</code></li>
+    <li><code>GridChen.getActiveCell()</code></li>
+    <li><code>GridChen.getSelectedRange()</code></li>
+</ul>
+
+<grid-chen style="display: inline-block"></grid-chen>
+<textarea id="console"></textarea>
+</body>
+
+<script type="module">
+    import "./grid-chen/component.js"
+    import {createView} from "./grid-chen/grid-data-view.js"
+
+    const schema = {
+        title: 'Array of Row Arrays',
+        type: 'array',
+        items: {
+            type: 'array',
+            items: [
+                {title: 'SomeDate', type: 'string', format: 'full-date'},
+                {title: 'SomeNumber', type: 'number'}
+            ]
+        }
+    };
+    const rows = [['2019-01-01', 1], ['2020-01-01', 2], ['2021-01-01', 3]];
+    /** @type {GridChen} */
+    const gridchen = document.querySelector('grid-chen');
+    const console = document.getElementById('console');
+
+    gridchen.resetFromView(createView(schema, rows));
+
+    gridchen.setEventListener('activeCellChanged', function (activeCell) {
+        console.value += 'activeCellChanged\n' + gridchen.getActiveCell() + '\n';
+        console.scrollTop = console.scrollHeight;
+    })
+    gridchen.setEventListener('selectionChanged', function (activeCell) {
+        console.value += 'selectionChanged\n' + gridchen.getSelectedRange() + '\n';
+        console.scrollTop = console.scrollHeight;
+    })
+</script>

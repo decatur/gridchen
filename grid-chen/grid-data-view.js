@@ -3,18 +3,9 @@
  * Source https://github.com/decatur/grid-chen/grid-chen/grid-data-view.js
  */
 
-import {
-    FullDateConverter,
-    FullDateStringConverter,
-    DatePartialTimeConverter,
-    DatePartialTimeStringConverter,
-    DateTimeConverter,
-    DateTimeStringConverter,
-    NumberConverter,
-    BooleanStringConverter,
-    StringConverter,
-    URIConverter
-} from "./converter.js";
+// TODO: Rename to matrix-view.js
+
+import * as c from "./converter.js";
 
 const numeric = new Set(['number', 'integer']);
 
@@ -74,29 +65,29 @@ function updateSchema(schemas) {
             } else if (schema.type === 'integer') {
                 fractionDigits = 0;
             }
-            schema.converter = new NumberConverter(fractionDigits);
+            schema.converter = new c.NumberConverter(fractionDigits);
             if (schema.format === '%') {
                 schema.converter.isPercent = true;
             }
         } else if (schema.type === 'string' && schema.format === 'full-date') {
-            schema.converter = new FullDateStringConverter();
+            schema.converter = new c.FullDateStringConverter();
         } else if (schema.type === 'string' && schema.format === 'date-partial-time') {
-            schema.converter = new DatePartialTimeStringConverter();
+            schema.converter = new c.DatePartialTimeStringConverter();
         } else if (schema.type === 'string' && schema.format === 'date-time') {
-            schema.converter = new DateTimeStringConverter(schema.frequency || 'M');
+            schema.converter = new c.DateTimeStringConverter(schema.frequency || 'M');
         } else if (schema.type === 'object' && schema.format === 'full-date') {
-            schema.converter = new FullDateConverter();
+            schema.converter = new c.FullDateConverter();
         } else if (schema.type === 'object' && schema.format === 'date-partial-time') {
-            schema.converter = new DatePartialTimeConverter(schema.frequency || 'M');
+            schema.converter = new c.DatePartialTimeConverter(schema.frequency || 'M');
         } else if (schema.type === 'object' && schema.format === 'date-time') {
-            schema.converter = new DateTimeConverter(schema.frequency || 'M');
+            schema.converter = new c.DateTimeConverter(schema.frequency || 'M');
         } else if (schema.type === 'boolean') {
-            schema.converter = new BooleanStringConverter();
+            schema.converter = new c.BooleanStringConverter();
         } else if (schema.type === 'string' && schema.format === 'uri') {
-            schema.converter = new URIConverter();
+            schema.converter = new c.URIConverter();
         } else {
             // string and others
-            schema.converter = new StringConverter();
+            schema.converter = new c.StringConverter();
         }
     }
 }
@@ -390,7 +381,9 @@ export function createRowMatrixView(schema, rows) {
             let patch = [];
 
             if (value == null) {
-                if (!rows[rowIndex]) return
+                if (!rows[rowIndex]) {
+                    return patch
+                }
                 delete rows[rowIndex][colIndex];
                 patch.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: undefined});
                 return patch

@@ -16,12 +16,15 @@ declare module GridChen {
         sortDirection?: number;
         converter?: StringConverter;
         frequency?: String;
+        enum?: (string|number)[];
+        readOnly?: boolean;
     }
 
     export interface IGridSchema {
         title: string;
         columnSchemas: IColumnSchema[];
         ids: string[];
+        readOnly?: boolean;
     }
 
     export interface JSONSchema {
@@ -44,7 +47,7 @@ declare module GridChen {
     }
 
     export interface MatrixView {
-        schema: object;
+        schema: IGridSchema;
         columnCount: () => number;
         rowCount: () => number;
         removeModel: () => object[];

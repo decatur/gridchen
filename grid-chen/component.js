@@ -30,9 +30,6 @@ const light = {
 //////////////////////
 
 window.console.log('Executing GridChen ...');
-/*window.onerror = function(evt) {
-    alert(evt);
-}*/
 
 /**
  * Returns a numerical vector from a CSS color of the form rgb(1,2,3).
@@ -55,7 +52,7 @@ let {
     headerRowBackgroundColor,
     headerRowSelectedBackgroundColor,
     cellBorderWidth
-} = (intensity < 0xff / 2?dark:light);
+} = (intensity < 0xff / 2 ? dark : light);
 
 const cellBorderStyle = `${cellBorderWidth}px solid ` + inputColor;
 const scrollBarWidth = scrollBarThumbWidth + 2 * scrollBarBorderWidth;
@@ -86,26 +83,6 @@ function intersectInterval(i1, i2) {
         return undefined;
     }
     return /**@type{GridChen.Interval}*/ {min, sup}
-}
-
-/**
- * Each event handler must be wrapped so that unhandled errors are reported to user.
- * TODO: Do this for all .on... and .addEventListener occurrences.
- * @param {Function} fnc
- * @returns {Function}
- */
-function wrap(fnc) {
-    return function(evt) {
-        try {
-            fnc(evt)
-        } catch (e) {
-            const dialog = openDialog();
-            dialog.innerHTML = `
-            <p>Oops, grid-chen has experienced an unexpected error!</p>
-            <p>See console for more details...</p>`;
-            console.error(e)
-        }
-    }
 }
 
 /**
@@ -172,6 +149,7 @@ export class GridChen extends HTMLElement {
             // First initialize creates shadow dom.
             this.attachShadow({mode: 'open'});
         }
+        // TODO: Attention Layout Thrashing; Do not use clientHeight.
         let totalHeight = this.clientHeight || 100;  // Default value needed for unit testing.
         const container = document.createElement('div');
         container.style.position = 'relative';
@@ -181,7 +159,7 @@ export class GridChen extends HTMLElement {
             container.innerText = String(viewModel);
             return this
         }
-        this.grid = createGrid(container, viewModel, this.eventListeners);
+        createGrid(container, viewModel, this.eventListeners, this);
         this.style.width = container.style.width;
         return this
     }
@@ -202,6 +180,7 @@ export class GridChen extends HTMLElement {
     }
 
     /**
+     * TODO: Move this to grid-data-view.js?
      * @param {number} rowIndex
      * @param {number} columnIndex
      * @param {number} rowCount
@@ -209,25 +188,18 @@ export class GridChen extends HTMLElement {
      * @returns {GridChen.Range}
      */
     getRangeByIndexes(rowIndex, columnIndex, rowCount, columnCount) {
-        return this.grid.getRange(rowIndex, columnIndex, rowCount, columnCount);
     }
 
     /**
      * @returns {GridChen.Range}
      */
     getSelectedRange() {
-        return this.grid.getSelection();
     }
 
     /**
      * @returns {GridChen.Range}
      */
     getActiveCell() {
-        return this.grid.getActiveCell();
-    }
-
-    _toTSV() {
-        return this.grid.toTSV();
     }
 }
 
@@ -437,8 +409,9 @@ class Selection extends Range {
  * @param {HTMLElement} container
  * @param {GridChen.MatrixView} viewModel
  * @param {Array<function()>} eventListeners
+ * @param {GridChen} gridchenElement
  */
-function createGrid(container, viewModel, eventListeners) {
+function createGrid(container, viewModel, eventListeners, gridchenElement) {
     const schema = viewModel.schema;
     const schemas = schema.columnSchemas;
     let totalHeight = parseInt(container.style.height);
@@ -462,6 +435,19 @@ function createGrid(container, viewModel, eventListeners) {
         .GRID textarea {
             background-color: white; border: {cellBorderWidth}px solid black; padding: {cellPadding}px;
         }
+        
+        /* Common style to all data cell elements */
+        .GRID span {
+            position: absolute;
+            border: ${cellBorderStyle};
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+            height: ${innerHeight};
+            padding: ${cellPadding}px;
+        }
+        
+        /* Important: The selectors string, non-string and error are used exclusively! */
         .GRID .string {
             text-align: left;
         }
@@ -470,8 +456,10 @@ function createGrid(container, viewModel, eventListeners) {
         }
         .GRID .error {
             text-align: left;
-            background-color: red;
+            border-color: red;
+            z-index: 1;
         }
+        
         #headerRow {
             position: absolute;
             text-align: center;
@@ -531,7 +519,7 @@ function createGrid(container, viewModel, eventListeners) {
             const datalist = document.createElement('datalist');
             datalist.id = 'enum' + columnIndex;
             for (const item of schema.enum) {
-                datalist.appendChild(document.createElement('option')).value = item;
+                datalist.appendChild(document.createElement('option')).value = String(item);
             }
             container.appendChild(datalist)
         }
@@ -637,7 +625,7 @@ function createGrid(container, viewModel, eventListeners) {
                 evt.preventDefault();
                 evt.stopPropagation();
                 // Toggle between input and edit mode
-                activeCell.mode = (activeCell.mode === 'input' ? 'edit' : input);
+                activeCell.mode = (activeCell.mode === 'input' ? 'edit' : 'input');
             } else if (evt.code === 'ArrowLeft' && activeCell.mode === 'input') {
                 evt.preventDefault();
                 evt.stopPropagation();
@@ -674,7 +662,6 @@ function createGrid(container, viewModel, eventListeners) {
         }
 
         blurHandler(evt) {
-            wrap(function() {
             logger.log('editor.onblur');
             commit();
 
@@ -682,7 +669,7 @@ function createGrid(container, viewModel, eventListeners) {
                 container.blur();
                 activeCell.hide();
                 selection.hide();
-            }})()
+            }
         }
 
         hide() {
@@ -834,7 +821,7 @@ function createGrid(container, viewModel, eventListeners) {
         }
     }
 
-    cellParent.onmousedown = wrap(function (evt) {
+    cellParent.onmousedown = function (evt) {
         logger.log('onmousedown');
         // But we do not want it to propagate as we want to avoid side effects.
         evt.stopPropagation();
@@ -896,9 +883,9 @@ function createGrid(container, viewModel, eventListeners) {
             resetHandlers();
             cellParent.focus(); // So that we receive keyboard events.
         }
-    });
+    };
 
-    cellParent.onmousewheel = wrap(function(_evt) {
+    cellParent.onmousewheel = function (_evt) {
         logger.log('onmousewheel');
         if ((/** @type {DocumentOrShadowRoot} */container.parentNode).activeElement !== container) return;
 
@@ -915,7 +902,7 @@ function createGrid(container, viewModel, eventListeners) {
         if (newFirstRow >= 0) {
             setFirstRow(newFirstRow);
         }
-    });
+    };
 
     container.onblur = function (evt) {
         logger.log('container.onblur: ' + evt);
@@ -1382,19 +1369,11 @@ function createGrid(container, viewModel, eventListeners) {
             elem.style.cursor = 'cell';
         }
 
-        let style = elem.style;
         spanMatrix[vpRowIndex][colIndex] = elem;
-        style.position = 'absolute';
+        let style = elem.style;
         style.top = (vpRowIndex * rowHeight) + 'px';
         style.left = (colIndex ? columnEnds[colIndex - 1] : 0) + 'px';
         style.width = schemas[colIndex].width + 'px';
-        style.height = innerHeight;
-        style.overflow = 'hidden';
-        style.whiteSpace = 'nowrap';
-        style.overflow = 'hidden';
-        style.textOverflow = 'ellipsis';
-        style.border = cellBorderStyle;
-        style.padding = cellPadding + 'px';
 
         elem.addEventListener('dblclick', () => activeCell.enterEditMode());
         cellParent.appendChild(elem);
@@ -1417,6 +1396,7 @@ function createGrid(container, viewModel, eventListeners) {
     }
 
     /**
+     * TODO: Move this to grid-data-view.js
      * @param {Range} r
      * @param {string} sep
      * @param {boolean} withHeaders
@@ -1446,7 +1426,7 @@ function createGrid(container, viewModel, eventListeners) {
 
     function toTSV() {
         const range = new Range(0, 0, rowCount, colCount);
-        return rangeToTSV(range,'\t', true)
+        return rangeToTSV(range, '\t', true)
     }
 
     /**
@@ -1521,6 +1501,7 @@ function createGrid(container, viewModel, eventListeners) {
             let row = matrix[index];
             for (let colIndex = 0; colIndex < colCount; colIndex++) {
                 let elem = elemRow[colIndex];
+                elem.removeAttribute('class');
                 let value = (row ? row[colIndex] : undefined);
                 if (value == null) { // JavaScript hack: checks also for undefined
                     elem.textContent = '';
@@ -1563,34 +1544,14 @@ function createGrid(container, viewModel, eventListeners) {
         }
     }
 
-    return {
-        /**
-         * @returns {Range1}
-         */
-        getActiveCell() {
-            return new Range1(activeCell.row, activeCell.col, 1, 1);
-        },
-        /**
-         * @returns {Range1}
-         */
-        getSelection() {
-            return new Range1(selection.rowIndex, selection.columnIndex,
-                selection.rowCount, selection.columnCount);
-        },
-        /**
-         * @param {number} rowIndex
-         * @param {number} columnIndex
-         * @param {number} rowCount
-         * @param {number} columnCount
-         * @returns {Range}
-         */
-        getRange(rowIndex, columnIndex, rowCount, columnCount) {
-            return new Range1(rowIndex, columnIndex, rowCount, columnCount);
-        },
-        toTSV() {
-            return toTSV()
-        }
-    };
+    gridchenElement._toTSV = toTSV;
+    gridchenElement.getSelectedRange =
+        () => new Range1(selection.rowIndex, selection.columnIndex,
+            selection.rowCount, selection.columnCount);
+    gridchenElement.getActiveCell =
+        () => new Range1(activeCell.row, activeCell.col, 1, 1);
+    gridchenElement.getRangeByIndexes =
+        (rowIndex, columnIndex, rowCount, columnCount) => new Range1(rowIndex, columnIndex, rowCount, columnCount);
 }
 
 /**

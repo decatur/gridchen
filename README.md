@@ -43,6 +43,7 @@ See https://decatur.github.io/grid-chen
 
 # TODOs
 
+* Fix module test_Clipboard
 * Improve encapsulation of JavaScript API 
 * Show 1 empty row at end (Slider issue)
 * Avoid refreshing complete viewport on cell change

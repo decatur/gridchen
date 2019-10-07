@@ -46,6 +46,10 @@ grid-chen {
         background-color: rgb(50, 50, 50);
     }
 
+    a:link {
+      color: grey;
+    }
+
     ::-webkit-scrollbar {
         background-color: inherit;
         width: 15px;

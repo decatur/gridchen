@@ -1,4 +1,4 @@
-import {createView} from "./grid-chen/grid-data-view.js"
+import {createView} from "./grid-chen/matrixview.js"
 
 export function createInteractiveDemoGrid(schema, orgData) {
     const container = document.body.appendChild(document.createElement('div'));

@@ -1,5 +1,5 @@
 import {testSync, assert} from './utils.js'
-import {createView} from '../grid-chen/grid-data-view.js'
+import {createView} from '../grid-chen/matrixview.js'
 
 const jsonpatch = window.jsonpatch;
 

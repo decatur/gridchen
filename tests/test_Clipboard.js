@@ -1,6 +1,6 @@
 import {assert, testAsync, log} from './utils.js'
 import '../grid-chen/component.js'
-import {createRowMatrixView} from "../grid-chen/grid-data-view.js";
+import {createRowMatrixView} from "../grid-chen/matrixview.js";
 
 function dispatchKey(gc, eventInitDict) {
     gc.shadowRoot.firstElementChild.dispatchEvent(new KeyboardEvent('keydown', eventInitDict));

@@ -158,7 +158,7 @@ export class GridChen extends HTMLElement {
     }
 
     /**
-     * TODO: Move this to grid-data-view.js?
+     * TODO: Move this to matrixview.js?
      * @param {number} rowIndex
      * @param {number} columnIndex
      * @param {number} rowCount
@@ -1376,7 +1376,7 @@ function createGrid(container, viewModel, gridchenElement) {
     }
 
     /**
-     * TODO: Move this to grid-data-view.js
+     * TODO: Move this to matrixview.js
      * @param {Range} r
      * @param {string} sep
      * @param {boolean} withHeaders

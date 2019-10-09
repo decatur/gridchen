@@ -1,6 +1,6 @@
 /**
  * Author: Wolfgang Kühn 2019
- * Source https://github.com/decatur/grid-chen/grid-chen/grid-data-view.js
+ * Source https://github.com/decatur/grid-chen/grid-chen/matrixview.js
  */
 
 // TODO: Rename to matrix-view.js

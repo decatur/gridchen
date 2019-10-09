@@ -100,32 +100,6 @@ function openDialog() {
     return dialog;
 }
 
-/**
- * Creates the display for an anchor cell mimicking MS-Excel. It supports entering edit mode via slow click and
- * cursor management.
- * @returns {HTMLAnchorElement}
- */
-function createAnchorElement() {
-    const elem = document.createElement('a');
-    elem.target = '_blank';
-    elem.onmousedown = function () {
-        window.setTimeout(function () {
-            elem.style.cursor = 'cell';
-            // Note the transient event handler style.
-            elem.onclick = function (evt) {
-                evt.preventDefault();
-                elem.onclick = undefined;
-            };
-            elem.onmouseup = elem.onmouseout = function () {
-                elem.onmouseup = elem.onmouseout = undefined;
-                elem.style.cursor = 'pointer';
-            };
-        }, 500);
-    };
-
-    return elem
-}
-
 // We export for testability.
 export class GridChen extends HTMLElement {
     constructor() {
@@ -414,7 +388,7 @@ function createGrid(container, viewModel, gridchenElement) {
         }
         
         /* Common style to all data cell elements */
-        .GRID span {
+        .GRID span, a {
             position: absolute;
             border: ${cellBorderStyle};
             text-overflow: ellipsis;
@@ -1202,7 +1176,7 @@ function createGrid(container, viewModel, gridchenElement) {
             title: schema.title,
             schemas: columnSchemas,
             columns: columns
-        }
+        };
         gridchenElement.dispatchEvent(new CustomEvent('plot', {detail: detail}));
     }
 
@@ -1340,14 +1314,7 @@ function createGrid(container, viewModel, gridchenElement) {
 
     function createCell(vpRowIndex, colIndex) {
         const schema = schemas[colIndex];
-        /** @type {HTMLElement} */
-        let elem;
-        if (schema.format === 'uri') {
-            elem = createAnchorElement();
-        } else {
-            elem = document.createElement('span');
-            elem.style.cursor = 'cell';
-        }
+        const elem = schema.converter.createElement();
 
         spanMatrix[vpRowIndex][colIndex] = elem;
         let style = elem.style;

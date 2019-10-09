@@ -31,15 +31,22 @@
                     {title: 'string', width: 100, type: 'string'},
                     {title: 'boolean', width: 100, type: 'boolean'},
                     {title: 'integer', width: 100, type: 'integer'},
-                    {title: 'number', width: 100, type: 'number'}
+                    {title: 'number', width: 100, type: 'number'},
+                    {title: 'uri', width: 100, type: 'string', format: 'uri'}
                 ]
             }
         },
         [
-            ['foo', true, -1, -3.14],
-            ['foo', 'realytrue', 1.2, 'pi']
+            ['foo', true, -1, -3.14, '[3](#3)'],
+            ['foo', true, -1, -3.14, '[grid-chen](http://github.com/decatur/grid-chen)'],
+            ['foo', 'error', 'error', 'error', 123]
         ]
     );
+
+    window.onhashchange = function(evt) {
+        const hash = evt.newURL.split('#')[1];
+        alert(`You clicked ${hash}`);
+    }
 
 </script>
 </html>

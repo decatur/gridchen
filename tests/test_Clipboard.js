@@ -8,8 +8,12 @@ function dispatchKey(gc, eventInitDict) {
 
 const schema = {
     title: 'test',
-    columnSchemas: [{title: 'number', type: 'number', width: 0}, {title: 'string', type: 'string', width: 0}]
+    columnSchemas: [
+        {title: 'number', type: 'number', width: 0},
+        {title: 'string', type: 'string', width: 0}
+    ]
 };
+
 /**
  * @type {GridChen}
  */
@@ -36,7 +40,7 @@ gc.addEventListener('dataChanged', (evt) => listener(evt));
     await testAsync('should paste cells to (2,1)', async function () {
         await navigator.clipboard.writeText(`0\ta\r\nNaN\tb`);
 
-        listener = (evt) => assert.equal([[0, 'a'], [0, 'a'], [NaN, 'b']], rows);
+        listener = () => assert.equal([[0, 'a'], [0, 'a'], [NaN, 'b']], rows);
 
         dispatchKey(gc, {code: 'ArrowDown'});
         dispatchKey(gc, {code: 'KeyV', ctrlKey: true});
@@ -45,7 +49,7 @@ gc.addEventListener('dataChanged', (evt) => listener(evt));
     await testAsync('tiling', async function () {
         await navigator.clipboard.writeText(`3\tc`);
 
-        listener = (evt) => assert.equal([[3, 'c'],[3, 'c'],[NaN, 'b']], rows);
+        listener = () => assert.equal([[3, 'c'], [3, 'c'], [NaN, 'b']], rows);
 
         gc.getRangeByIndexes(0, 0, 2, 2).select();
         dispatchKey(gc, {code: 'KeyV', ctrlKey: true});
@@ -54,10 +58,11 @@ gc.addEventListener('dataChanged', (evt) => listener(evt));
     await testAsync('paste outside of column range', async function () {
         await navigator.clipboard.writeText(`3\tc`);
 
-        listener = (evt) => assert.equal([[3, '3'],[3, 'c'],[NaN, 'b']], rows);
+        listener = () => assert.equal([[3, '3'], [3, 'c'], [NaN, 'b']], rows);
 
-        gc.getRangeByIndexes(0, 1, 1, 2).select();
+        gc.getRangeByIndexes(0, 1, 1, 1).select();
         dispatchKey(gc, {code: 'KeyV', ctrlKey: true});
+
     });
 
 })();

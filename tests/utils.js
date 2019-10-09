@@ -1,3 +1,7 @@
+window.onerror = function (evt) {
+    // console.error(evt);
+    log(evt);
+};
 
 let errCount = 0;
 
@@ -6,7 +10,7 @@ export function getErrorCount() {
 }
 
 export function log(msg) {
-    console.log(msg);
+    //console.log(msg);
     const div = document.createElement('div');
     div.style.marginLeft = '1em';
     div.textContent = msg;

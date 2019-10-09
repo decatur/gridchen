@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Suite Runner</title>
+    <script src="../theme.js"></script>
+</head>
+<body>
+
+<h1><a href="../index.html">GridChen Index</a> / Test Suite Runner</h1>
+
+<p>
+    Run all tests.
+</p>
+
+</body>
+
+<script src="jsonpatch.min.js"></script>
+
+<script type="module">
+    /*
+     * ### Test Execution Design
+     * 0. No dependencies.
+     * 1. Test modules are loaded and executed complete independent of each other.
+     * 2. In generated iframes access to the clipboard is restricted. So we use a new browser window, not an iframe.
+     * 3. We rely on the given browser functionality such as 'Close Other Tabs'
+     */
+
+    const modules = ['test_date', 'test_GridChen', 'test_Clipboard', "test_Converter", "test_tsvToMatrix", "test_DataViews"];
+
+    function nextModule() {
+        if (modules.length) {
+            window.open('unittest.html?module=' + modules[0]);
+        }
+    }
+
+    // Register callback through window.opener.
+    window.moduleDone = function(moduleName) {
+        const index = modules.indexOf(moduleName);
+        modules.splice(index, 1);
+        nextModule()
+    };
+
+    nextModule()
+
+</script>
+</html>

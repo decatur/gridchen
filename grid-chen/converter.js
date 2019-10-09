@@ -8,6 +8,15 @@
 import * as u from './utils.js'
 
 /**
+ * @returns {HTMLSpanElement}
+ */
+function createSpan() {
+    const elem = document.createElement('span');
+    elem.style.cursor = 'cell';
+    return elem
+}
+
+/**
  * @interface {GridChen.StringConverter}
  */
 export class StringConverter {
@@ -35,6 +44,13 @@ export class StringConverter {
      */
     fromEditable(s) {
         return s.trim();
+    }
+
+    /**
+     * @returns {HTMLSpanElement}
+     */
+    createElement() {
+        return createSpan()
     }
 
     /**
@@ -80,27 +96,63 @@ export class URIConverter {
     }
 
     /**
+     * Creates the display for an anchor cell mimicking MS-Excel. It supports entering edit mode via slow click and
+     * cursor management.
+     * @returns {HTMLAnchorElement}
+     */
+    createElement() {
+        const elem = document.createElement('a');
+
+        elem.onmousedown = function () {
+            //elem.onclick = undefined;
+            window.setTimeout(function () {
+                elem.style.cursor = 'cell';
+                // Note the transient event handler style.
+                elem.onclick = function (evt) {
+                    evt.preventDefault();
+                    elem.onclick = undefined;
+                };
+                elem.onmouseup = elem.onmouseout = function () {
+                    elem.onclick = elem.onmouseup = elem.onmouseout = undefined;
+                    elem.style.cursor = 'pointer';
+                };
+            }, 500);
+        };
+
+        return elem
+    }
+
+    /**
      * @param {HTMLAnchorElement} element
      * @param {string|*} value
      */
     render(element, value) {
+        // This will also remove the pointer cursor.
+        element.removeAttribute('href');
+        element.removeAttribute('target');
+
         if (value.constructor !== String) {
             element.textContent = String(value);
             element.className = 'error';
         } else {
             // Check for markdown link, i.e. [foobar](http://foobar.org)
             const m = value.match(/^\[(.+)\]\((.+)\)$/);
+            let href;
+            let text;
             if (m) {
-                element.textContent = m[1];
-                element.href = m[2];
+                text = m[1];
+                href = m[2];
             } else {
-                if (value === '') {
-                    // This will also remove the pointer cursor.
-                    element.removeAttribute('href');
-                } else {
-                    element.href = value;
+                if (value !== '') {
+                    href = value;
                 }
-                element.textContent = value;
+                text = value;
+            }
+
+            element.textContent = text;
+            if (href) {
+                element.href = href;
+                if (!href.startsWith('#')) element.target = '_blank';
             }
 
             element.className = 'non-string';
@@ -143,6 +195,13 @@ export class BooleanStringConverter {
             return false
         }
         return s;
+    }
+
+    /**
+     * @returns {HTMLSpanElement}
+     */
+    createElement() {
+        return createSpan()
     }
 
     /**
@@ -217,6 +276,13 @@ export class NumberConverter {
     }
 
     /**
+     * @returns {HTMLSpanElement}
+     */
+    createElement() {
+        return createSpan()
+    }
+
+    /**
      * @param {HTMLElement} element
      * @param {number|*} value
      */
@@ -270,6 +336,13 @@ export class FullDateStringConverter {
             return s
         }
         return u.toUTCDateString(new Date(Date.UTC(...parts)))
+    }
+
+    /**
+     * @returns {HTMLSpanElement}
+     */
+    createElement() {
+        return createSpan()
     }
 
     /**
@@ -346,6 +419,13 @@ export class DatePartialTimeStringConverter {
     }
 
     /**
+     * @returns {HTMLSpanElement}
+     */
+    createElement() {
+        return createSpan()
+    }
+
+    /**
      * @param {HTMLElement} element
      * @param {string|*} value
      */
@@ -413,6 +493,13 @@ export class DateTimeStringConverter {
     }
 
     /**
+     * @returns {HTMLSpanElement}
+     */
+    createElement() {
+        return createSpan()
+    }
+
+    /**
      * @param {HTMLElement} element
      * @param {string|*} value
      */
@@ -468,6 +555,13 @@ export class FullDateConverter {
             return s
         }
         return new Date(Date.UTC(...parts))
+    }
+
+    /**
+     * @returns {HTMLSpanElement}
+     */
+    createElement() {
+        return createSpan()
     }
 
     /**
@@ -532,6 +626,13 @@ export class DatePartialTimeConverter {
     }
 
     /**
+     * @returns {HTMLSpanElement}
+     */
+    createElement() {
+        return createSpan()
+    }
+
+    /**
      * @param {HTMLElement} element
      * @param {Date|*} value
      */
@@ -543,7 +644,7 @@ export class DatePartialTimeConverter {
 
             element.textContent =
                 value.toISOString()
-                    .substr(0, this.displayResolution==='H'?13:16)
+                    .substr(0, this.displayResolution === 'H' ? 13 : 16)
                     .replace('T', ' ');
             element.className = 'non-string';
         }
@@ -592,6 +693,13 @@ export class DateTimeConverter {
         parts[3] -= parts[5]; // Get rid of hour offset
         parts[4] -= parts[6]; // Get rid of minute offset
         return new Date(Date.UTC(...parts.slice(0, 5)));
+    }
+
+    /**
+     * @returns {HTMLSpanElement}
+     */
+    createElement() {
+        return createSpan()
     }
 
     /**

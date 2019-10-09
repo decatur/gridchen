@@ -1,10 +1,6 @@
 import {assert, testAsync, log} from './utils.js'
 import '../grid-chen/component.js'
 import {createRowMatrixView} from "../grid-chen/grid-data-view.js";
-import {NumberConverter} from "../grid-chen/converter.js";
-
-
-const decimalSep = new NumberConverter(1).decimalSep;
 
 function dispatchKey(gc, eventInitDict) {
     gc.shadowRoot.firstElementChild.dispatchEvent(new KeyboardEvent('keydown', eventInitDict));
@@ -23,7 +19,9 @@ const rows = [
     [NaN, 'b']
 ];
 const view = createRowMatrixView(schema, rows);
+let listener;
 gc.resetFromView(view);
+gc.addEventListener('dataChanged', (evt) => listener(evt));
 
 (async function () {
 
@@ -35,23 +33,19 @@ gc.resetFromView(view);
         assert.equal(`0\ta\r\nNaN\tb`, text);
     });
 
-    await testAsync('paste1', async function () {
+    await testAsync('should paste cells to (2,1)', async function () {
         await navigator.clipboard.writeText(`0\ta\r\nNaN\tb`);
 
-        gc.setEventListener('paste', () => testAsync('should paste cells to (2,1)', function () {
-            assert.equal([[0, 'a'], [0, 'a'], [NaN, 'b']], rows);
-        }));
+        listener = (evt) => assert.equal([[0, 'a'], [0, 'a'], [NaN, 'b']], rows);
 
         dispatchKey(gc, {code: 'ArrowDown'});
         dispatchKey(gc, {code: 'KeyV', ctrlKey: true});
     });
 
-    await testAsync('paste2', async function () {
+    await testAsync('tiling', async function () {
         await navigator.clipboard.writeText(`3\tc`);
 
-        gc.setEventListener('paste', () => testAsync('tiling', function () {
-            assert.equal([[3, 'c'],[3, 'c'],[NaN, 'b']], rows);
-        }));
+        listener = (evt) => assert.equal([[3, 'c'],[3, 'c'],[NaN, 'b']], rows);
 
         gc.getRangeByIndexes(0, 0, 2, 2).select();
         dispatchKey(gc, {code: 'KeyV', ctrlKey: true});
@@ -60,9 +54,7 @@ gc.resetFromView(view);
     await testAsync('paste outside of column range', async function () {
         await navigator.clipboard.writeText(`3\tc`);
 
-        gc.setEventListener('paste', () => testAsync('tiling', function () {
-            assert.equal([[3, '3'],[3, 'c'],[NaN, 'b']], rows);
-        }));
+        listener = (evt) => assert.equal([[3, '3'],[3, 'c'],[NaN, 'b']], rows);
 
         gc.getRangeByIndexes(0, 1, 1, 2).select();
         dispatchKey(gc, {code: 'KeyV', ctrlKey: true});

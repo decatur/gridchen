@@ -34,6 +34,7 @@ export function createInteractiveDemoGrid(schema, orgData) {
     const patchElement = document.querySelector('.patch textarea');
     const tsvElement = document.querySelector('.tsv textarea');
     const gridElement = container.querySelector('grid-chen');
+    let view;
 
     function resetGrid() {
 
@@ -58,16 +59,16 @@ export function createInteractiveDemoGrid(schema, orgData) {
         }
 
         patchElement.value = '';
-        const view = newView();
+        view = newView();
         gridElement.resetFromView(view);
-        gridElement.setEventListener('dataChanged', function (patch) {
-            dataElement.value = REPR.stringify(view.getModel(), null, 2);
-            patchElement.value = REPR.stringify(patch, null, 2);
-            tsvElement.value = gridElement._toTSV();
-        });
         tsvElement.value = gridElement._toTSV();
     }
 
+    gridElement.addEventListener('dataChanged', function (evt) {
+        dataElement.value = REPR.stringify(view.getModel(), null, 2);
+        patchElement.value = REPR.stringify(evt.detail['patch'], null, 2);
+        tsvElement.value = gridElement._toTSV();
+    });
     schemaElement.value = JSON.stringify(schema, null, 4);
     dataElement.oninput = schemaElement.oninput = resetGrid;
     dataElement.value = REPR.stringify(orgData, null, 2);

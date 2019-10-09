@@ -68,8 +68,9 @@
 
     document.querySelector('grid-chen')
         .resetFromView(createView(schema, data))
-        .setEventListener('plot',
-            (container, title, schemas, series) => renderPlot(container, title, schemas, series))
+        .addEventListener('plot', function(evt) {
+            renderPlot(evt.detail.graphElement, evt.detail.title, evt.detail.schemas, evt.detail.columns);
+        });
 
 
 </script>

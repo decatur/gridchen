@@ -30,6 +30,7 @@ grid-chen {
 }
 
 @media (prefers-color-scheme: dark) {
+    /* See https://gist.github.com/meskarune/2721790 for a template */
     :root {
         --button-background-color: rgb(50, 50, 50);
     }

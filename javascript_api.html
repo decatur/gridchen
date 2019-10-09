@@ -19,14 +19,28 @@
 <h1><a href="index.html">GridChen Index</a> / JavaScript API</h1>
 
 <p>
-    The HTML code of this page shows the usage of the JavaScript API.
+    Please see the source code of this page for usage of the JavaScript API.
 </p>
 
+<h2>GridChen</h2>
+
 <ul>
-    <li><code>GridChen.resetFromView()</code></li>
-    <li><code>GridChen.setEventListener()</code></li>
+    <li><code>GridChen.resetFromView(view)</code></li>
     <li><code>GridChen.getActiveCell()</code></li>
     <li><code>GridChen.getSelectedRange()</code></li>
+</ul>
+
+<h2>MatrixView</h2>
+<ul>
+    <li><code>matrixview.createView(schema, matrix)</code></li>
+</ul>
+
+<h2>Custom Event Listeners</h2>
+<ul>
+    <li><code>activeCellChanged</code></li>
+    <li><code>selectionChanged</code></li>
+    <li><code>dataChanged</code></li>
+    <li><code>plot</code></li>
 </ul>
 
 <grid-chen style="display: inline-block"></grid-chen>
@@ -55,12 +69,22 @@
 
     gridchen.resetFromView(createView(schema, rows));
 
-    gridchen.setEventListener('activeCellChanged', function (activeCell) {
+    gridchen.addEventListener('activeCellChanged', function (evt) {
         console.value += 'activeCellChanged\n' + gridchen.getActiveCell() + '\n';
         console.scrollTop = console.scrollHeight;
-    })
-    gridchen.setEventListener('selectionChanged', function (activeCell) {
+    });
+    gridchen.addEventListener('selectionChanged', function (evt) {
         console.value += 'selectionChanged\n' + gridchen.getSelectedRange() + '\n';
         console.scrollTop = console.scrollHeight;
-    })
+    });
+    gridchen.addEventListener('dataChanged', function (evt) {
+        console.value += 'dataChanged\n' + JSON.stringify(evt.detail.patch) + '\n';
+        console.scrollTop = console.scrollHeight;
+    });
+    gridchen.addEventListener('plot', function (evt) {
+        console.value += 'plot\n' + JSON.stringify(evt.detail) + '\n';
+        console.scrollTop = console.scrollHeight;
+    });
+
+
 </script>

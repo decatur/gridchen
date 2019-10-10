@@ -59,8 +59,8 @@ window.onerror = function (evt) {
     // const dialog = openDialog();
     // dialog.innerHTML = `
     // <p>Oops, grid-chen has experienced an unexpected error!</p>
-    // <p>See console for more details...</p>`;
-    // console.error(e)
-    alert('Oops, there was an unexpected error!\nSee the debug console for more details...');
+    // <p>See log for more details...</p>`;
+    // log.error(e)
+    alert('Oops, there was an unexpected error!\nSee the debug log for more details...');
 };
 

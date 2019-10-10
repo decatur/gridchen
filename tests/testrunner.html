@@ -28,7 +28,7 @@
         .then(function() {
             favLink.setAttribute('href', `${getErrorCount()?'red':'green'}.png`)
         })
-        .catch(e => favLink.setAttribute('href', `red.png`));
+        .catch(() => favLink.setAttribute('href', `red.png`));
 
 
     window.setTimeout(function() {

@@ -21,7 +21,7 @@ export function createInteractiveDemoGrid(schema, orgData) {
         <grid-chen></grid-chen>
     </label>
     <label class="demo patch">
-        JSON Patch of Last Edit
+        JSON Transaction Patch
         <textarea class="demo" readonly></textarea>
     </label>
     <label class="demo tsv">

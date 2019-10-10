@@ -17,7 +17,7 @@ function createSpan() {
 }
 
 /**
- * @interface {GridChen.StringConverter}
+ * @implements {GridChen.Converter}
  */
 export class StringConverter {
     constructor() {
@@ -103,29 +103,6 @@ export class URIConverter {
     createElement() {
         const elem = document.createElement('a');
 
-        // elem.onmousedown = function () {
-        //     const h = window.setTimeout(function () {
-        //         elem.style.cursor = 'cell';
-        //         // Note the transient event handler style.
-        //         elem.onclick = function (evt) {
-        //             evt.preventDefault();
-        //             elem.onclick = undefined;
-        //         };
-        //         elem.onmouseup = function (evt) {
-        //             elem.onmouseup = undefined;
-        //             elem.style.cursor = 'pointer';
-        //         };
-        //         elem.onmouseout = function (evt) {
-        //             elem.onmouseout = elem.onclick = undefined;
-        //             elem.style.cursor = 'pointer';
-        //         };
-        //     }, 500);
-        //
-        //     elem.onmouseup = elem.onmouseout = function () {
-        //         window.clearTimeout(h);
-        //     };
-        // };
-
         function onMouseUpOrOut(func) {
             elem.onmouseup = elem.onmouseout = func;
         }
@@ -140,10 +117,8 @@ export class URIConverter {
          *     c) does not follow the link
          */
 
-        elem.ondblclick = function(evt) {
-            // TODO: Better to not attach any ondblclick in the first place.
-            evt.stopImmediatePropagation();
-        };
+        // Avoid activeCell.enterEditMode() being called.
+        elem.ondblclick = (evt) => evt.stopPropagation();
 
         // TODO: Use event delegation.
         elem.onmousedown = function () {
@@ -209,7 +184,7 @@ export class URIConverter {
 }
 
 /**
- * @interface {GridChen.StringConverter}
+ * @interface {GridChen.Converter}
  */
 export class BooleanStringConverter {
     constructor() {
@@ -268,7 +243,7 @@ export class BooleanStringConverter {
 }
 
 /**
- * @interface {GridChen.StringConverter}
+ * @interface {GridChen.Converter}
  */
 export class NumberConverter {
     /**

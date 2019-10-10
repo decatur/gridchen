@@ -1,5 +1,5 @@
 window.onerror = function (evt) {
-    // console.error(evt);
+    // log.error(evt);
     log(evt);
 };
 
@@ -10,7 +10,7 @@ export function getErrorCount() {
 }
 
 export function log(msg) {
-    //console.log(msg);
+    //log.log(msg);
     const div = document.createElement('div');
     div.style.marginLeft = '1em';
     div.textContent = msg;
@@ -33,7 +33,7 @@ export async function testAsync(msg, asyncFct) {
     try {
         await asyncFct();
     } catch(e) {
-        //console.log(e);
+        //log.log(e);
         err(div, e);
     }
 }

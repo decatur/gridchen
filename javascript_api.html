@@ -6,10 +6,9 @@
     <script src="./theme.js"></script>
     <style>
         textarea {
-            display: inline-block;
-            margin: 0 2em 0 0;
-            height: 200px;
-            width: 50%;
+            display: block;
+            height: 400px;
+            width: 100%;
             background-color: inherit;
             color: inherit;
         }
@@ -19,32 +18,17 @@
 <h1><a href="index.html">GridChen Index</a> / JavaScript API</h1>
 
 <p>
-    Please see the source code of this page for usage of the JavaScript API.
+    Please see the source code of this page for usage of the JavaScript API and the
+    <a href="./grid-chen/grid-chen.d.ts">grid-chen TypeScript Definitions</a>
 </p>
 
-<h2>GridChen</h2>
+<grid-chen style="display: inline-block; height: 400px;"></grid-chen>
 
-<ul>
-    <li><code>GridChen.resetFromView(view)</code></li>
-    <li><code>GridChen.getActiveCell()</code></li>
-    <li><code>GridChen.getSelectedRange()</code></li>
-</ul>
+<form style="display: inline-block;margin-left:1em;vertical-align: top; width: 50%;">
+    <button name="save" type="button">Save</button>
+    <label style="display:block">Log <textarea name="log"></textarea></label>
+</form>
 
-<h2>MatrixView</h2>
-<ul>
-    <li><code>matrixview.createView(schema, matrix)</code></li>
-</ul>
-
-<h2>Custom Event Listeners</h2>
-<ul>
-    <li><code>activeCellChanged</code></li>
-    <li><code>selectionChanged</code></li>
-    <li><code>dataChanged</code></li>
-    <li><code>plot</code></li>
-</ul>
-
-<grid-chen style="display: inline-block"></grid-chen>
-<textarea id="console"></textarea>
 </body>
 
 <script type="module">
@@ -63,28 +47,43 @@
         }
     };
     const rows = [['2019-01-01', 1], ['2020-01-01', 2], ['2021-01-01', 3]];
-    /** @type {GridChen} */
-    const gridchen = document.querySelector('grid-chen');
-    const console = document.getElementById('console');
+    /** @type {GridChen.GridChen} */
+    const gridChen = document.querySelector('grid-chen');
+    const logElem = document.forms[0].log;
+    let logValue = '';
 
-    gridchen.resetFromView(createView(schema, rows));
+    gridChen.resetFromView(createView(schema, rows));
 
-    gridchen.addEventListener('activeCellChanged', function (evt) {
-        console.value += 'activeCellChanged\n' + gridchen.getActiveCell() + '\n';
-        console.scrollTop = console.scrollHeight;
-    });
-    gridchen.addEventListener('selectionChanged', function (evt) {
-        console.value += 'selectionChanged\n' + gridchen.getSelectedRange() + '\n';
-        console.scrollTop = console.scrollHeight;
-    });
-    gridchen.addEventListener('dataChanged', function (evt) {
-        console.value += 'dataChanged\n' + JSON.stringify(evt.detail.patch) + '\n';
-        console.scrollTop = console.scrollHeight;
-    });
-    gridchen.addEventListener('plot', function (evt) {
-        console.value += 'plot\n' + JSON.stringify(evt.detail) + '\n';
-        console.scrollTop = console.scrollHeight;
+    function logEvent(evt, msg) {
+        logValue = logElem.value = logValue + evt.type + '\n' + msg + '\n';
+        logElem.scrollTop = logElem.scrollHeight;
+    }
+
+    gridChen.addEventListener('activeCellChanged', /**@param {Event} evt*/ function (evt) {
+        logEvent(evt, gridChen.getActiveRange());
     });
 
+    gridChen.addEventListener('selectionChanged', /**@param {Event} evt*/ function (evt) {
+        logEvent(evt, gridChen.getSelectedRange());
+    });
+
+    gridChen.addEventListener('dataChanged', /**@param {GridChen.DataChangedEvent} evt*/ function (evt) {
+        logEvent(evt, JSON.stringify(evt.detail.patch));
+    });
+
+    gridChen.addEventListener('plot', /**@param {GridChen.DataChangedEvent} evt*/ function (evt) {
+        logEvent(evt, JSON.stringify(evt.detail));
+    });
+
+    document.forms[0].save.onclick = function () {
+        const patch = gridChen.getPatch();
+        if (patch.length) {
+            logElem.value = 'Saved...\n' + JSON.stringify(gridChen.getPatch(), null, 2);
+            gridChen.resetPatch();
+        } else {
+            logElem.value = 'Data is not modified';
+        }
+        logValue = '';
+    }
 
 </script>

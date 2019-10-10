@@ -100,7 +100,10 @@ function openDialog() {
     return dialog;
 }
 
-// We export for testability.
+/**
+ * We export for testability.
+ * @implements {GridChen.GridChen}
+ */
 export class GridChen extends HTMLElement {
     constructor() {
         super();
@@ -108,6 +111,7 @@ export class GridChen extends HTMLElement {
 
     /**
      * @param {GridChen.MatrixView} viewModel
+     * @returns {GridChen}
      */
     resetFromView(viewModel) {
         if (this.shadowRoot) {
@@ -142,16 +146,16 @@ export class GridChen extends HTMLElement {
     getRangeByIndexes(rowIndex, columnIndex, rowCount, columnCount) {
     }
 
-    /**
-     * @returns {GridChen.Range}
-     */
     getSelectedRange() {
     }
 
-    /**
-     * @returns {GridChen.Range}
-     */
-    getActiveCell() {
+    getActiveRange() {
+    }
+
+    getPatch() {
+    }
+
+    resetPatch() {
     }
 }
 
@@ -365,7 +369,8 @@ function createGrid(container, viewModel, gridchenElement) {
     const schema = viewModel.schema;
     const schemas = schema.columnSchemas;
     const totalHeight = parseInt(container.style.height);
-    const currentPatch = [];
+    const transactionPatches = [];
+    const transactionPatch = [];
 
     const rowHeight = lineHeight + 2 * cellBorderWidth;
     const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
@@ -461,9 +466,16 @@ function createGrid(container, viewModel, gridchenElement) {
     info.onclick = showInfo;
     container.appendChild(info);
 
+    //let lastRefreshMillis = -100;
+
     function refresh() {
         rowCount = viewModel.rowCount();
-        setFirstRow(firstRow)
+        setFirstRow(firstRow);
+        /*if (window.performance.now() - lastRefreshMillis < 100) {
+            throw new Error();
+        }
+        lastRefreshMillis = window.performance.now();
+        */
     }
 
     refreshHeaders();
@@ -527,12 +539,21 @@ function createGrid(container, viewModel, gridchenElement) {
 
 
     let cellParent = /** @type {HTMLElement} */ document.createElement('div');
-    cellParent.className = "GRID";
+    cellParent.className = 'GRID';
     cellParent.style.position = 'absolute';  // Must be absolute otherwise contentEditable=true produces strange behaviour
     //cellParent.style.display = 'inline-block';
     cellParent.style.width = gridWidth + 'px';
     cellParent.style.height = viewPortHeight + 'px';
     container.tabIndex = 0;
+
+    function flush() {
+        if (transactionPatch.length) {
+            refresh();
+            transactionPatches.push(transactionPatch);
+            gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: transactionPatch}}));
+            transactionPatch.length = 0;
+        }
+    }
 
     class Editor {
 
@@ -564,8 +585,8 @@ function createGrid(container, viewModel, gridchenElement) {
                 evt.stopPropagation();
             }
 
-            this.input.addEventListener('keydown', this.keydownHandler);
-            this.textarea.addEventListener('keydown', this.keydownHandler);
+            this.input.addEventListener('keydown', Editor.keydownHandler);
+            this.textarea.addEventListener('keydown', Editor.keydownHandler);
 
             this.input.addEventListener('mousedown', foo);
             this.textarea.addEventListener('mousedown', foo);
@@ -577,12 +598,10 @@ function createGrid(container, viewModel, gridchenElement) {
         /**
          * @param {KeyboardEvent} evt
          */
-        keydownHandler(evt) {
+        static keydownHandler(evt) {
             logger.log('editor.onkeydown: ' + evt.code);
             // Clicking editor should invoke default: move caret. It should not delegate to containers action.
             evt.stopPropagation();
-
-            currentPatch.length = 0;
 
             if (evt.code === 'F2') {
                 evt.preventDefault();
@@ -592,10 +611,12 @@ function createGrid(container, viewModel, gridchenElement) {
             } else if (evt.code === 'ArrowLeft' && activeCell.mode === 'input') {
                 evt.preventDefault();
                 evt.stopPropagation();
+                commit();
                 navigateCell(evt, 0, -1);
             } else if (evt.code === 'ArrowRight' && activeCell.mode === 'input') {
                 evt.preventDefault();
                 evt.stopPropagation();
+                commit();
                 navigateCell(evt, 0, 1);
             } else if (evt.code === 'Enter' && evt.altKey) {
                 evt.preventDefault();
@@ -622,13 +643,9 @@ function createGrid(container, viewModel, gridchenElement) {
                 evt.stopPropagation();
                 commit();
             }
-            if (currentPatch.length) {
-                refresh();
-                gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: currentPatch}}));
-            }
         }
 
-        blurHandler(evt) {
+        static blurHandler(evt) {
             logger.log('editor.onblur');
             commit();
 
@@ -667,13 +684,13 @@ function createGrid(container, viewModel, gridchenElement) {
             // Note: focus after display!
             // Note: It is ok to scroll on focus here.
             this.input.focus();
-            this.input.addEventListener('blur', this.blurHandler);
+            this.input.addEventListener('blur', Editor.blurHandler);
         }
 
         showTextArea() {
             const style = this.input.style;
             style.display = 'none';
-            this.input.removeEventListener('blur', this.blurHandler);
+            this.input.removeEventListener('blur', Editor.blurHandler);
             this.textarea.style.left = style.left;
             this.textarea.style.top = style.top;
             this.textarea.style.width = style.width;
@@ -683,8 +700,7 @@ function createGrid(container, viewModel, gridchenElement) {
 
             this.textarea.value = this.input.value;
             this.textarea.focus();
-            //window.setTimeout(()=>textarea.focus(), 10);
-            this.textarea.addEventListener('blur', this.blurHandler);
+            this.textarea.addEventListener('blur', Editor.blurHandler);
         }
 
         /**
@@ -727,7 +743,7 @@ function createGrid(container, viewModel, gridchenElement) {
             this.hide();
             const targetRow = rowIndex - firstRow;
             if (targetRow < 0 || targetRow >= viewPortRowCount) return;
-            this.span = spanMatrix[rowIndex - firstRow][colIndex];
+            this.span = cellMatrix[rowIndex - firstRow][colIndex];
             this.col = colIndex;
             this.row = rowIndex;
             this.show();
@@ -775,9 +791,9 @@ function createGrid(container, viewModel, gridchenElement) {
         if (!rr) return;
         for (let row = rr.rowIndex; row < rr.rowIndex + rr.rowCount; row++) {
             for (let col = rr.columnIndex; col < rr.columnIndex + rr.columnCount; col++) {
-                const span = spanMatrix[row][col];
+                const span = cellMatrix[row][col];
                 const style = span.style;
-                if (spanMatrix[row][col] === activeCell.span) {
+                if (cellMatrix[row][col] === activeCell.span) {
                     // Do not change color of active cell.
                 } else if (backgroundColor === undefined) {
                     style.removeProperty('background-color');
@@ -787,6 +803,8 @@ function createGrid(container, viewModel, gridchenElement) {
             }
         }
     }
+
+    cellParent.ondblclick = () => activeCell.enterEditMode();
 
     cellParent.onmousedown = function (evt) {
         logger.log('onmousedown');
@@ -804,7 +822,7 @@ function createGrid(container, viewModel, gridchenElement) {
         function index(evt) {
             const y = evt.clientY - rect.y;
             const x = evt.clientX - rect.x;
-            // console.log(x + ' ' + y);
+            // log.log(x + ' ' + y);
             const grid_y = Math.trunc(y / rowHeight);
             let grid_x = 0;
             for (grid_x; grid_x < colCount; grid_x++) {
@@ -834,7 +852,7 @@ function createGrid(container, viewModel, gridchenElement) {
             let {rowIndex, colIndex} = index(evt);
             logger.log(`onmousemove ${rowIndex} ${colIndex}`);
 
-            if (rowIndex - firstRow < spanMatrix.length) {
+            if (rowIndex - firstRow < cellMatrix.length) {
                 selection.expand(rowIndex, colIndex);
             }
         };
@@ -915,7 +933,7 @@ function createGrid(container, viewModel, gridchenElement) {
             for (; rowIndex < endRowIndex; rowIndex++) {
                 //modifiedRows.add(rowIndex);
                 for (let colIndex = r.columnIndex; colIndex < endColIndex; colIndex++) {
-                    currentPatch.push(...viewModel.setCell(rowIndex, colIndex, undefined));
+                    transactionPatch.push(...viewModel.setCell(rowIndex, colIndex, undefined));
                 }
             }
         }
@@ -926,13 +944,14 @@ function createGrid(container, viewModel, gridchenElement) {
             if (row.some(item => item != null)) {
                 break
             }
-            currentPatch.push(...viewModel.deleteRow(rowIndex));
+            transactionPatch.push(...viewModel.deleteRow(rowIndex));
             rowIndex--;
         }
 
         if (rowIndex === -1) {
-            currentPatch.push(...viewModel.removeModel())
+            transactionPatch.push(...viewModel.removeModel())
         }
+        flush();
     }
 
     function deleteRows() {
@@ -942,9 +961,10 @@ function createGrid(container, viewModel, gridchenElement) {
         }
         for (const r of selection.areas) {
             rangeIterator(r.rowCount).forEach(function () {
-                currentPatch.push(...viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
+                transactionPatch.push(...viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
             });
         }
+        flush();
     }
 
     function insertRow() {
@@ -952,7 +972,8 @@ function createGrid(container, viewModel, gridchenElement) {
             alert('This grid is locked!');
             return
         }
-        currentPatch.push(viewModel.splice(activeCell.row));
+        transactionPatch.push(viewModel.splice(activeCell.row));
+        flush();
     }
 
     function copySelection(doCut, withHeaders) {
@@ -972,7 +993,6 @@ function createGrid(container, viewModel, gridchenElement) {
     container.onkeydown = function (evt) {
         logger.log('container.onkeydown ' + evt.code);
 
-        currentPatch.length = 0;
         //if (activeCell.mode === 'edit') throw Error();
         // Note 1: All handlers call both preventDefault() and stopPropagation().
         //         The reason is documented in the handler code.
@@ -1033,13 +1053,14 @@ function createGrid(container, viewModel, gridchenElement) {
             }
             window.navigator.clipboard.readText()
                 .then(text => {
-                    //console.log('Pasted content: ', text);
+                    //log.log('Pasted content: ', text);
                     let matrix = tsvToMatrix(text);
                     if (matrix) {
                         paste(matrix);
-                        if (currentPatch.length) {
+                        if (transactionPatch.length) {
                             refresh();
-                            gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: currentPatch}}));
+                            gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: transactionPatch}}));
+                            transactionPatches.push(transactionPatch);
                         }
                     }
                 })
@@ -1097,11 +1118,6 @@ function createGrid(container, viewModel, gridchenElement) {
                 evt.stopPropagation();
                 activeCell.enterInputMode(evt.key);
             }
-        }
-
-        if (currentPatch.length) {
-            refresh();
-            gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: currentPatch}}));
         }
     };
 
@@ -1170,7 +1186,9 @@ function createGrid(container, viewModel, gridchenElement) {
             return
         }
 
+        /** @type{GridChen.IColumnSchema[]}*/
         const columnSchemas = [];
+        /** @type{number[][]}*/
         const columns = [];
         for (const columnIndex of columnIndices) {
             columnSchemas.push(schemas[columnIndex]);
@@ -1182,10 +1200,10 @@ function createGrid(container, viewModel, gridchenElement) {
         dialog.textContent = '';
         const graphElement = dialog.appendChild(document.createElement('div'));
         const detail = {
-            graphElement,
+            graphElement: graphElement,
             title: schema.title,
             schemas: columnSchemas,
-            columns: columns
+            columns1: columns
         };
         gridchenElement.dispatchEvent(new CustomEvent('plot', {detail: detail}));
     }
@@ -1285,16 +1303,17 @@ function createGrid(container, viewModel, gridchenElement) {
                     value = schemas[colIndex].converter.fromEditable(value.trim());
                     //value = value.replace(/\\n/g, '\n');
                 }
-                currentPatch.push(viewModel.setCell(rowIndex, colIndex, value));
+                transactionPatch.push(viewModel.setCell(rowIndex, colIndex, value));
             }
         }
 
         activeCell.mode = 'display';
         container.focus({preventScroll: true});
+        flush();
     }
 
     /** @type {Array<Array<HTMLElement>>} */
-    let spanMatrix = Array(viewPortRowCount);
+    let cellMatrix = Array(viewPortRowCount);
     let pageIncrement = Math.max(1, viewPortRowCount);
 
     function setFirstRow(_firstRow, caller) {
@@ -1326,14 +1345,11 @@ function createGrid(container, viewModel, gridchenElement) {
         const schema = schemas[colIndex];
         const elem = schema.converter.createElement();
 
-        spanMatrix[vpRowIndex][colIndex] = elem;
+        cellMatrix[vpRowIndex][colIndex] = elem;
         let style = elem.style;
         style.top = (vpRowIndex * rowHeight) + 'px';
         style.left = (colIndex ? columnEnds[colIndex - 1] : 0) + 'px';
         style.width = schemas[colIndex].width + 'px';
-
-        // TODO: Use event delegation.
-        elem.addEventListener('dblclick', () => activeCell.enterEditMode());
         cellParent.appendChild(elem);
     }
 
@@ -1404,7 +1420,7 @@ function createGrid(container, viewModel, gridchenElement) {
             for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
                 let value = matrix[i][j];
                 if (value !== undefined) value = schemas[colIndex].converter.fromEditable(value.trim());
-                currentPatch.push(viewModel.setCell(rowIndex, colIndex, value));
+                transactionPatch.push(viewModel.setCell(rowIndex, colIndex, value));
             }
         }
     }
@@ -1452,9 +1468,9 @@ function createGrid(container, viewModel, gridchenElement) {
     }
 
     function updateViewportRows(matrix) {
-        // console.log('setRowData', rowData)
-        for (let index = 0; index < spanMatrix.length; index++) {
-            let elemRow = spanMatrix[index];
+        // log.log('setRowData', rowData)
+        for (let index = 0; index < cellMatrix.length; index++) {
+            let elemRow = cellMatrix[index];
             let row = matrix[index];
             for (let colIndex = 0; colIndex < colCount; colIndex++) {
                 let elem = elemRow[colIndex];
@@ -1470,8 +1486,8 @@ function createGrid(container, viewModel, gridchenElement) {
         }
     }
 
-    for (let rowIndex = 0; rowIndex < spanMatrix.length; rowIndex++) {
-        spanMatrix[rowIndex] = Array(colCount);
+    for (let rowIndex = 0; rowIndex < cellMatrix.length; rowIndex++) {
+        cellMatrix[rowIndex] = Array(colCount);
         for (let colIndex = 0; colIndex < colCount; colIndex++) {
             createCell(rowIndex, colIndex);
         }
@@ -1501,14 +1517,23 @@ function createGrid(container, viewModel, gridchenElement) {
         }
     }
 
-    gridchenElement._toTSV = toTSV;
+    gridchenElement.getPatch = function () {
+        const allPatches = [];
+        transactionPatches.forEach(patch => allPatches.push(...patch));
+        return allPatches;
+    };
+    gridchenElement.resetPatch = function () {
+        transactionPatches.length = 0;
+    };
+
     gridchenElement.getSelectedRange =
         () => new Range1(selection.rowIndex, selection.columnIndex,
             selection.rowCount, selection.columnCount);
-    gridchenElement.getActiveCell =
+    gridchenElement.getActiveRange =
         () => new Range1(activeCell.row, activeCell.col, 1, 1);
     gridchenElement.getRangeByIndexes =
         (rowIndex, columnIndex, rowCount, columnCount) => new Range1(rowIndex, columnIndex, rowCount, columnCount);
+    gridchenElement['_toTSV'] = toTSV;
 }
 
 /**

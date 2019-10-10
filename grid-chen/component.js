@@ -398,6 +398,16 @@ function createGrid(container, viewModel, gridchenElement) {
             padding: ${cellPadding}px;
         }
         
+        a:link {
+            color: var(--a-link-color);
+        }
+        
+        a:visited {
+            color: var(--a-visited-color); 
+        }
+        
+       
+        
         /* Important: The selectors string, non-string and error are used exclusively! */
         .GRID .string {
             text-align: left;
@@ -1322,6 +1332,7 @@ function createGrid(container, viewModel, gridchenElement) {
         style.left = (colIndex ? columnEnds[colIndex - 1] : 0) + 'px';
         style.width = schemas[colIndex].width + 'px';
 
+        // TODO: Use event delegation.
         elem.addEventListener('dblclick', () => activeCell.enterEditMode());
         cellParent.appendChild(elem);
     }

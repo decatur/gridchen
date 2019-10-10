@@ -32,7 +32,8 @@ grid-chen {
 @media (prefers-color-scheme: dark) {
     /* See https://gist.github.com/meskarune/2721790 for a template */
     :root {
-        --button-background-color: rgb(50, 50, 50);
+        --a-link-color: rgb(255, 255, 16);     /* Inverse of rgb(0, 0, 238) */
+        --a-visited-color: rgb(170, 229, 116); /* Inverse of rgb(85, 26, 139) */
     }
 
     /* For some reason, background-color cannot be inherited by option elements correctly in Chrome.
@@ -48,7 +49,11 @@ grid-chen {
     }
 
     a:link {
-      color: grey;
+      color: var(--a-link-color);
+    }
+
+    a:visited {
+      color: var(--a-visited-color);
     }
 
     ::-webkit-scrollbar {
@@ -67,7 +72,8 @@ grid-chen {
 
 @media (prefers-color-scheme: light) {
     :root {
-        --button-background-color: initial;
+        --a-link-color: rgb(0, 0, 238);
+        --a-visited-color: rgb(85, 26, 139);
     }
 
     body {

@@ -96,27 +96,75 @@ export class URIConverter {
     }
 
     /**
-     * Creates the display for an anchor cell mimicking MS-Excel. It supports entering edit mode via slow click and
-     * cursor management.
+     * Creates the display for an anchor cell mimicking MS-Excel.
+     * It supports entering edit mode via slow click and cursor management.
      * @returns {HTMLAnchorElement}
      */
     createElement() {
         const elem = document.createElement('a');
 
+        // elem.onmousedown = function () {
+        //     const h = window.setTimeout(function () {
+        //         elem.style.cursor = 'cell';
+        //         // Note the transient event handler style.
+        //         elem.onclick = function (evt) {
+        //             evt.preventDefault();
+        //             elem.onclick = undefined;
+        //         };
+        //         elem.onmouseup = function (evt) {
+        //             elem.onmouseup = undefined;
+        //             elem.style.cursor = 'pointer';
+        //         };
+        //         elem.onmouseout = function (evt) {
+        //             elem.onmouseout = elem.onclick = undefined;
+        //             elem.style.cursor = 'pointer';
+        //         };
+        //     }, 500);
+        //
+        //     elem.onmouseup = elem.onmouseout = function () {
+        //         window.clearTimeout(h);
+        //     };
+        // };
+
+        function onMouseUpOrOut(func) {
+            elem.onmouseup = elem.onmouseout = func;
+        }
+
+        /*
+         * Requirements from Excel:
+         * 1) A fast click selects the cell and follows the link.
+         * 2) A dblclick is the same as a fast click. So a dblclick must not enter edit mode.
+         * 3) A slow click (>500ms)
+         *     a) selects the cell
+         *     b) changes the cursor to cell
+         *     c) does not follow the link
+         */
+
+        elem.ondblclick = function(evt) {
+            // TODO: Better to not attach any ondblclick in the first place.
+            evt.stopImmediatePropagation();
+        };
+
+        // TODO: Use event delegation.
         elem.onmousedown = function () {
-            //elem.onclick = undefined;
-            window.setTimeout(function () {
+            const h = window.setTimeout(function () {
+                const href = elem.getAttribute('href');
+                // Make sure link is not followed
+                elem.removeAttribute('href');
                 elem.style.cursor = 'cell';
-                // Note the transient event handler style.
-                elem.onclick = function (evt) {
-                    evt.preventDefault();
-                    elem.onclick = undefined;
-                };
-                elem.onmouseup = elem.onmouseout = function () {
-                    elem.onclick = elem.onmouseup = elem.onmouseout = undefined;
-                    elem.style.cursor = 'pointer';
-                };
+                onMouseUpOrOut(function () {
+                    // Reestablish cursor.
+                    elem.style.removeProperty('cursor');
+                    // Reestablish link. Must be done async because if this is a onmouseup event,
+                    // an onclick will always fire afterwards, which in turn would follow the link.
+                    window.requestAnimationFrame(function() { elem.href = href; });
+                    // Remove this handlers.
+                    onMouseUpOrOut(undefined);
+                });
             }, 500);
+
+            // In case timer did not trigger yet this will clear it.
+            onMouseUpOrOut(() => window.clearTimeout(h));
         };
 
         return elem

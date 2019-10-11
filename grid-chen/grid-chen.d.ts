@@ -2,9 +2,6 @@
 /// grid-chen APIs
 /////////////////////////////
 
-// TODO: export?
-// TODO: declare
-
 declare module GridChen {
 
     export interface JSONSchema {

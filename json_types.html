@@ -44,8 +44,8 @@
         ]
     );
 
-    window.onhashchange = function(evt) {
-        const hash = window.location.hash; //evt.newURL.split('#')[1];
+    window.onhashchange = function() {
+        const hash = window.location.hash;
         alert(`You clicked ${hash}`);
     }
 

@@ -105,6 +105,10 @@ function openDialog() {
  * @implements {GridChen.GridChen}
  */
 export class GridChen extends HTMLElement {
+    activeRange;
+    patch;
+    selectedRange;
+
     constructor() {
         super();
     }
@@ -144,18 +148,6 @@ export class GridChen extends HTMLElement {
      * @returns {GridChen.Range}
      */
     getRangeByIndexes(rowIndex, columnIndex, rowCount, columnCount) {
-    }
-
-    get selectedRange() {
-        return this._getSelectedRange();
-    }
-
-    get activeRange() {
-        return this._getActiveRange();
-    }
-
-    get patch() {
-        return this._getPatch();
     }
 
     resetPatch() {
@@ -1189,7 +1181,7 @@ function createGrid(container, viewModel, gridchenElement) {
         }
 
         /** @type{GridChen.ColumnSchema[]}*/
-        const columnSchemas = [];
+        let columnSchemas = [];
         /** @type{number[][]}*/
         const columns = [];
         for (const columnIndex of columnIndices) {
@@ -1201,12 +1193,13 @@ function createGrid(container, viewModel, gridchenElement) {
         // in the HTML element.
         dialog.textContent = '';
         const graphElement = dialog.appendChild(document.createElement('div'));
-        const detail = {
+        /** @type {GridChen.PlotEventDetail} */
+        let detail = Object.assign({
             graphElement: graphElement,
             title: schema.title,
             schemas: columnSchemas,
-            columns1: columns
-        };
+            columns: columns
+        });
         gridchenElement.dispatchEvent(new CustomEvent('plot', {detail: detail}));
     }
 
@@ -1519,20 +1512,31 @@ function createGrid(container, viewModel, gridchenElement) {
         }
     }
 
-    gridchenElement._getPatch = function () {
-        const allPatches = [];
-        transactionPatches.forEach(patch => allPatches.push(...patch));
-        return allPatches;
-    };
+    Object.defineProperty(gridchenElement, 'patch',
+        {
+            get: function () {
+                const allPatches = [];
+                transactionPatches.forEach(patch => allPatches.push(...patch));
+                return allPatches;
+            }
+        }
+    );
+
     gridchenElement.resetPatch = function () {
         transactionPatches.length = 0;
     };
 
-    gridchenElement._getSelectedRange =
-        () => new Range1(selection.rowIndex, selection.columnIndex,
-            selection.rowCount, selection.columnCount);
-    gridchenElement._getActiveRange =
-        () => new Range1(activeCell.row, activeCell.col, 1, 1);
+    Object.defineProperty(gridchenElement, 'selectedRange',
+        {
+            get: () => new Range1(selection.rowIndex, selection.columnIndex,
+                selection.rowCount, selection.columnCount)
+        }
+    );
+
+    Object.defineProperty(gridchenElement, 'activeRange',
+        {get: () => new Range1(activeCell.row, activeCell.col, 1, 1)}
+    );
+
     gridchenElement.getRangeByIndexes =
         (rowIndex, columnIndex, rowCount, columnCount) => new Range1(rowIndex, columnIndex, rowCount, columnCount);
     gridchenElement['_toTSV'] = toTSV;

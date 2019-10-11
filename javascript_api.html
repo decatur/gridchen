@@ -71,7 +71,7 @@
         logEvent(evt, JSON.stringify(evt.detail.patch));
     });
 
-    gridChen.addEventListener('plot', /**@param {GridChen.DataChangedEvent} evt*/ function (evt) {
+    gridChen.addEventListener('plot', /**@param {GridChen.PlotEvent} evt*/ function (evt) {
         logEvent(evt, JSON.stringify(evt.detail));
     });
 

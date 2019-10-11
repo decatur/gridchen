@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Suite Runner</title>
+    <link rel="stylesheet" href="../demo.css">
     <script src="../theme.js"></script>
 </head>
 <body>
 
 <h1><a href="../index.html">GridChen Index</a> / Test Suite Runner</h1>
 
-<p>
-    Run all tests.
-</p>
+<button id="runAllTests">Run all tests</button>
+
+<grid-chen style="display: block; height: 300px; margin: 1em;"></grid-chen>
 
 </body>
 
@@ -25,23 +26,50 @@
      * 2. In generated iframes access to the clipboard is restricted. So we use a new browser window, not an iframe.
      * 3. We rely on the given browser functionality such as 'Close Other Tabs'
      */
+    import "../grid-chen/component.js"
+    import {createView} from "../grid-chen/matrixview.js"
 
     const modules = ['test_date', 'test_GridChen', 'test_Clipboard', "test_Converter", "test_tsvToMatrix", "test_DataViews"];
+    let modulesToRun;
 
     function nextModule() {
-        if (modules.length) {
-            window.open('testrunner.html?module=' + modules[0]);
-        }
+        window.open('testrunner.html?module=' + modulesToRun[0]);
     }
 
     // Register callback through window.opener.
-    window.moduleDone = function(moduleName) {
-        const index = modules.indexOf(moduleName);
-        modules.splice(index, 1);
-        nextModule()
+    window.moduleDone = function (moduleName) {
+        const index = modulesToRun.indexOf(moduleName);
+        modulesToRun.splice(index, 1);
+        if (modulesToRun.length) {
+            nextModule();
+        }
     };
 
-    nextModule()
+    //nextModule()
+    const schema = {
+        title: 'Test Suite',
+        type: 'array',
+        items: {
+            type: 'array',
+            items: [
+                {title: 'Run Single Test', type: 'string', format: 'uri', width: 200}
+            ]
+        }
+    };
+
+    /** @type {GridChen.GridChen} */
+    const gridChen = document.querySelector('grid-chen');
+    gridChen.resetFromView(createView(schema, modules.map(moduleName => ['#' + moduleName])));
+
+    document.getElementById('runAllTests').onclick = function() {
+        modulesToRun = Object.assign([], modules);
+        nextModule();
+    };
+
+    window.onhashchange = function () {
+        modulesToRun = [window.location.hash.substr(1)];
+        nextModule();
+    }
 
 </script>
 </html>

@@ -71,11 +71,11 @@ testSync('expand selection with keys', async function () {
     gc.resetFromView(view);
 
     gc.getRangeByIndexes(0, 0, 1, 1).select();
-    let r = gc.getSelectedRange();
+    let r = gc.selectedRange;
     assert.equal([0, 0, 1, 1], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
     dispatch(gc, 'keydown',{code: 'ArrowRight', shiftKey: true});
     dispatch(gc, 'keydown', {code: 'ArrowDown', shiftKey: true});
-    r = gc.getSelectedRange();
+    r = gc.selectedRange;
     assert.equal([0, 0, 2, 2], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
 });
 
@@ -91,7 +91,7 @@ testSync('Selection', () => {
         dispatchMouseDown(gc);
         dispatch(gc, 'keydown',{code: 'ArrowRight', shiftKey: true});
         testSync('should expand selection', () => {
-            const r = gc.getSelectedRange();
+            const r = gc.selectedRange;
             assert.equal(0, r.rowIndex);
             assert.equal(1, r.rowCount);
             assert.equal(0, r.columnIndex);
@@ -108,7 +108,7 @@ testSync('Selection', () => {
         dispatchMouseDown(gc);
         dispatch(gc, 'keydown', {code: 'ArrowRight', shiftKey: true});
         testSync('should expand selection', () => {
-            const r = gc.getSelectedRange();
+            const r = gc.selectedRange;
             assert.equal(0, r.rowIndex);
             assert.equal(1, r.rowCount);
             assert.equal(0, r.columnIndex);

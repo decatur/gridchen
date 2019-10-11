@@ -1,39 +1,100 @@
+/////////////////////////////
+/// grid-chen APIs
+/////////////////////////////
+
+// TODO: export?
+// TODO: declare
+
 declare module GridChen {
 
     export interface JSONSchema {
         title: string;
-        type?: string;
+        type: string;
+        /**
+         * If properties is set, this schema describes an object.
+         */
         properties?: Object;
+        /**
+         * If items is an array object, this schema describes a fixed length tuple
+         * with item at index having schema items[index].
+         * If items is an object, this schema describes a variable length array
+         * with each item having the object as its schema.
+         */
         items?: Object | Object[];
         readOnly?: boolean;
     }
 
-    export interface IColumnSchema {
-        type: string;
+    export interface ColumnSchema {
+        readonly type: string;
         format?: string;
         title: string;
         width: number;
         fractionDigits?: number;
         sortDirection?: number;
         converter?: Converter;
+        // TODO: Rename according ISO
         frequency?: String;
         enum?: (string|number)[];
         readOnly?: boolean;
     }
 
+    export interface GridSchema {
+        title: string;
+        columnSchemas: ColumnSchema[];
+        ids: string[];
+        readOnly?: boolean;
+    }
+
+    export interface Converter {
+        fromEditable: (a: string) => (number | Date | string | boolean);
+        toTSV: (a: (number | Date | string | boolean)) => string;
+        toEditable: (a: (number | Date | string | boolean)) => string;
+        createElement:() => HTMLElement;
+        render: (element: HTMLElement, value: any) => void;
+    }
+
+    /**
+     * A rectangular range of grid cells.
+     */
     export interface CellRange {
+        /**
+         * Returns the lowest row index in the range.
+         */
         rowIndex: number;
+        /**
+         * Returns the lowest column index in the range.
+         */
         columnIndex: number;
         rowCount: number;
         columnCount: number;
     }
 
-    export interface GridChen extends HTMLDivElement {
+    /**
+     * The Web Component.
+     */
+    export interface GridChen extends HTMLElement {
+        /**
+         * Resets this element based on the specified view.
+         * @param view
+         */
         resetFromView: (view: MatrixView) => GridChen;
-        getPatch: () => object[];
-        resetPatch: () => undefined;
-        getActiveRange: () => CellRange;
-        getSelectedRange: () => CellRange;
+        /**
+         * The accumulated JSON Patch since the last resetFromView() or resetPatch().
+         */
+        readonly patch: object[];
+        /**
+         * Returns the active cell.
+         */
+        readonly activeRange: CellRange;
+        /**
+         * Returns the convex hull of all selected areas.
+         * This always contains the active cell.
+         */
+        readonly selectedRange: CellRange;
+        /**
+         * Empties the accumulated JSON Patch.
+         */
+        resetPatch: () => void;
     }
 
     interface ActiveCellChanged extends Event {
@@ -52,7 +113,7 @@ declare module GridChen {
     export interface PlotEventDetail {
         graphElement: HTMLElement;
         title: string;
-        schemas: IColumnSchema[];
+        schemas: ColumnSchema[];
         columns: number[][];
     }
 
@@ -62,7 +123,7 @@ declare module GridChen {
     export function createView(schema: JSONSchema, view: any[] | object): MatrixView;
 
     export interface MatrixView {
-        schema: IGridSchema;
+        schema: GridSchema;
         columnCount: () => number;
         rowCount: () => number;
         removeModel: () => object[];

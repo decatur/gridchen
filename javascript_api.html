@@ -60,11 +60,11 @@
     }
 
     gridChen.addEventListener('activeCellChanged', /**@param {Event} evt*/ function (evt) {
-        logEvent(evt, gridChen.getActiveRange());
+        logEvent(evt, gridChen.activeRange);
     });
 
     gridChen.addEventListener('selectionChanged', /**@param {Event} evt*/ function (evt) {
-        logEvent(evt, gridChen.getSelectedRange());
+        logEvent(evt, gridChen.selectedRange);
     });
 
     gridChen.addEventListener('dataChanged', /**@param {GridChen.DataChangedEvent} evt*/ function (evt) {
@@ -76,9 +76,9 @@
     });
 
     document.forms[0].save.onclick = function () {
-        const patch = gridChen.getPatch();
+        const patch = gridChen.patch;
         if (patch.length) {
-            logElem.value = 'Saved...\n' + JSON.stringify(gridChen.getPatch(), null, 2);
+            logElem.value = 'Saved...\n' + JSON.stringify(patch, null, 2);
             gridChen.resetPatch();
         } else {
             logElem.value = 'Data is not modified';

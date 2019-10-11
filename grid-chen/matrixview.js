@@ -51,7 +51,7 @@ function updateSortDirection(schemas, colIndex) {
 }
 
 /**
- * @param {GridChen.IColumnSchema[]} schemas
+ * @param {GridChen.ColumnSchema[]} schemas
  */
 function updateSchema(schemas) {
     for (const schema of schemas) {
@@ -301,7 +301,7 @@ function padArray(a, targetLength, path) {
 }
 
 /**
- * @param {GridChen.IGridSchema} schema
+ * @param {GridChen.GridSchema} schema
  * @param {Array<object>} rows
  * @returns {GridChen.MatrixView | Error}
  */
@@ -431,7 +431,7 @@ export function createRowMatrixView(schema, rows) {
 }
 
 /**
- * @param {GridChen.IGridSchema} schema
+ * @param {GridChen.GridSchema} schema
  * @param {Array<object>} rows
  * @returns {GridChen.MatrixView | Error}
  */
@@ -549,7 +549,7 @@ export function createRowObjectsView(schema, rows) {
 }
 
 /**
- * @param {GridChen.IGridSchema} schema
+ * @param {GridChen.GridSchema} schema
  * @param {Array<object>} columns
  */
 export function createColumnMatrixView(schema, columns) {
@@ -683,7 +683,7 @@ export function createColumnMatrixView(schema, columns) {
 }
 
 /**
- * @param {GridChen.IGridSchema} schema
+ * @param {GridChen.GridSchema} schema
  * @param {object} columns
  */
 export function createColumnObjectView(schema, columns) {
@@ -826,7 +826,7 @@ export function createColumnObjectView(schema, columns) {
 }
 
 /**
- * @param {GridChen.IGridSchema} schema
+ * @param {GridChen.GridSchema} schema
  * @param {Array<*>} column
  */
 export function createColumnVectorView(schema, column) {

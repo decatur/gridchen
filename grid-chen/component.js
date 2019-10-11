@@ -146,13 +146,16 @@ export class GridChen extends HTMLElement {
     getRangeByIndexes(rowIndex, columnIndex, rowCount, columnCount) {
     }
 
-    getSelectedRange() {
+    get selectedRange() {
+        return this._getSelectedRange();
     }
 
-    getActiveRange() {
+    get activeRange() {
+        return this._getActiveRange();
     }
 
-    getPatch() {
+    get patch() {
+        return this._getPatch();
     }
 
     resetPatch() {
@@ -228,6 +231,9 @@ class ScrollBar {
     }
 }
 
+/**
+ * @implements {GridChen.CellRange}
+ */
 class Range {
     /**
      * @param {number} rowIndex
@@ -370,7 +376,7 @@ function createGrid(container, viewModel, gridchenElement) {
     const schemas = schema.columnSchemas;
     const totalHeight = parseInt(container.style.height);
     const transactionPatches = [];
-    const transactionPatch = [];
+    let transactionPatch = [];
 
     const rowHeight = lineHeight + 2 * cellBorderWidth;
     const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
@@ -551,7 +557,7 @@ function createGrid(container, viewModel, gridchenElement) {
             refresh();
             transactionPatches.push(transactionPatch);
             gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: transactionPatch}}));
-            transactionPatch.length = 0;
+            transactionPatch = [];
         }
     }
 
@@ -1057,11 +1063,7 @@ function createGrid(container, viewModel, gridchenElement) {
                     let matrix = tsvToMatrix(text);
                     if (matrix) {
                         paste(matrix);
-                        if (transactionPatch.length) {
-                            refresh();
-                            gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: transactionPatch}}));
-                            transactionPatches.push(transactionPatch);
-                        }
+                        flush();
                     }
                 })
                 .catch(err => {
@@ -1186,7 +1188,7 @@ function createGrid(container, viewModel, gridchenElement) {
             return
         }
 
-        /** @type{GridChen.IColumnSchema[]}*/
+        /** @type{GridChen.ColumnSchema[]}*/
         const columnSchemas = [];
         /** @type{number[][]}*/
         const columns = [];
@@ -1517,7 +1519,7 @@ function createGrid(container, viewModel, gridchenElement) {
         }
     }
 
-    gridchenElement.getPatch = function () {
+    gridchenElement._getPatch = function () {
         const allPatches = [];
         transactionPatches.forEach(patch => allPatches.push(...patch));
         return allPatches;
@@ -1526,10 +1528,10 @@ function createGrid(container, viewModel, gridchenElement) {
         transactionPatches.length = 0;
     };
 
-    gridchenElement.getSelectedRange =
+    gridchenElement._getSelectedRange =
         () => new Range1(selection.rowIndex, selection.columnIndex,
             selection.rowCount, selection.columnCount);
-    gridchenElement.getActiveRange =
+    gridchenElement._getActiveRange =
         () => new Range1(activeCell.row, activeCell.col, 1, 1);
     gridchenElement.getRangeByIndexes =
         (rowIndex, columnIndex, rowCount, columnCount) => new Range1(rowIndex, columnIndex, rowCount, columnCount);

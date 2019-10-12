@@ -131,5 +131,10 @@ declare module GridChen {
         setCell: (rowIndex: number, colIndex: number, value: any) => object[];
         splice: (rowIndex: number) => object[];
         sort: (colIndex: number) => number;
+        /**
+         * Undoes one transaction patch if possible and pops it from the list.
+         * @param transactionPatches list of list of patch operations
+         */
+        undo: (transactionPatches: object[][]) => void;
     }
 }

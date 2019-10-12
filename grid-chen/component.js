@@ -7,7 +7,7 @@
 
 //////////////////////
 // Start Configuration
-const DEBUG = false;
+const DEBUG = (location.hostname === 'localhost');
 const cellPadding = 3;
 const scrollBarBorderWidth = 1;
 const scrollBarThumbWidth = 15;
@@ -368,6 +368,7 @@ function createGrid(container, viewModel, gridchenElement) {
     const schemas = schema.columnSchemas;
     const totalHeight = parseInt(container.style.height);
     const transactionPatches = [];
+    const redoPatches = [];
     let transactionPatch = [];
 
     const rowHeight = lineHeight + 2 * cellBorderWidth;
@@ -386,10 +387,6 @@ function createGrid(container, viewModel, gridchenElement) {
     const styleSheet = document.createElement('style');
 
     styleSheet.textContent = `
-        .GRID textarea {
-            background-color: white; border: {cellBorderWidth}px solid black; padding: {cellPadding}px;
-        }
-        
         /* Common style to all data cell elements */
         .GRID span, a {
             position: absolute;
@@ -436,6 +433,16 @@ function createGrid(container, viewModel, gridchenElement) {
             background-color: inherit;
             cursor: help;
             font-size: large;
+        }
+        
+        .GRID input, textarea {
+            color: ${inputColor};
+            background-color: ${inputBackgroundColor};
+            position: absolute;
+            display: none;
+            height: ${innerHeight};
+            padding: ${cellPadding}px;
+            border-width: ${cellBorderWidth}px;
         }
     `;
     container.appendChild(styleSheet);
@@ -559,24 +566,10 @@ function createGrid(container, viewModel, gridchenElement) {
             /** @type{HTMLInputElement} */
             this.input = document.createElement('input');
             this.input.id = 'editor';
-            this.input.style.color = inputColor;
-            this.input.style.backgroundColor = inputBackgroundColor;
-            this.input.style.position = 'absolute';
-            this.input.style.display = 'none';
-            this.input.style.height = innerHeight;
-            this.input.style.padding = cellPadding + 'px';
-            this.input.style.borderWidth = cellBorderWidth + 'px';
 
             /** @type{HTMLTextAreaElement} */
             this.textarea = document.createElement('textarea');
             this.textarea.id = 'textarea';
-            this.textarea.style.color = inputColor;
-            this.textarea.style.backgroundColor = inputBackgroundColor;
-            this.textarea.style.position = 'absolute';
-            this.textarea.style.display = 'none';
-            this.textarea.style.height = innerHeight;
-            this.textarea.style.padding = cellPadding + 'px';
-            this.textarea.style.borderWidth = cellBorderWidth + 'px';
 
             function foo(evt) {
                 // Clicking editor should invoke default: move the caret. It should not delegate to containers action.
@@ -867,11 +860,11 @@ function createGrid(container, viewModel, gridchenElement) {
         }
     };
 
-    cellParent.onmousewheel = function (_evt) {
+    /** @param {WheelEvent} evt */
+    cellParent.onmousewheel = function (evt) {
         logger.log('onmousewheel');
         if ((/** @type {DocumentOrShadowRoot} */container.parentNode).activeElement !== container) return;
 
-        let evt = /** @type {WheelEvent} */ _evt;
         // Do not disable zoom. Both Excel and Browsers zoom on ctrl-wheel.
         if (evt.ctrlKey) return;
         evt.stopPropagation();
@@ -970,7 +963,7 @@ function createGrid(container, viewModel, gridchenElement) {
             alert('This grid is locked!');
             return
         }
-        transactionPatch.push(viewModel.splice(activeCell.row));
+        transactionPatch.push(...viewModel.splice(activeCell.row));
         flush();
     }
 
@@ -1111,6 +1104,27 @@ function createGrid(container, viewModel, gridchenElement) {
                 evt.preventDefault();
                 evt.stopPropagation();
                 activeCell.enterInputMode(evt.key);
+            }
+        } else if (evt.code === 'KeyY' && evt.ctrlKey) {
+            // TODO: Why KeyY and not KeyZ. Is code always us layout?
+            evt.preventDefault();
+            evt.stopPropagation();
+            const patch = transactionPatches.pop();
+            if (patch) {
+                const reversedPatch = viewModel.undo(patch);
+                redoPatches.push(patch);
+                refresh();
+                gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: reversedPatch}}));
+            }
+        } else if (evt.code === 'KeyZ' && evt.ctrlKey) {
+            // Redo
+            evt.preventDefault();
+            evt.stopPropagation();
+            const patch = redoPatches.pop();
+            if (patch) {
+                viewModel.redo(patch);
+                refresh();
+                gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: patch}}));
             }
         }
     };
@@ -1298,7 +1312,7 @@ function createGrid(container, viewModel, gridchenElement) {
                     value = schemas[colIndex].converter.fromEditable(value.trim());
                     //value = value.replace(/\\n/g, '\n');
                 }
-                transactionPatch.push(viewModel.setCell(rowIndex, colIndex, value));
+                transactionPatch.push(...viewModel.setCell(rowIndex, colIndex, value));
             }
         }
 
@@ -1415,7 +1429,7 @@ function createGrid(container, viewModel, gridchenElement) {
             for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
                 let value = matrix[i][j];
                 if (value !== undefined) value = schemas[colIndex].converter.fromEditable(value.trim());
-                transactionPatch.push(viewModel.setCell(rowIndex, colIndex, value));
+                transactionPatch.push(...viewModel.setCell(rowIndex, colIndex, value));
             }
         }
     }

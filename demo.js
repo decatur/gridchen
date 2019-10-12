@@ -47,6 +47,9 @@ export function createInteractiveDemoGrid(schema, orgData) {
             }
 
             let data;
+            if (dataElement.value.trim() === '') {
+                dataElement.value = 'null';
+            }
 
             try {
                 data = REPR.parse(dataElement.value);
@@ -86,7 +89,9 @@ export const REPR = {
      */
     parse(s) {
         s = s.trim();
-        if (s === '') return undefined;
+        if (s === '') {
+            throw new SyntaxError('Unexpected end of REPR input');
+        }
         return eval('(' + s + ')')
     },
     /**

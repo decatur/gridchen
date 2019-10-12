@@ -301,6 +301,108 @@ function padArray(a, targetLength, path) {
 }
 
 /**
+ * @param {{op:string, path:string}} op
+ */
+function reverseOp(op) {
+    if (op.op === 'replace') {
+        // {"op":"replace","path":"/0/1"}
+        return {op:op.op, path:op.path, value:op.oldValue, oldValue:op.value}
+    } else if (op.op === 'add') {
+        // {"op":"add","path":"/-","value":null}
+        // {"op":"add","path":"/1"}
+        return {op:'remove', path:op.path}
+    } else if (op.op === 'remove') {
+        // {"op":"remove","path":"/1","oldValue":["2020-01-01",2]}
+        return {op:'add', path:op.path, value:op.oldValue}
+    }
+    [{"op":"remove","path":"/1","oldValue":["2020-01-01",2]}]
+    throw new Error(JSON.stringify(op))
+}
+
+/**
+ * @param {{data:object}} holder
+ * @param {{op:string, path:string}, value?:*} op
+ */
+function applyOp(holder, op) {
+    const data = holder.data;
+    if (op.op === 'replace') {
+        // {"op":"replace","path":"/0/1"}
+        const path = op.path.split('/');
+        if (path.length === 3) {
+            data[path[1]][path[2]] = op.value;
+        } else if (path.length === 2) {
+            data[path[1]] = op.value;
+        } else {
+            throw new Error(JSON.stringify(op))
+        }
+    } else if (op.op === 'add') {
+        const path = op.path.split('/');
+        if (path.length === 3) {
+            /*if (data[path[1]] == null) {
+                data[path[1]] = []
+            }*/
+
+            data[path[1]][path[2]] = op.value;
+        } else if (path.length === 2) {
+            data.splice(path[1], 0, op.value);
+        } else if (path.length === 1) {
+            data.splice(path[1], 0, op.value);
+        } else {
+            throw new Error(JSON.stringify(op))
+        }
+    } else if (op.op === 'remove') {
+        const path = op.path.split('/');
+        if (path[1] === '-') path[1] = data.length-1;
+
+        if (path.length === 3) {
+            if (path[2] === '-') path[2] = data[path[1]].length-1;
+            if (Array.isArray(data[path[1]])) {
+                data[path[1]].splice(path[2], 1);
+            } else {
+                delete data[path[1]][path[2]];
+            }
+        } else if (path.length === 2) {
+            if (Array.isArray(data)) {
+                data.splice(path[1], 1);
+            } else {
+                delete data[path[1]];
+            }
+        } else {
+            // {"op":"remove","path":""}
+            delete holder.data;
+        }
+    } else {
+        throw new Error(JSON.stringify(op))
+    }
+}
+
+/**
+ * @param {object} holder
+ * @param {object[]} patch
+ */
+function redo(holder, patch) {
+    console.log(JSON.stringify(patch))
+    for (let op of patch) {
+        applyOp(holder, op);
+    }
+}
+
+/**
+ * @param {object} holder
+ * @param {object[]} patch
+ * @returns {object[]}
+ */
+function undo(holder, patch) {
+    const reversedPatch = [];
+    console.log(JSON.stringify(patch))
+    for (let op of patch) {
+        reversedPatch.unshift(reverseOp(op))
+    }
+    redo(holder, reversedPatch);
+    return reversedPatch
+}
+
+/**
  * @param {GridChen.GridSchema} schema
  * @param {Array<object>} rows
  * @returns {GridChen.MatrixView | Error}
@@ -356,8 +458,9 @@ export function createRowMatrixView(schema, rows) {
          * @returns {object[]}
          */
         deleteRow(rowIndex) {
+            const oldValue = rows[rowIndex];
             rows.splice(rowIndex, 1);
-            return [{op: 'remove', path: `/${rowIndex}`}];
+            return [{op: 'remove', path: `/${rowIndex}`, oldValue}];
         }
 
         /**
@@ -384,8 +487,9 @@ export function createRowMatrixView(schema, rows) {
                 if (!rows[rowIndex]) {
                     return patch
                 }
+                const oldValue = rows[rowIndex][colIndex];
                 delete rows[rowIndex][colIndex];
-                patch.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: undefined});
+                patch.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: undefined, oldValue });
                 return patch
             }
 
@@ -403,7 +507,12 @@ export function createRowMatrixView(schema, rows) {
                 patch.push(...padArray(rows[rowIndex], schemas.length, `/${rowIndex}/-`));
             }
 
-            patch.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value});
+            const oldValue = rows[rowIndex][colIndex];
+            if (value === oldValue) {
+                // TODO: assert that patch is empty?
+                return patch
+            }
+            patch.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value, oldValue: oldValue});
 
             rows[rowIndex][colIndex] = value;
             return patch;
@@ -424,6 +533,19 @@ export function createRowMatrixView(schema, rows) {
         sort(colIndex) {
             let [, sortDirection] = updateSortDirection(schemas, colIndex);
             rows.sort((row1, row2) => compare(row1[colIndex], row2[colIndex]) * sortDirection);
+        }
+
+        undo(patch) {
+            const holder = {data:rows};
+            const reversePatch = undo(holder, patch);
+            rows = holder.data;
+            return reversePatch;
+        }
+
+        redo(patch) {
+            const holder = {data:rows};
+            redo(holder, patch);
+            rows = holder.data;
         }
     }
 
@@ -513,17 +635,23 @@ export function createRowObjectsView(schema, rows) {
 
             if (!rows[rowIndex]) {
                 rows[rowIndex] = {};
+                // TODO: Make this an add and previous padArray(rows, rowIndex, '/-')
                 patch.push({op: 'replace', path: `/${rowIndex}`, value: {}});
             }
 
             const key = ids[colIndex];
-            //if (key in rows[rowIndex]) {
-            //    patch.push({op: 'replace', path: `/${rowIndex}/${key}`, value: value});
-            //} else {
-            patch.push({op: 'add', path: `/${rowIndex}/${key}`, value: value});
-            //}
+            const oldValue = rows[rowIndex][key];
+            if (value == null) {
+                patch.push({op: 'remove', path: `/${rowIndex}/${key}`, oldValue});
+                delete rows[rowIndex][key];
+            } else if (oldValue == null) {
+                patch.push({op: 'add', path: `/${rowIndex}/${key}`, value});
+                rows[rowIndex][key] = value;
+            } else {
+                patch.push({op: 'replace', path: `/${rowIndex}/${key}`, value: value, oldValue: oldValue});
+                rows[rowIndex][key] = value;
+            }
 
-            rows[rowIndex][key] = value;
             return patch;
         }
 
@@ -542,6 +670,13 @@ export function createRowObjectsView(schema, rows) {
         sort(colIndex) {
             let [, sortDirection] = updateSortDirection(schemas, colIndex);
             rows.sort((row1, row2) => compare(row1[ids[colIndex]], row2[ids[colIndex]]) * sortDirection);
+        }
+
+        undo(patch) {
+            const holder = {data: rows};
+            const reversePatch = undo(holder, patch);
+            rows = holder.data;
+            return reversePatch;
         }
     }
 
@@ -641,9 +776,11 @@ export function createColumnMatrixView(schema, columns) {
                 patch.push(...padArray(column, rowIndex+1, `/${colIndex}/-`));
             }
 
-            patch.push({op: 'replace', path: `/${colIndex}/${rowIndex}`, value: value});
-
+            const oldValue = columns[colIndex][rowIndex];
+            // Must not use remove operation here!
             columns[colIndex][rowIndex] = value;
+            patch.push({op: 'replace', path: `/${colIndex}/${rowIndex}`, value: value, oldValue});
+
             return patch;
         }
 
@@ -676,6 +813,13 @@ export function createColumnMatrixView(schema, columns) {
                 });
                 columns[j] = sortedColumn;
             });
+        }
+
+        undo(patch) {
+            const holder = {data: columns};
+            const reversePatch = undo(holder, patch);
+            columns = holder.data;
+            return reversePatch;
         }
     }
 
@@ -780,9 +924,11 @@ export function createColumnObjectView(schema, columns) {
                 patch.push(...padArray(column, rowIndex+1, `/${key}/-`));
             }
 
-            patch.push({op: 'replace', path: `/${key}/${rowIndex}`, value: value});
-
+            const oldValue = column[rowIndex];
             column[rowIndex] = value;
+            // Must not use remove operation here!
+            patch.push({op: 'replace', path: `/${key}/${rowIndex}`, value: value, oldValue});
+
             return patch;
         }
 
@@ -819,6 +965,13 @@ export function createColumnObjectView(schema, columns) {
                 });
                 columns[key] = sortedColumn;
             });
+        }
+
+        undo(patch) {
+            const holder = {data: columns};
+            const reversePatch = undo(holder, patch);
+            columns = holder.data;
+            return reversePatch;
         }
     }
 
@@ -901,18 +1054,19 @@ export function createColumnVectorView(schema, column) {
         setCell(rowIndex, colIndex, value) {
             let patch = [];
 
-            if (value == null) {
-                delete column[rowIndex];
-                patch.push({op: 'replace', path: `/${rowIndex}`, value: undefined});
-                return patch
-            }
-
             if (!column) {
                 column = createArray(1 + rowIndex);
                 patch.push({op: 'add', path: '', value: createArray(1 + rowIndex)});
             }
 
-            patch.push({op: 'replace', path: `/${rowIndex}`, value: value});
+            const oldValue = column[rowIndex];
+            if (value == null) {
+                delete column[rowIndex];
+                patch.push({op: 'replace', path: `/${rowIndex}`, value: undefined, oldValue});
+                return patch
+            }
+
+            patch.push({op: 'replace', path: `/${rowIndex}`, value: value, oldValue});
 
             column[rowIndex] = value;
             return patch;
@@ -934,6 +1088,13 @@ export function createColumnVectorView(schema, column) {
             console.assert(colIndex === 0);
             let [, sortDirection] = updateSortDirection([columnSchema], 0);
             column.sort((a, b) => compare(a, b) * sortDirection);
+        }
+
+        undo(patch) {
+            const holder = {data: column};
+            const reversePatch = undo(holder, patch);
+            column = holder.data;
+            return reversePatch;
         }
     }
 

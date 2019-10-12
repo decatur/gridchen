@@ -641,7 +641,9 @@ export function createRowObjectsView(schema, rows) {
 
             const key = ids[colIndex];
             const oldValue = rows[rowIndex][key];
-            if (value == null) {
+            if (value == null && oldValue == null) {
+                // No Op
+            } else if (value == null) {
                 patch.push({op: 'remove', path: `/${rowIndex}/${key}`, oldValue});
                 delete rows[rowIndex][key];
             } else if (oldValue == null) {
@@ -737,10 +739,14 @@ export function createColumnMatrixView(schema, columns) {
          * @returns {object[]}
          */
         deleteRow(rowIndex) {
-            columns.forEach(function (column) {
-                column.splice(rowIndex, 1);
+            const patch = [];
+            columns.forEach(function (column, colIndex) {
+                if (column) {
+                    column.splice(rowIndex, 1);
+                    patch.push({op: 'remove', path: `/${colIndex}/${rowIndex}`})
+                }
             });
-            return range(schemas.length).map(colIndex => ({op: 'remove', path: `/${colIndex}/${rowIndex}`}));
+            return patch;
         }
 
         /**
@@ -791,8 +797,10 @@ export function createColumnMatrixView(schema, columns) {
         splice(rowIndex) {
             let patch = [];
             columns.forEach(function (column, colIndex) {
-                column.splice(rowIndex, 0, undefined);
-                patch.push({op: 'add', path: `/${colIndex}/${rowIndex}`, value: undefined});
+                if (column) {
+                    column.splice(rowIndex, 0, undefined);
+                    patch.push({op: 'add', path: `/${colIndex}/${rowIndex}`, value: undefined});
+                }
             });
             return patch;
         }
@@ -881,10 +889,14 @@ export function createColumnObjectView(schema, columns) {
          * @returns {object[]}
          */
         deleteRow(rowIndex) {
-            Object.values(columns).forEach(function (column) {
+            const patch = [];
+            Object.keys(columns).forEach(function (key) {
+                // TODO: Handle column == null
+                const column = columns[key];
                 column.splice(rowIndex, 1);
+                patch.push({op: 'remove', path: `/${key}/${rowIndex}`})
             });
-            return range(schemas.length).map(colIndex => ({op: 'remove', path: `/${ids[colIndex]}/${rowIndex}`}));
+            return patch;
         }
 
         /**
@@ -918,7 +930,11 @@ export function createColumnObjectView(schema, columns) {
                 patch.push({op: 'add', path: '', value: createEmptyObject()});
             }
 
-            const column = columns[key];
+            let column = columns[key];
+            if (!column) {
+                column = columns[key] = [];
+                patch.push({op: 'add', path: `/${key}`, value: []});
+            }
 
             if (rowIndex >= column.length) {
                 patch.push(...padArray(column, rowIndex+1, `/${key}/-`));
@@ -941,6 +957,7 @@ export function createColumnObjectView(schema, columns) {
             // TODO: Object.values and sort index?
             ids.forEach(function (key) {
                 const column = columns[key];
+                if (!column) return
                 column.splice(rowIndex, 0, undefined);
                 patch.push({op: 'add', path: `/${key}/${rowIndex}`, value: undefined});
             });
@@ -960,6 +977,7 @@ export function createColumnObjectView(schema, columns) {
             ids.forEach(function (key) {
                 const sortedColumn = Array();
                 const column = columns[key];
+                if (!column) return;
                 indexes.forEach(function (index, i) {
                     sortedColumn[i] = column[index[1]];
                 });
@@ -1052,11 +1070,16 @@ export function createColumnVectorView(schema, column) {
          * @returns {object[]}
          */
         setCell(rowIndex, colIndex, value) {
+            if (colIndex !== 0) {
+                throw new RangeError();
+            }
             let patch = [];
 
             if (!column) {
                 column = createArray(1 + rowIndex);
                 patch.push({op: 'add', path: '', value: createArray(1 + rowIndex)});
+            } else if (rowIndex >= column.length) {
+                patch.push(...padArray(column, rowIndex+1, `/-`));
             }
 
             const oldValue = column[rowIndex];

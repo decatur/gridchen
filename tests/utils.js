@@ -3,6 +3,8 @@ window.onerror = function (evt) {
     log(evt);
 };
 
+export let positiveTestNames = []
+
 let errCount = 0;
 
 export function getErrorCount() {
@@ -39,6 +41,10 @@ export async function testAsync(msg, asyncFct) {
 }
 
 export function testSync(msg, syncFct) {
+    if (positiveTestNames.length && !positiveTestNames.includes(msg)) {
+        log('Skipping ' + msg);
+        return
+    }
     const div = log(msg);
     try {
         syncFct();

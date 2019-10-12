@@ -20,6 +20,10 @@
     import {getErrorCount} from './utils.js'
 
     const favLink = document.getElementById('favicon');
+    const m = window.location.search.match(/module=([^&]+)/);
+    if (!m) {
+        throw new Error('Page must be loaded with module query');
+    }
     const moduleName = window.location.search.match(/module=([^&]+)/)[1];
     document.title = moduleName;
     document.getElementById('moduleName').textContent = moduleName;

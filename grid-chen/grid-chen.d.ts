@@ -137,4 +137,13 @@ declare module GridChen {
          */
         undo: (transactionPatches: object[][]) => void;
     }
+
+    export interface JSONPatchOperation {
+        op: string;
+        path: string;
+        value?: any;
+        oldValue?: any;
+    }
+
+    export type JSONPatch = JSONPatchOperation[];
 }

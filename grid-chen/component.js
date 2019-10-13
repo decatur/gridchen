@@ -759,7 +759,7 @@ function createGrid(container, viewModel, gridchenElement) {
             this.mode = 'edit';
             this.enterMode();
             let value = viewModel.getCell(this.row, this.col);
-            if (value === undefined || value === null) {
+            if (value == null) {
                 value = '';
             } else {
                 value = schemas[this.col].converter.toEditable(value);
@@ -1394,14 +1394,14 @@ function createGrid(container, viewModel, gridchenElement) {
             tsvRows[i] = row.map(function (value, j) {
                 let schema = schemas[r.columnIndex + j];
                 if (value == null) {
-                    return undefined;
+                    return null;
                 }
                 value = schema.converter.toTSV(value).trim();
                 if (value.includes('\t') || value.includes('\n')) {
                     value = '"' + value + '"';
                 }
                 return value;
-            }).join(sep);  // Note that a=[undefined, 3].join(',') is ',3', which is what we want.
+            }).join(sep);  // Note that a=[null, 3].join(',') is ',3', which is what we want.
         }
         if (withHeaders) {
             tsvRows.unshift(schemas.map(schema => schema.title).join(sep));

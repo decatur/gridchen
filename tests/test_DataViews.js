@@ -13,13 +13,11 @@ positiveTestNames.push();
  * @param {object} emptyModel
  */
 function testsOnFirstColumn(schema, createModel, emptyModel) {
-    testSync('...set', () => {
+
+    testSync('...getModel', () => {
         const model = createModel();
         const view = createView(schema, model);
-        const patch = view.setCell(1, 0, 'x');
         assert.equal(view.getModel(), model);
-        const patched = jsonPatch.apply_patch(createModel(), patch);
-        assert.equal(patched, model);
     });
 
     testSync('...add', () => {
@@ -50,8 +48,12 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         function deleteCell(rowIndex, columnIndex) {
             const model = createModel();
             const view = createView(schema, model);
-            const patch = view.setCell(rowIndex, columnIndex, undefined);
+            const patch = view.setCell(rowIndex, columnIndex, null);
             const patched = jsonPatch.apply_patch(createModel(), patch);
+            assert.equal(patched, model);
+
+            const reversePatch = view.undo(patch);
+            view.redo(patch);
             assert.equal(patched, model);
         }
 
@@ -71,6 +73,10 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
             const patch = view.setCell(rowIndex, columnIndex, 'x');
             const patched = jsonPatch.apply_patch(createModel(), patch);
             assert.equal(patched, model);
+
+            const reversePatch = view.undo(patch);
+            view.redo(patch);
+            assert.equal(patched, model);
         }
 
         const model = createModel();
@@ -83,9 +89,9 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
     });
 
     testSync('...set-from-scratch', () => {
-        const view = createView(schema, undefined);
+        const view = createView(schema, null);
         const patch = view.setCell(1, 0, 42);
-        const patched = jsonPatch.apply_patch(undefined, patch);
+        const patched = jsonPatch.apply_patch(null, patch);
         assert.equal(patched, view.getModel());
     });
 
@@ -122,6 +128,7 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         const view = createView(schema, createModel());
         const patch = view.removeModel();
         const patched = jsonPatch.apply_patch(createModel(), patch);
+        // jsonPatch does NOT return null, which would be more appropriate.
         assert.equal(patched, undefined);
     });
 }
@@ -134,7 +141,7 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
  */
 
 testSync('RowMatrixView', () => {
-    const createModel = () => [['a', undefined, 'b'], undefined, ['c', undefined, 'd']];
+    const createModel = () => [['a', null, 'b'], null, ['c', null, 'd']];
     const emptyModel = [];
     const schema = {
         "title": "Array of Row Arrays",
@@ -166,7 +173,7 @@ testSync('RowMatrixView', () => {
 });
 
 testSync('RowObjectsView', () => {
-    const createModel = () => [{c1: 'a', c3: 'b'}, undefined, {c1: 'c', c3: 'd'}];
+    const createModel = () => [{c1: 'a', c3: 'b'}, null, {c1: 'c', c3: 'd'}];
     const emptyModel = [];
     const schema = {
         "title": "Array of Row Objects",
@@ -198,8 +205,8 @@ testSync('RowObjectsView', () => {
 });
 
 testSync('ColumnMatrixView', () => {
-    const createModel = () => [['a', undefined, 'c'], undefined, ['b', undefined, 'd']];
-    const emptyModel = [[], undefined, []];
+    const createModel = () => [['a', null, 'c'], null, ['b', null, 'd']];
+    const emptyModel = [[], null, []];
     const schema = {
         "title": "Array of Column Array",
         "type": "object",
@@ -213,12 +220,12 @@ testSync('ColumnMatrixView', () => {
     testsOnFirstColumn(schema, createModel, emptyModel);
 
     testSync('sort', () => {
-        const model = [[1, NaN, 3, 2], ['b', undefined, 'c', 'a']];
+        const model = [[1, NaN, 3, 2], ['b', null, 'c', 'a']];
         const colView = createView(schema, model);
         colView.sort(0);
-        assert.equal([[1, 2, 3, NaN], ['b', 'a', 'c', undefined]], model);
+        assert.equal([[1, 2, 3, NaN], ['b', 'a', 'c', null]], model);
         colView.sort(1);
-        assert.equal([[2, 1, 3, NaN], ['a', 'b', 'c', undefined]], model);
+        assert.equal([[2, 1, 3, NaN], ['a', 'b', 'c', null]], model);
     });
 
 });
@@ -226,8 +233,8 @@ testSync('ColumnMatrixView', () => {
 testSync('ColumnObjectView', () => {
     const createModel = function () {
         return {
-            col1: ['a', undefined, 'c'],
-            col3: ['b', undefined, 'd']
+            col1: ['a', null, 'c'],
+            col3: ['b', null, 'd']
         };
     };
     const emptyModel = {col1: [], col3: []};
@@ -246,19 +253,19 @@ testSync('ColumnObjectView', () => {
     testSync('sort', () => {
         const model = {
             col1: [1, NaN, 3, 2],
-            col2: ['b', undefined, 'c', 'a']
+            col2: ['b', null, 'c', 'a']
         };
         const colView = createView(schema, model);
         colView.sort(0);
-        assert.equal({col1: [1, 2, 3, NaN], col2: ['b', 'a', 'c', undefined]}, model);
+        assert.equal({col1: [1, 2, 3, NaN], col2: ['b', 'a', 'c', null]}, model);
         colView.sort(1);
-        assert.equal({col1: [2, 1, 3, NaN], col2: ['a', 'b', 'c', undefined]}, model);
+        assert.equal({col1: [2, 1, 3, NaN], col2: ['a', 'b', 'c', null]}, model);
     });
 
 });
 
 testSync('ColumnVectorView', () => {
-    const createModel = () => [1, undefined, 3, 2];
+    const createModel = () => [1, null, 3, 2];
     const emptyModel = [];
     const schema = {
         "title": "Single Column",

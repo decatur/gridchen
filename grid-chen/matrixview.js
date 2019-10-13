@@ -114,14 +114,12 @@ function sortedColumns(properties) {
 /**
  * @param {GridChen.JSONSchema} schema
  * @param {?} matrix
- * @returns {MatrixView|Error}
+ * @returns {MatrixView}
  */
 export function createView(schema, matrix) {
     const columnSchemas = createColumnSchemas(schema);
     if (columnSchemas instanceof Error) {
-        const err = new Error('createView() received undefined schema');
-        console.error(err);
-        return err
+        throw columnSchemas;
     }
 
     columnSchemas.readOnly = (typeof schema.readOnly === 'boolean') ? schema.readOnly : false;
@@ -212,6 +210,7 @@ export function createColumnSchemas(schema) {
 
 class MatrixView {
 
+    getModel() {}
     /**
      * @returns {number}
      */
@@ -264,13 +263,20 @@ class MatrixView {
      * @param {GridChen.JSONPatch} patch
      * @returns {GridChen.JSONPatch}
      */
-    undo(patch) {
+    undoPatch(patch) {
+        const reversedPatch = [];
+        //console.log(JSON.stringify(patch))
+        for (let op of patch) {
+            reversedPatch.unshift(reverseOp(op));
+        }
+        this.applyPatch(reversedPatch);
+        return reversedPatch
     }
 
     /**
      * @param {GridChen.JSONPatch} patch
      */
-    redo(patch) {
+    applyPatch(patch) {
     }
 }
 
@@ -299,8 +305,10 @@ class MatrixView {
 // Then
 // Case k < array.length: This is a simple {op:'replace', path:'/k', value:value}.
 // Case k >= array.length: Add k - array.length nulls followed by adding the value, or
-//     for (const l=array.length; l < k; l++) {op:'add', path:'/-', value:null}
-//     {op:'add', path:'/-', value:value}
+//     for (const l=array.length; l < k; l++) {op:'add', path:'/' + l, value:null}
+//     {op:'add', path:'/k', value:value}
+//
+// For the add operation, never use the '-' path fragment, because we cannot revert that operation into a remove.
 
 /**
  * @param {number} length
@@ -314,11 +322,11 @@ function createArray(length, mapfn) {
     return Array.from({length: length}, mapfn)
 }
 
-function padArray(a, targetLength, path) {
+function padArray(a, targetLength, prefix) {
     const patch = [];
     for (let k = a.length; k < targetLength; k++) {
         a[k] = null;
-        patch.push({op: 'add', path: path, value: null});
+        patch.push({op: 'add', path: prefix + k, value: null});
     }
     return patch
 }
@@ -348,62 +356,53 @@ function reverseOp(op) {
  * @param {GridChen.JSONPatchOperation} op
  */
 function applyOp(holder, op) {
-    const data = holder.data;
+    let data = holder.data;
     /** @type{(string|number)[]}*/
     const path = op.path.split('/');
-    if (path[1] === '-') path[1] = data.length - 1;
-    if (path[2] === '-') path[2] = data[path[1]].length - 1;
 
-    if (!(path.length <= 3 && path.length !== 1)) {
+    if (!(path.length <= 3)) {
         // Note we do not support the empty key, i.e. path '/'
         throw new RangeError(JSON.stringify(op))
     }
 
+    function navigate() {
+        path.shift();
+        while (path.length > 1) {
+           data = data[path.shift()];
+        }
+        return path[0]
+    }
+
     if (op.op === 'replace') {
         // {"op":"replace","path":"/0/1"}
-        if (path.length === 3) {
-            data[path[1]][path[2]] = op.value;
-        } else if (path.length === 2) {
-            data[path[1]] = op.value;
-        } else {
+        if (path.length === 1) {
             holder.data = op.value;
+        } else {
+            const index = navigate();
+            data[index] = op.value;
         }
     } else if (op.op === 'add') {
-        if (path.length === 3) {
-            const o = data[path[1]];
-            if (Array.isArray(o)) {
-                o.splice(path[2], 0, op.value);
-            } else {
-                o[path[2]] = op.value;
-            }
-        } else if (path.length === 2) {
-            if (Array.isArray(data)) {
-                data.splice(path[1], 0, op.value);
-            } else {
-                data[path[1]] = op.value;
-            }
-        } else {
+        if (path.length === 1) {
             holder.data = op.value;
+        } else {
+            let index = navigate();
+            if (Array.isArray(data)) {
+                data.splice(index, 0, op.value);
+            } else {
+                data[index] = op.value;
+            }
         }
     } else if (op.op === 'remove') {
-        if (path[1] === '-') path[1] = data.length - 1;
-
-        if (path.length === 3) {
-            if (path[2] === '-') path[2] = data[path[1]].length - 1;
-            if (Array.isArray(data[path[1]])) {
-                data[path[1]].splice(path[2], 1);
-            } else {
-                delete data[path[1]][path[2]];
-            }
-        } else if (path.length === 2) {
-            if (Array.isArray(data)) {
-                data.splice(path[1], 1);
-            } else {
-                delete data[path[1]];
-            }
-        } else {
-            // {"op":"remove","path":""}
+        if (path.length === 1) {
+           // {"op":"remove","path":""}
             delete holder.data;
+        } else {
+            let index = navigate();
+            if (Array.isArray(data)) {
+                data.splice(index, 1);
+            } else {
+                delete data[index];
+            }
         }
     } else {
         // No need to support move, copy, or test.
@@ -415,26 +414,11 @@ function applyOp(holder, op) {
  * @param {object} holder
  * @param {GridChen.JSONPatch} patch
  */
-function redo(holder, patch) {
+function applyPatch(holder, patch) {
     //console.log(JSON.stringify(patch));
     for (let op of patch) {
         applyOp(holder, op);
     }
-}
-
-/**
- * @param {object} holder
- * @param {GridChen.JSONPatch} patch
- * @returns {GridChen.JSONPatch}
- */
-function undo(holder, patch) {
-    const reversedPatch = [];
-    //console.log(JSON.stringify(patch))
-    for (let op of patch) {
-        reversedPatch.unshift(reverseOp(op))
-    }
-    redo(holder, reversedPatch);
-    return reversedPatch
 }
 
 /**
@@ -462,8 +446,9 @@ export function createRowMatrixView(schema, rows) {
         }
 
         removeModel() {
+            const patch = [{op: 'remove', path: '', oldValue:rows}];
             rows = null;
-            return [{op: 'remove', path: ''}];
+            return patch
         }
 
         /**
@@ -534,13 +519,13 @@ export function createRowMatrixView(schema, rows) {
                 patch.push({op: 'add', path: '', value: createArray(1 + rowIndex)});
             }
 
-            patch.push(...padArray(rows, 1 + rowIndex, '/-'));
+            patch.push(...padArray(rows, 1 + rowIndex, '/'));
 
             if (!rows[rowIndex]) {
                 rows[rowIndex] = createArray(1 + colIndex);
-                patch.push({op: 'replace', path: `/${rowIndex}`, value: createArray(1 + colIndex)});
+                patch.push({op: 'replace', path: `/${rowIndex}`, value: createArray(1 + colIndex), oldValue: null});
             } else if (rows[rowIndex].length < schemas.length) {
-                patch.push(...padArray(rows[rowIndex], schemas.length, `/${rowIndex}/-`));
+                patch.push(...padArray(rows[rowIndex], schemas.length, `/${rowIndex}/`));
             }
 
             const oldValue = rows[rowIndex][colIndex];
@@ -571,20 +556,9 @@ export function createRowMatrixView(schema, rows) {
             rows.sort((row1, row2) => compare(row1[colIndex], row2[colIndex]) * sortDirection);
         }
 
-        /**
-         * @param {GridChen.JSONPatch} patch
-         * @returns {GridChen.JSONPatch}
-         */
-        undo(patch) {
+        applyPatch(patch) {
             const holder = {data: rows};
-            const reversePatch = undo(holder, patch);
-            rows = holder.data;
-            return reversePatch;
-        }
-
-        redo(patch) {
-            const holder = {data: rows};
-            redo(holder, patch);
+            applyPatch(holder, patch);
             rows = holder.data;
         }
     }
@@ -621,8 +595,9 @@ export function createRowObjectsView(schema, rows) {
          * @returns {GridChen.JSONPatch}
          */
         removeModel() {
+            const patch = [{op: 'remove', path: '', oldValue:rows}];
             rows = null;
-            return [{op: 'remove', path: ''}];
+            return patch
         }
 
         /**
@@ -672,7 +647,7 @@ export function createRowObjectsView(schema, rows) {
                 patch.push({op: 'add', path: '', value: createArray(1 + rowIndex)});
             }
 
-            patch.push(...padArray(rows, 1 + rowIndex, '/-'));
+            patch.push(...padArray(rows, 1 + rowIndex, '/'));
 
             if (!rows[rowIndex]) {
                 rows[rowIndex] = {};
@@ -715,16 +690,9 @@ export function createRowObjectsView(schema, rows) {
             rows.sort((row1, row2) => compare(row1[ids[colIndex]], row2[ids[colIndex]]) * sortDirection);
         }
 
-        undo(patch) {
+        applyPatch(patch) {
             const holder = {data: rows};
-            const reversePatch = undo(holder, patch);
-            rows = holder.data;
-            return reversePatch;
-        }
-
-        redo(patch) {
-            const holder = {data: rows};
-            redo(holder, patch);
+            applyPatch(holder, patch);
             rows = holder.data;
         }
     }
@@ -764,8 +732,9 @@ export function createColumnMatrixView(schema, columns) {
          * @returns {GridChen.JSONPatch}
          */
         removeModel() {
+            const patch = [{op: 'remove', path: '', oldValue:columns}];
             columns = null;
-            return [{op: 'remove', path: ''}];
+            return patch
         }
 
         /**
@@ -827,7 +796,7 @@ export function createColumnMatrixView(schema, columns) {
             }
 
             if (rowIndex >= column.length) {
-                patch.push(...padArray(column, rowIndex + 1, `/${colIndex}/-`));
+                patch.push(...padArray(column, rowIndex + 1, `/${colIndex}/`));
             }
 
             const oldValue = columns[colIndex][rowIndex];
@@ -871,20 +840,9 @@ export function createColumnMatrixView(schema, columns) {
             });
         }
 
-        /**
-         * @param {GridChen.JSONPatch} patch
-         * @returns {GridChen.JSONPatch}
-         */
-        undo(patch) {
+        applyPatch(patch) {
             const holder = {data: columns};
-            const reversePatch = undo(holder, patch);
-            columns = holder.data;
-            return reversePatch;
-        }
-
-        redo(patch) {
-            const holder = {data: columns};
-            redo(holder, patch);
+            applyPatch(holder, patch);
             columns = holder.data;
         }
     }
@@ -925,8 +883,9 @@ export function createColumnObjectView(schema, columns) {
          * @returns {GridChen.JSONPatch}
          */
         removeModel() {
+            const patch = [{op: 'remove', path: '', oldValue:columns}];
             columns = null;
-            return [{op: 'remove', path: ''}];
+            return patch
         }
 
         /**
@@ -996,7 +955,7 @@ export function createColumnObjectView(schema, columns) {
             }
 
             if (rowIndex >= column.length) {
-                patch.push(...padArray(column, rowIndex + 1, `/${key}/-`));
+                patch.push(...padArray(column, rowIndex + 1, `/${key}/`));
             }
 
             const oldValue = column[rowIndex];
@@ -1049,21 +1008,10 @@ export function createColumnObjectView(schema, columns) {
 
         /**
          * @param {GridChen.JSONPatch} patch
-         * @returns {GridChen.JSONPatch}
          */
-        undo(patch) {
+        applyPatch(patch) {
             const holder = {data: columns};
-            const reversePatch = undo(holder, patch);
-            columns = holder.data;
-            return reversePatch;
-        }
-
-        /**
-         * @param {GridChen.JSONPatch} patch
-         */
-        redo(patch) {
-            const holder = {data: columns};
-            redo(holder, patch);
+            applyPatch(holder, patch);
             columns = holder.data;
         }
     }
@@ -1103,8 +1051,9 @@ export function createColumnVectorView(schema, column) {
          * @returns {GridChen.JSONPatch}
          */
         removeModel() {
+            const patch = [{op: 'remove', path: '', oldValue:column}];
             column = null;
-            return [{op: 'remove', path: ''}];
+            return patch
         }
 
         /**
@@ -1155,7 +1104,7 @@ export function createColumnVectorView(schema, column) {
                 column = createArray(1 + rowIndex);
                 patch.push({op: 'add', path: '', value: createArray(1 + rowIndex)});
             } else if (rowIndex >= column.length) {
-                patch.push(...padArray(column, rowIndex + 1, `/-`));
+                patch.push(...padArray(column, rowIndex + 1, '/'));
             }
 
             const oldValue = column[rowIndex];
@@ -1189,16 +1138,9 @@ export function createColumnVectorView(schema, column) {
             column.sort((a, b) => compare(a, b) * sortDirection);
         }
 
-        undo(patch) {
+        applyPatch(patch) {
             const holder = {data: column};
-            const reversePatch = undo(holder, patch);
-            column = holder.data;
-            return reversePatch;
-        }
-
-        redo(patch) {
-            const holder = {data: column};
-            redo(holder, patch);
+            applyPatch(holder, patch);
             column = holder.data;
         }
     }

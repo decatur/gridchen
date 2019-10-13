@@ -1111,7 +1111,7 @@ function createGrid(container, viewModel, gridchenElement) {
             evt.stopPropagation();
             const patch = transactionPatches.pop();
             if (patch) {
-                const reversedPatch = viewModel.undo(patch);
+                const reversedPatch = viewModel.undoPatch(patch);
                 redoPatches.push(patch);
                 refresh();
                 gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: reversedPatch}}));
@@ -1122,7 +1122,7 @@ function createGrid(container, viewModel, gridchenElement) {
             evt.stopPropagation();
             const patch = redoPatches.pop();
             if (patch) {
-                viewModel.redo(patch);
+                viewModel.applyPatch(patch);
                 refresh();
                 gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: patch}}));
             }

@@ -20,27 +20,27 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         assert.equal(view.getModel(), model);
     });
 
-    testSync('...add', () => {
-        const model = createModel();
-        const view = createView(schema, model);
-        const patch = view.setCell(1, 0, 'x');
-        const patched = jsonPatch.apply_patch(createModel(), patch);
-        assert.equal(patched, model);
-    });
-
     testSync('...setAfterLast', () => {
         const model = createModel();
         const view = createView(schema, model);
-        const patch = view.setCell(4, 0, 'x');
+        const patch = view.setCell(3, 0, 'x');
         const patched = jsonPatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+
+        view.undoPatch(patch);
+        view.applyPatch(patch);
         assert.equal(patched, model);
     });
 
     testSync('...setSecondAfterLast', () => {
         const model = createModel();
         const view = createView(schema, model);
-        const patch = view.setCell(5, 0, 'x');
+        const patch = view.setCell(4, 0, 'x');
         const patched = jsonPatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+
+        view.undoPatch(patch);
+        view.applyPatch(patch);
         assert.equal(patched, model);
     });
 
@@ -52,8 +52,8 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
             const patched = jsonPatch.apply_patch(createModel(), patch);
             assert.equal(patched, model);
 
-            const reversePatch = view.undo(patch);
-            view.redo(patch);
+            view.undoPatch(patch);
+            view.applyPatch(patch);
             assert.equal(patched, model);
         }
 
@@ -74,8 +74,8 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
             const patched = jsonPatch.apply_patch(createModel(), patch);
             assert.equal(patched, model);
 
-            const reversePatch = view.undo(patch);
-            view.redo(patch);
+            view.undoPatch(patch);
+            view.applyPatch(patch);
             assert.equal(patched, model);
         }
 
@@ -93,6 +93,10 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         const patch = view.setCell(1, 0, 42);
         const patched = jsonPatch.apply_patch(null, patch);
         assert.equal(patched, view.getModel());
+
+        view.undoPatch(patch);
+        view.applyPatch(patch);
+        assert.equal(patched, view.getModel());
     });
 
     testSync('...splice', () => {
@@ -100,6 +104,10 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         const view = createView(schema, model);
         const patch = view.splice(1);
         const patched = jsonPatch.apply_patch(createModel(), patch);
+        assert.equal(patched, model);
+
+        view.undoPatch(patch);
+        view.applyPatch(patch);
         assert.equal(patched, model);
     });
 
@@ -109,19 +117,32 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         const patch = view.deleteRow(1);
         const patched = jsonPatch.apply_patch(createModel(), patch);
         assert.equal(patched, model);
+
+        view.undoPatch(patch);
+        view.applyPatch(patch);
+        assert.equal(patched, model);
     });
 
     testSync('...deleteAllRowsAndOne', () => {
         const model = createModel();
         const view = createView(schema, model);
         const rowCount = view.rowCount();
-        view.deleteRow(rowCount);  // NoOp
+        const patches = [];
+        patches.push(view.deleteRow(rowCount));  // NoOp
         for (let i = 0; i < rowCount; i++) {
-            view.deleteRow(0);
+            patches.push(view.deleteRow(0));
         }
         assert.equal(emptyModel, view.getModel());
-        view.deleteRow(0); // NoOp
+        patches.push(view.deleteRow(0)); // NoOp
         assert.equal(emptyModel, view.getModel());
+
+        for (let i=patches.length-1; i>=0; i--) {
+            view.undoPatch(patches[i]);
+        }
+        for (let i=0; i<patches.length; i++) {
+            view.applyPatch(patches[i]);
+        }
+        assert.equal(emptyModel, model);
     });
 
     testSync('...remove', () => {
@@ -130,6 +151,9 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         const patched = jsonPatch.apply_patch(createModel(), patch);
         // jsonPatch does NOT return null, which would be more appropriate.
         assert.equal(patched, undefined);
+
+        view.undoPatch(patch);
+        assert.equal(createModel(), view.getModel());
     });
 }
 
@@ -288,7 +312,11 @@ testSync('ColumnVectorView', () => {
 });
 
 testSync('Test Invalid Schema', () => {
-    const view = createView({title: 'FooBar'}, []);
-    assert.equal('createView() received undefined schema', view.message);
+    try {
+        const view = createView({title: 'FooBar'}, []);
+    } catch (e) {
+        assert.equal("Invalid schema: FooBar", e.message);
+    }
+
 });
 

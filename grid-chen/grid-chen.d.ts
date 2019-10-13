@@ -121,6 +121,7 @@ declare module GridChen {
 
     export interface MatrixView {
         schema: GridSchema;
+        getModel: () => object;
         columnCount: () => number;
         rowCount: () => number;
         removeModel: () => object[];
@@ -131,11 +132,11 @@ declare module GridChen {
         setCell: (rowIndex: number, colIndex: number, value: any) => object[];
         splice: (rowIndex: number) => object[];
         sort: (colIndex: number) => number;
+        applyPatch: (patch: JSONPatch) => void;
         /**
-         * Undoes one transaction patch if possible and pops it from the list.
-         * @param transactionPatches list of list of patch operations
+         * Undoes a patch.
          */
-        undo: (transactionPatches: object[][]) => void;
+        undoPatch: (patch: JSONPatch) => JSONPatch;
     }
 
     export interface JSONPatchOperation {

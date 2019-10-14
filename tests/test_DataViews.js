@@ -1,7 +1,14 @@
 import {testSync, assert, positiveTestNames} from './utils.js'
-import {createView} from '../grid-chen/matrixview.js'
+import {createView, applyJSONPatch} from '../grid-chen/matrixview.js'
 
-const jsonPatch = window.jsonpatch;
+let apply;
+if (window.jsonpatch) {
+    console.log('Using Dharmafly JSONPatch.js');
+    apply = window.jsonpatch.apply_patch;
+} else {
+    console.log('Using our own.')
+    apply = applyJSONPatch;
+}
 
 positiveTestNames.push();
 //positiveTestNames.push(...['RowObjectsView', '...deleteCell11']);
@@ -24,11 +31,11 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(3, 0, 'x');
-        const patched = jsonPatch.apply_patch(createModel(), patch);
+        const patched = apply(createModel(), patch);
         assert.equal(patched, model);
 
         view.undoPatch(patch);
-        view.applyPatch(patch);
+        view.applyJSONPatch(patch);
         assert.equal(patched, model);
     });
 
@@ -36,11 +43,11 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.setCell(4, 0, 'x');
-        const patched = jsonPatch.apply_patch(createModel(), patch);
+        const patched = apply(createModel(), patch);
         assert.equal(patched, model);
 
         view.undoPatch(patch);
-        view.applyPatch(patch);
+        view.applyJSONPatch(patch);
         assert.equal(patched, model);
     });
 
@@ -49,11 +56,11 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
             const model = createModel();
             const view = createView(schema, model);
             const patch = view.setCell(rowIndex, columnIndex, null);
-            const patched = jsonPatch.apply_patch(createModel(), patch);
+            const patched = apply(createModel(), patch);
             assert.equal(patched, model);
 
             view.undoPatch(patch);
-            view.applyPatch(patch);
+            view.applyJSONPatch(patch);
             assert.equal(patched, model);
         }
 
@@ -71,11 +78,11 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
             const model = createModel();
             const view = createView(schema, model);
             const patch = view.setCell(rowIndex, columnIndex, 'x');
-            const patched = jsonPatch.apply_patch(createModel(), patch);
+            const patched = apply(createModel(), patch);
             assert.equal(patched, model);
 
             view.undoPatch(patch);
-            view.applyPatch(patch);
+            view.applyJSONPatch(patch);
             assert.equal(patched, model);
         }
 
@@ -91,11 +98,11 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
     testSync('...set-from-scratch', () => {
         const view = createView(schema, null);
         const patch = view.setCell(1, 0, 42);
-        const patched = jsonPatch.apply_patch(null, patch);
+        const patched = apply(null, patch);
         assert.equal(patched, view.getModel());
 
         view.undoPatch(patch);
-        view.applyPatch(patch);
+        view.applyJSONPatch(patch);
         assert.equal(patched, view.getModel());
     });
 
@@ -103,11 +110,11 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.splice(1);
-        const patched = jsonPatch.apply_patch(createModel(), patch);
+        const patched = apply(createModel(), patch);
         assert.equal(patched, model);
 
         view.undoPatch(patch);
-        view.applyPatch(patch);
+        view.applyJSONPatch(patch);
         assert.equal(patched, model);
     });
 
@@ -115,11 +122,11 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
         const model = createModel();
         const view = createView(schema, model);
         const patch = view.deleteRow(1);
-        const patched = jsonPatch.apply_patch(createModel(), patch);
+        const patched = apply(createModel(), patch);
         assert.equal(patched, model);
 
         view.undoPatch(patch);
-        view.applyPatch(patch);
+        view.applyJSONPatch(patch);
         assert.equal(patched, model);
     });
 
@@ -140,7 +147,7 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
             view.undoPatch(patches[i]);
         }
         for (let i=0; i<patches.length; i++) {
-            view.applyPatch(patches[i]);
+            view.applyJSONPatch(patches[i]);
         }
         assert.equal(emptyModel, model);
     });
@@ -148,7 +155,7 @@ function testsOnFirstColumn(schema, createModel, emptyModel) {
     testSync('...remove', () => {
         const view = createView(schema, createModel());
         const patch = view.removeModel();
-        const patched = jsonPatch.apply_patch(createModel(), patch);
+        const patched = apply(createModel(), patch);
         // jsonPatch does NOT return null, which would be more appropriate.
         assert.equal(patched, undefined);
 

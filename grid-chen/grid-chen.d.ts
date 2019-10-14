@@ -132,7 +132,7 @@ declare module GridChen {
         setCell: (rowIndex: number, colIndex: number, value: any) => object[];
         splice: (rowIndex: number) => object[];
         sort: (colIndex: number) => number;
-        applyPatch: (patch: JSONPatch) => void;
+        applyJSONPatch: (patch: JSONPatch) => void;
         /**
          * Undoes a patch.
          */

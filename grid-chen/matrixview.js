@@ -396,10 +396,12 @@ function applyPatch(holder, patch) {
 }
 
 /**
- * Returns the mutated data object or, if some path is root '', a new object (add) or undefined (remove).
+ * Returns the mutated data (yes, data is mutated) object or, if some path is root '',
+ * a new object (add) or undefined (remove).
  * This is a low budget implementation of RFC 6902 JSON Patch.
  * It does not implement the move, copy, or test operations.
  * It does not support corner cases such as the '-' path or ~ escapes.
+ * It does not do any validation or error handling.
  *
  * @param {object} data
  * @param {GridChen.JSONPatch} patch

@@ -133,10 +133,6 @@ declare module GridChen {
         splice: (rowIndex: number) => object[];
         sort: (colIndex: number) => number;
         applyJSONPatch: (patch: JSONPatch) => void;
-        /**
-         * Undoes a patch.
-         */
-        undoPatch: (patch: JSONPatch) => JSONPatch;
     }
 
     export interface JSONPatchOperation {

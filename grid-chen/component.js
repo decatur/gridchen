@@ -1,3 +1,5 @@
+import {reversePatch} from "./matrixview.js";
+
 /**
  * Author: Wolfgang Kühn 2019
  * Source https://github.com/decatur/grid-chen/grid-chen/component.js
@@ -554,6 +556,7 @@ function createGrid(container, viewModel, gridchenElement) {
     function flush() {
         if (transactionPatch.length) {
             refresh();
+            transactionPatch.cell = {rowIndex: activeCell.row, columnIndex: activeCell.col};
             transactionPatches.push(transactionPatch);
             gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: transactionPatch}}));
             transactionPatch = [];
@@ -1107,27 +1110,37 @@ function createGrid(container, viewModel, gridchenElement) {
             }
         } else if (evt.code === 'KeyY' && evt.ctrlKey) {
             // TODO: Why KeyY and not KeyZ. Is code always us layout?
-            evt.preventDefault();
-            evt.stopPropagation();
-            const patch = transactionPatches.pop();
-            if (patch) {
-                const reversedPatch = viewModel.undoPatch(patch);
-                redoPatches.push(patch);
-                refresh();
-                gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: reversedPatch}}));
-            }
+            evt.preventDefault(); // No evt.stopPropagation() so that parent context can participate in undo.
+            undo();
         } else if (evt.code === 'KeyZ' && evt.ctrlKey) {
-            // Redo
-            evt.preventDefault();
-            evt.stopPropagation();
-            const patch = redoPatches.pop();
-            if (patch) {
-                viewModel.applyPatch(patch);
-                refresh();
-                gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: patch}}));
-            }
+            evt.preventDefault(); // As with undo, no evt.stopPropagation().
+            redo();
         }
     };
+
+    function undo() {
+        const patch = transactionPatches.pop();
+        if (!patch) return;
+        redoPatches.push(patch);
+        const reversedPatch = reversePatch(patch);
+        reversedPatch.cell = patch.cell;
+        applyPatch(reversedPatch);
+    }
+
+    function redo() {
+        const patch = redoPatches.pop();
+        if (!patch) return;
+        transactionPatches.push(patch);
+        applyPatch(patch);
+    }
+
+    function applyPatch(patch) {
+        viewModel.applyJSONPatch(patch);
+        activeCell.move(patch.cell.rowIndex, patch.cell.columnIndex);
+        selection.set(patch.cell.rowIndex, patch.cell.columnIndex);
+        refresh();
+        gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: patch}}));
+    }
 
     function showInfo() {
         let dialog = openDialog();

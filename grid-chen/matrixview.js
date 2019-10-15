@@ -263,20 +263,6 @@ class MatrixView {
 
     /**
      * @param {GridChen.JSONPatch} patch
-     * @returns {GridChen.JSONPatch}
-     */
-    undoPatch(patch) {
-        const reversedPatch = [];
-        //console.log(JSON.stringify(patch))
-        for (let op of patch) {
-            reversedPatch.unshift(reverseOp(op));
-        }
-        this.applyJSONPatch(reversedPatch);
-        return reversedPatch
-    }
-
-    /**
-     * @param {GridChen.JSONPatch} patch
      */
     applyJSONPatch(patch) {
     }
@@ -350,6 +336,18 @@ function reverseOp(op) {
     }
     // No need to support move, copy, or test.
     throw new RangeError(op.op)
+}
+
+/**
+ * @param {GridChen.JSONPatch} patch
+ * @returns {GridChen.JSONPatch}
+ */
+export function reversePatch(patch) {
+    const reversedPatch = [];
+    for (let op of patch) {
+        reversedPatch.unshift(reverseOp(op));
+    }
+    return reversedPatch
 }
 
 /**

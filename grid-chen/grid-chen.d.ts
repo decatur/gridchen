@@ -117,6 +117,17 @@ declare module GridChen {
     interface PlotEvent extends CustomEvent<PlotEventDetail> {
     }
 
+    export interface JSONPatchOperation {
+        op: string;
+        path: string;
+        value?: any;
+        oldValue?: any;
+    }
+
+    export interface JSONPatch extends Array<JSONPatchOperation> {
+        cell: object;
+    }
+
     export function createView(schema: JSONSchema, view: any[] | object): MatrixView;
 
     export interface MatrixView {
@@ -135,12 +146,5 @@ declare module GridChen {
         applyJSONPatch: (patch: JSONPatch) => void;
     }
 
-    export interface JSONPatchOperation {
-        op: string;
-        path: string;
-        value?: any;
-        oldValue?: any;
-    }
 
-    export type JSONPatch = JSONPatchOperation[];
 }

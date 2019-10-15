@@ -32,7 +32,7 @@
 </body>
 
 <script type="module">
-    import "./grid-chen/component.js"
+    import "./grid-chen/webcomponent.js"
     import {createView} from "./grid-chen/matrixview.js"
 
     const schema = {
@@ -67,7 +67,7 @@
         logEvent(evt, gridChen.selectedRange);
     });
 
-    gridChen.addEventListener('dataChanged', /**@param {GridChen.DataChangedEvent} evt*/ function (evt) {
+    gridChen.addEventListener('datachanged', /**@param {GridChen.DataChangedEvent} evt*/ function (evt) {
         logEvent(evt, JSON.stringify(evt.detail.patch));
     });
 

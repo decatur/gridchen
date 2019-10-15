@@ -67,7 +67,7 @@ export function createInteractiveDemoGrid(schema, orgData) {
         tsvElement.value = gridElement._toTSV();
     }
 
-    gridElement.addEventListener('dataChanged', function (evt) {
+    gridElement.addEventListener('datachanged', function (evt) {
         dataElement.value = REPR.stringify(view.getModel(), null, 2);
         patchElement.value = REPR.stringify(evt.detail['patch'], null, 2);
         tsvElement.value = gridElement._toTSV();

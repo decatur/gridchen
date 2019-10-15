@@ -1,5 +1,5 @@
 import {assert, testAsync, log} from './utils.js'
-import '../grid-chen/component.js'
+import '../grid-chen/webcomponent.js'
 import {createRowMatrixView} from "../grid-chen/matrixview.js";
 
 function dispatchKey(gc, eventInitDict) {
@@ -25,7 +25,7 @@ const rows = [
 const view = createRowMatrixView(schema, rows);
 let listener;
 gc.resetFromView(view);
-gc.addEventListener('dataChanged', (evt) => listener(evt));
+gc.addEventListener('datachanged', (evt) => listener(evt));
 
 (async function () {
 

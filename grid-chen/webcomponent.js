@@ -1122,7 +1122,7 @@ function createGrid(container, viewModel, gridchenElement) {
                 refresh();
                 this.scheduledPatch.cell = {rowIndex: activeCell.row, columnIndex: activeCell.col};
                 this.transactionPatches.push(this.scheduledPatch);
-                gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: this.scheduledPatch}}));
+                gridchenElement.dispatchEvent(new CustomEvent('datachanged', {detail: {patch: this.scheduledPatch}}));
                 this.scheduledPatch = [];
             }
         }
@@ -1151,7 +1151,7 @@ function createGrid(container, viewModel, gridchenElement) {
             activeCell.move(patch.cell.rowIndex, patch.cell.columnIndex);
             selection.set(patch.cell.rowIndex, patch.cell.columnIndex);
             refresh();
-            gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: patch}}));
+            gridchenElement.dispatchEvent(new CustomEvent('datachanged', {detail: {patch: patch}}));
         }
 
         clear() {

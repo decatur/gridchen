@@ -16,7 +16,7 @@ See https://decatur.github.io/grid-chen
 <grid-chen></grid-chen>
 </body>
 <script type="module">
-    import "./grid-chen/component.js"
+    import "./webwebcomponent.js"
     import {createView} from "./grid-chen/matrixview.js"
 
     const schema = {

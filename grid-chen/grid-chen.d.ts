@@ -76,7 +76,7 @@ declare module GridChen {
          */
         resetFromView: (view: MatrixView) => GridChen;
         /**
-         * The accumulated JSON Patch since the last resetFromView() or resetPatch().
+         * The accumulated JSON Patch since the last resetFromView() or resetTransactions().
          */
         readonly patch: object[];
         /**
@@ -91,7 +91,7 @@ declare module GridChen {
         /**
          * Empties the accumulated JSON Patch.
          */
-        resetPatch: () => void;
+        resetTransactions: () => void;
     }
 
     interface ActiveCellChanged extends Event {
@@ -124,13 +124,13 @@ declare module GridChen {
         getModel: () => object;
         columnCount: () => number;
         rowCount: () => number;
-        removeModel: () => object[];
-        deleteRow: (rowIndex: number) => object[];
+        removeModel: () => JSONPatch;
+        deleteRow: (rowIndex: number) => JSONPatch;
         getCell: (rowIndex: number, colIndex: number) => any;
         getRow: (rowIndex: number) => any;
         getColumn: (colIndex: number) => any;
-        setCell: (rowIndex: number, colIndex: number, value: any) => object[];
-        splice: (rowIndex: number) => object[];
+        setCell: (rowIndex: number, colIndex: number, value: any) => JSONPatch;
+        splice: (rowIndex: number) => GridChen.JSONPatch;
         sort: (colIndex: number) => number;
         applyJSONPatch: (patch: JSONPatch) => void;
     }

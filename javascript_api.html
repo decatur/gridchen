@@ -79,7 +79,7 @@
         const patch = gridChen.patch;
         if (patch.length) {
             logElem.value = 'Saved...\n' + JSON.stringify(patch, null, 2);
-            gridChen.resetPatch();
+            gridChen.resetTransactions();
         } else {
             logElem.value = 'Data is not modified';
         }

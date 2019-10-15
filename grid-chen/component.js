@@ -152,7 +152,7 @@ export class GridChen extends HTMLElement {
     getRangeByIndexes(rowIndex, columnIndex, rowCount, columnCount) {
     }
 
-    resetPatch() {
+    resetTransactions() {
     }
 }
 
@@ -369,10 +369,6 @@ function createGrid(container, viewModel, gridchenElement) {
     const schema = viewModel.schema;
     const schemas = schema.columnSchemas;
     const totalHeight = parseInt(container.style.height);
-    const transactionPatches = [];
-    const redoPatches = [];
-    let transactionPatch = [];
-
     const rowHeight = lineHeight + 2 * cellBorderWidth;
     const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
 
@@ -552,16 +548,6 @@ function createGrid(container, viewModel, gridchenElement) {
     cellParent.style.width = gridWidth + 'px';
     cellParent.style.height = viewPortHeight + 'px';
     container.tabIndex = 0;
-
-    function flush() {
-        if (transactionPatch.length) {
-            refresh();
-            transactionPatch.cell = {rowIndex: activeCell.row, columnIndex: activeCell.col};
-            transactionPatches.push(transactionPatch);
-            gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: transactionPatch}}));
-            transactionPatch = [];
-        }
-    }
 
     class Editor {
 
@@ -927,7 +913,7 @@ function createGrid(container, viewModel, gridchenElement) {
             for (; rowIndex < endRowIndex; rowIndex++) {
                 //modifiedRows.add(rowIndex);
                 for (let colIndex = r.columnIndex; colIndex < endColIndex; colIndex++) {
-                    transactionPatch.push(...viewModel.setCell(rowIndex, colIndex, undefined));
+                    tm.schedulePatch(viewModel.setCell(rowIndex, colIndex, undefined));
                 }
             }
         }
@@ -938,14 +924,14 @@ function createGrid(container, viewModel, gridchenElement) {
             if (row.some(item => item != null)) {
                 break
             }
-            transactionPatch.push(...viewModel.deleteRow(rowIndex));
+            tm.schedulePatch(viewModel.deleteRow(rowIndex));
             rowIndex--;
         }
 
         if (rowIndex === -1) {
-            transactionPatch.push(...viewModel.removeModel())
+            tm.schedulePatch(viewModel.removeModel())
         }
-        flush();
+        tm.flushScheduledPatches();
     }
 
     function deleteRows() {
@@ -955,10 +941,10 @@ function createGrid(container, viewModel, gridchenElement) {
         }
         for (const r of selection.areas) {
             rangeIterator(r.rowCount).forEach(function () {
-                transactionPatch.push(...viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
+                tm.schedulePatch(viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
             });
         }
-        flush();
+        tm.flushScheduledPatches();
     }
 
     function insertRow() {
@@ -966,8 +952,8 @@ function createGrid(container, viewModel, gridchenElement) {
             alert('This grid is locked!');
             return
         }
-        transactionPatch.push(...viewModel.splice(activeCell.row));
-        flush();
+        tm.schedulePatch(viewModel.splice(activeCell.row));
+        tm.flushScheduledPatches();
     }
 
     function copySelection(doCut, withHeaders) {
@@ -1051,7 +1037,7 @@ function createGrid(container, viewModel, gridchenElement) {
                     let matrix = tsvToMatrix(text);
                     if (matrix) {
                         paste(matrix);
-                        flush();
+                        tm.flushScheduledPatches();
                     }
                 })
                 .catch(err => {
@@ -1111,36 +1097,80 @@ function createGrid(container, viewModel, gridchenElement) {
         } else if (evt.code === 'KeyY' && evt.ctrlKey) {
             // TODO: Why KeyY and not KeyZ. Is code always us layout?
             evt.preventDefault(); // No evt.stopPropagation() so that parent context can participate in undo.
-            undo();
+            tm.undo();
         } else if (evt.code === 'KeyZ' && evt.ctrlKey) {
             evt.preventDefault(); // As with undo, no evt.stopPropagation().
-            redo();
+            tm.redo();
         }
     };
 
-    function undo() {
-        const patch = transactionPatches.pop();
-        if (!patch) return;
-        redoPatches.push(patch);
-        const reversedPatch = reversePatch(patch);
-        reversedPatch.cell = patch.cell;
-        applyPatch(reversedPatch);
+    class TransactionManager {
+        constructor() {
+            this.clear();
+        }
+
+        /**
+         * @param {GridChen.JSONPatch} patch
+         */
+        schedulePatch(patch) {
+            this.redoPatches = [];
+            this.scheduledPatch.push(...patch);
+        }
+
+        flushScheduledPatches() {
+            if (this.scheduledPatch.length) {
+                refresh();
+                this.scheduledPatch.cell = {rowIndex: activeCell.row, columnIndex: activeCell.col};
+                this.transactionPatches.push(this.scheduledPatch);
+                gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: this.scheduledPatch}}));
+                this.scheduledPatch = [];
+            }
+        }
+
+        undo() {
+            const patch = this.transactionPatches.pop();
+            if (!patch) return;
+            this.redoPatches.push(patch);
+            const reversedPatch = reversePatch(patch);
+            reversedPatch.cell = patch.cell;
+            this.applyPatch(reversedPatch);
+        }
+
+        redo() {
+            const patch = this.redoPatches.pop();
+            if (!patch) return;
+            this.transactionPatches.push(patch);
+            this.applyPatch(patch);
+        }
+
+        /**
+         * @param {GridChen.JSONPatch} patch
+         */
+        applyPatch(patch) {
+            viewModel.applyJSONPatch(patch);
+            activeCell.move(patch.cell.rowIndex, patch.cell.columnIndex);
+            selection.set(patch.cell.rowIndex, patch.cell.columnIndex);
+            refresh();
+            gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: patch}}));
+        }
+
+        clear() {
+            this.transactionPatches = [];
+            this.redoPatches = [];
+            this.scheduledPatch = [];
+        }
+
+        /**
+         * @returns {JSONPatchOperation[]}
+         */
+        get patch() {
+            const allPatches = [];
+            this.transactionPatches.forEach(patch => allPatches.push(...patch));
+            return allPatches;
+        }
     }
 
-    function redo() {
-        const patch = redoPatches.pop();
-        if (!patch) return;
-        transactionPatches.push(patch);
-        applyPatch(patch);
-    }
-
-    function applyPatch(patch) {
-        viewModel.applyJSONPatch(patch);
-        activeCell.move(patch.cell.rowIndex, patch.cell.columnIndex);
-        selection.set(patch.cell.rowIndex, patch.cell.columnIndex);
-        refresh();
-        gridchenElement.dispatchEvent(new CustomEvent('dataChanged', {detail: {patch: patch}}));
-    }
+    const tm = new TransactionManager();
 
     function showInfo() {
         let dialog = openDialog();
@@ -1327,13 +1357,13 @@ function createGrid(container, viewModel, gridchenElement) {
                     value = schemas[colIndex].converter.fromEditable(value.trim());
                     //value = value.replace(/\\n/g, '\n');
                 }
-                transactionPatch.push(...viewModel.setCell(rowIndex, colIndex, value));
+                tm.schedulePatch(viewModel.setCell(rowIndex, colIndex, value));
             }
         }
 
         activeCell.mode = 'display';
         container.focus({preventScroll: true});
-        flush();
+        tm.flushScheduledPatches();
     }
 
     /** @type {Array<Array<HTMLElement>>} */
@@ -1444,7 +1474,7 @@ function createGrid(container, viewModel, gridchenElement) {
             for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
                 let value = matrix[i][j];
                 if (value !== undefined) value = schemas[colIndex].converter.fromEditable(value.trim());
-                transactionPatch.push(...viewModel.setCell(rowIndex, colIndex, value));
+                tm.schedulePatch(viewModel.setCell(rowIndex, colIndex, value));
             }
         }
     }
@@ -1544,15 +1574,13 @@ function createGrid(container, viewModel, gridchenElement) {
     Object.defineProperty(gridchenElement, 'patch',
         {
             get: function () {
-                const allPatches = [];
-                transactionPatches.forEach(patch => allPatches.push(...patch));
-                return allPatches;
+                return tm.patch;
             }
         }
     );
 
-    gridchenElement.resetPatch = function () {
-        transactionPatches.length = 0;
+    gridchenElement.resetTransactions = function () {
+        tm.clear();
     };
 
     Object.defineProperty(gridchenElement, 'selectedRange',

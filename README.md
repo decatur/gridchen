@@ -43,7 +43,9 @@ See https://decatur.github.io/grid-chen
 
 # TODOs
 
-* Fix module test_Clipboard
+* Do not use JSON Patch replace for a remove operation!
+* TransactionManager: Do not add properties cell to patch array.
+* Handle clipboard not permitted errors
 * Improve encapsulation of JavaScript API 
 * Show 1 empty row at end (Slider issue)
 * Avoid refreshing complete viewport on cell change

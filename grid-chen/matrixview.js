@@ -679,7 +679,7 @@ export function createRowObjectsView(schema, rows) {
         }
 
         applyJSONPatch(patch) {
-            rows = applyJSONPatch(rows, patch);
+            rows = /**@type{object[]}*/ applyJSONPatch(rows, patch);
         }
     }
 

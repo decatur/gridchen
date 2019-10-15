@@ -1,3 +1,4 @@
+
 function pad(v) {
     return String(v).padStart(2, '0');
 }
@@ -215,4 +216,161 @@ function createLocalDateParser(locale) {
     }
 
     return new LocalDateParser()
+}
+
+/**
+ * @param {GridChen.JSONPatchOperation} op
+ */
+function reverseOp(op) {
+    if (op.op === 'replace') {
+        // {"op":"replace","path":"/0/1"}
+        return {op: op.op, path: op.path, value: op.oldValue, oldValue: op.value}
+    } else if (op.op === 'add') {
+        // {"op":"add","path":"/-","value":null}
+        // {"op":"add","path":"/1"}
+        return {op: 'remove', path: op.path}
+    } else if (op.op === 'remove') {
+        // {"op":"remove","path":"/1","oldValue":["2020-01-01",2]}
+        return {op: 'add', path: op.path, value: op.oldValue}
+    }
+    // No need to support move, copy, or test.
+    throw new RangeError(op.op)
+}
+
+/**
+ * @param {GridChen.JSONPatch} patch
+ * @returns {GridChen.JSONPatch}
+ */
+export function reversePatch(patch) {
+    const reversedPatch = [];
+    for (let op of patch) {
+        reversedPatch.unshift(reverseOp(op));
+    }
+    return reversedPatch
+}
+
+/**
+ * Applies a JSON Patch operation.
+ * @param {{'':object}} holder
+ * @param {GridChen.JSONPatchOperation} op
+ */
+function applyJSONPatchOperation(holder, op) {
+    const path = op.path.split('/');
+
+    while (path.length > 1) {
+        holder = holder[path.shift()];
+    }
+    const index = path[0];
+
+    if (op.op === 'replace') {
+        holder[index] = op.value;
+    } else if (op.op === 'add') {
+        if (Array.isArray(holder)) {
+            (/**@type{object[]}*/holder).splice(parseInt(index), 0, op.value);
+        } else {
+            holder[index] = op.value;
+        }
+    } else if (op.op === 'remove') {
+        if (Array.isArray(holder)) {
+            (/**@type{object[]}*/holder).splice(parseInt(index), 1);
+        } else {
+            delete holder[index];
+        }
+    } else {
+        // No need to support move, copy, or test.
+        throw new RangeError(op.op)
+    }
+}
+
+/**
+ * @param {{'':object}} holder
+ * @param {GridChen.JSONPatch} patch
+ */
+function applyPatch(holder, patch) {
+    for (let op of patch) {
+        applyJSONPatchOperation(holder, op);
+    }
+}
+
+/**
+ * Returns the mutated data (yes, data is mutated) object or, if some path is root '',
+ * a new object (add) or undefined (remove).
+ * This is a low budget implementation of RFC 6902 JSON Patch.
+ * It does not implement the move, copy, or test operations.
+ * It does not support corner cases such as the '-' path or ~ escapes.
+ * It does not do any validation or error handling.
+ *
+ * @param {object} data
+ * @param {GridChen.JSONPatch} patch
+ * @returns {object|undefined}
+ */
+export function applyJSONPatch(data, patch) {
+    const holder = {'': data};
+    applyPatch(holder, patch);
+    return holder[''];
+}
+
+export class TransactionManager {
+    constructor() {
+        this.clear();
+    }
+
+    /**
+     * @param {GridChen.JSONPatch} patch
+     */
+    schedulePatch(patch) {
+        this.redoPatches = [];
+        this.scheduledPatch.push(...patch);
+    }
+
+    flushScheduledPatches(listener) {
+        if (this.scheduledPatch.length) {
+            this.scheduledPatch.listener = listener;
+            this.transactionPatches.push(this.scheduledPatch);
+            // TODO: There should be only one listener called
+            listener.flush(this.scheduledPatch);
+            this.scheduledPatch = [];
+        }
+    }
+
+    undo() {
+        const patch = this.transactionPatches.pop();
+        if (!patch) return;
+        this.redoPatches.push(patch);
+        const reversedPatch = reversePatch(patch);
+        // TODO: Not nice!
+        reversedPatch.cell = patch.cell;
+        // TODO: Not nice!
+        reversedPatch.listener = patch.listener;
+        this.applyPatch(reversedPatch);
+    }
+
+    redo() {
+        const patch = this.redoPatches.pop();
+        if (!patch) return;
+        this.transactionPatches.push(patch);
+        this.applyPatch(patch);
+    }
+
+    /**
+     * @param {GridChen.JSONPatch} patch
+     */
+    applyPatch(patch) {
+        patch.listener.apply(patch);
+    }
+
+    clear() {
+        this.transactionPatches = [];
+        this.redoPatches = [];
+        this.scheduledPatch = [];
+    }
+
+    /**
+     * @returns {JSONPatchOperation[]}
+     */
+    get patch() {
+        const allPatches = [];
+        this.transactionPatches.forEach(patch => allPatches.push(...patch));
+        return allPatches;
+    }
 }

@@ -1,4 +1,4 @@
-import {reversePatch} from "./matrixview.js";
+import {TransactionManager} from "./utils.js";
 
 /**
  * Author: Wolfgang Kühn 2019
@@ -117,9 +117,10 @@ export class GridChen extends HTMLElement {
 
     /**
      * @param {GridChen.MatrixView} viewModel
+     * @param {TransactionManager} transactionManager
      * @returns {GridChen}
      */
-    resetFromView(viewModel) {
+    resetFromView(viewModel, transactionManager) {
         if (this.shadowRoot) {
             this.shadowRoot.removeChild(this.shadowRoot.firstChild);
         } else {
@@ -136,7 +137,7 @@ export class GridChen extends HTMLElement {
             container.innerText = String(viewModel);
             return this
         }
-        createGrid(container, viewModel, this);
+        createGrid(container, viewModel, this, transactionManager);
         this.style.width = container.style.width;
         return this
     }
@@ -364,8 +365,10 @@ class Selection extends Range {
  * @param {HTMLElement} container
  * @param {GridChen.MatrixView} viewModel
  * @param {GridChen} gridchenElement
+ * @param {TransactionManager} tm
  */
-function createGrid(container, viewModel, gridchenElement) {
+function createGrid(container, viewModel, gridchenElement, tm) {
+    tm = tm || new TransactionManager();
     const schema = viewModel.schema;
     const schemas = schema.columnSchemas;
     const totalHeight = parseInt(container.style.height);
@@ -403,9 +406,7 @@ function createGrid(container, viewModel, gridchenElement) {
         a:visited {
             color: var(--a-visited-color); 
         }
-        
-       
-        
+
         /* Important: The selectors string, non-string and error are used exclusively! */
         .GRID .string {
             text-align: left;
@@ -931,7 +932,7 @@ function createGrid(container, viewModel, gridchenElement) {
         if (rowIndex === -1) {
             tm.schedulePatch(viewModel.removeModel())
         }
-        tm.flushScheduledPatches();
+        tm.flushScheduledPatches(tmListener);
     }
 
     function deleteRows() {
@@ -944,7 +945,7 @@ function createGrid(container, viewModel, gridchenElement) {
                 tm.schedulePatch(viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
             });
         }
-        tm.flushScheduledPatches();
+        tm.flushScheduledPatches(tmListener);
     }
 
     function insertRow() {
@@ -953,7 +954,7 @@ function createGrid(container, viewModel, gridchenElement) {
             return
         }
         tm.schedulePatch(viewModel.splice(activeCell.row));
-        tm.flushScheduledPatches();
+        tm.flushScheduledPatches(tmListener);
     }
 
     function copySelection(doCut, withHeaders) {
@@ -1037,7 +1038,7 @@ function createGrid(container, viewModel, gridchenElement) {
                     let matrix = tsvToMatrix(text);
                     if (matrix) {
                         paste(matrix);
-                        tm.flushScheduledPatches();
+                        tm.flushScheduledPatches(tmListener);
                     }
                 })
                 .catch(err => {
@@ -1104,73 +1105,20 @@ function createGrid(container, viewModel, gridchenElement) {
         }
     };
 
-    class TransactionManager {
-        constructor() {
-            this.clear();
-        }
-
-        /**
-         * @param {GridChen.JSONPatch} patch
-         */
-        schedulePatch(patch) {
-            this.redoPatches = [];
-            this.scheduledPatch.push(...patch);
-        }
-
-        flushScheduledPatches() {
-            if (this.scheduledPatch.length) {
-                refresh();
-                this.scheduledPatch.cell = {rowIndex: activeCell.row, columnIndex: activeCell.col};
-                this.transactionPatches.push(this.scheduledPatch);
-                gridchenElement.dispatchEvent(new CustomEvent('datachanged', {detail: {patch: this.scheduledPatch}}));
-                this.scheduledPatch = [];
-            }
-        }
-
-        undo() {
-            const patch = this.transactionPatches.pop();
-            if (!patch) return;
-            this.redoPatches.push(patch);
-            const reversedPatch = reversePatch(patch);
-            reversedPatch.cell = patch.cell;
-            this.applyPatch(reversedPatch);
-        }
-
-        redo() {
-            const patch = this.redoPatches.pop();
-            if (!patch) return;
-            this.transactionPatches.push(patch);
-            this.applyPatch(patch);
-        }
-
-        /**
-         * @param {GridChen.JSONPatch} patch
-         */
-        applyPatch(patch) {
+    const tmListener = {
+        flush (scheduledPatch) {
+            refresh();
+            scheduledPatch.cell = {rowIndex: activeCell.row, columnIndex: activeCell.col};
+            gridchenElement.dispatchEvent(new CustomEvent('datachanged', {detail: {patch: scheduledPatch}}));
+        },
+        apply (patch) {
             viewModel.applyJSONPatch(patch);
             activeCell.move(patch.cell.rowIndex, patch.cell.columnIndex);
             selection.set(patch.cell.rowIndex, patch.cell.columnIndex);
             refresh();
             gridchenElement.dispatchEvent(new CustomEvent('datachanged', {detail: {patch: patch}}));
         }
-
-        clear() {
-            this.transactionPatches = [];
-            this.redoPatches = [];
-            this.scheduledPatch = [];
-        }
-
-        /**
-         * @returns {JSONPatchOperation[]}
-         */
-        get patch() {
-            const allPatches = [];
-            this.transactionPatches.forEach(patch => allPatches.push(...patch));
-            return allPatches;
-        }
-    }
-
-    const tm = new TransactionManager();
+    };
 
     function showInfo() {
         let dialog = openDialog();
@@ -1363,7 +1311,7 @@ function createGrid(container, viewModel, gridchenElement) {
 
         activeCell.mode = 'display';
         container.focus({preventScroll: true});
-        tm.flushScheduledPatches();
+        tm.flushScheduledPatches(tmListener);
     }
 
     /** @type {Array<Array<HTMLElement>>} */

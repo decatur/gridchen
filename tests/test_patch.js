@@ -1,5 +1,5 @@
 import {testSync, assert} from './utils.js'
-import {applyJSONPatch} from "../grid-chen/matrixview.js";
+import {applyJSONPatch} from "../grid-chen/utils.js";
 
 function apply(o, op) {
     return applyJSONPatch(o, [op])

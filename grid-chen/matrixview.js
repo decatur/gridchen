@@ -6,6 +6,7 @@
 // TODO: Rename to matrix-view.js
 
 import * as c from "./converter.js";
+import {applyJSONPatch} from './utils.js'
 
 const numeric = new Set(['number', 'integer']);
 
@@ -16,7 +17,7 @@ function range(count) {
 /**
  * Compare function for all supported data types, i.e. string, numeric, date types, boolean.
  * undefined, null and NaN always compare as bigger in compliance to Excel.
- * TODO: This is not true; Excel compares #WERT! as smaller!
+ * TODO: This is not true; Excel compares #VALUE! as smaller! (What about #VALUE! vs undefined?)
  * @param a
  * @param b
  * @returns {number}
@@ -317,98 +318,6 @@ function padArray(a, targetLength, prefix) {
         patch.push({op: 'add', path: prefix + k, value: null});
     }
     return patch
-}
-
-/**
- * @param {GridChen.JSONPatchOperation} op
- */
-function reverseOp(op) {
-    if (op.op === 'replace') {
-        // {"op":"replace","path":"/0/1"}
-        return {op: op.op, path: op.path, value: op.oldValue, oldValue: op.value}
-    } else if (op.op === 'add') {
-        // {"op":"add","path":"/-","value":null}
-        // {"op":"add","path":"/1"}
-        return {op: 'remove', path: op.path}
-    } else if (op.op === 'remove') {
-        // {"op":"remove","path":"/1","oldValue":["2020-01-01",2]}
-        return {op: 'add', path: op.path, value: op.oldValue}
-    }
-    // No need to support move, copy, or test.
-    throw new RangeError(op.op)
-}
-
-/**
- * @param {GridChen.JSONPatch} patch
- * @returns {GridChen.JSONPatch}
- */
-export function reversePatch(patch) {
-    const reversedPatch = [];
-    for (let op of patch) {
-        reversedPatch.unshift(reverseOp(op));
-    }
-    return reversedPatch
-}
-
-/**
- * Applies a JSON Patch operation.
- * @param {{'':object}} holder
- * @param {GridChen.JSONPatchOperation} op
- */
-function applyJSONPatchOperation(holder, op) {
-    const path = op.path.split('/');
-
-    while (path.length > 1) {
-        holder = holder[path.shift()];
-    }
-    const index = path[0];
-
-    if (op.op === 'replace') {
-        holder[index] = op.value;
-    } else if (op.op === 'add') {
-        if (Array.isArray(holder)) {
-            (/**@type{object[]}*/holder).splice(parseInt(index), 0, op.value);
-        } else {
-            holder[index] = op.value;
-        }
-    } else if (op.op === 'remove') {
-        if (Array.isArray(holder)) {
-            (/**@type{object[]}*/holder).splice(parseInt(index), 1);
-        } else {
-            delete holder[index];
-        }
-    } else {
-        // No need to support move, copy, or test.
-        throw new RangeError(op.op)
-    }
-}
-
-/**
- * @param {{'':object}} holder
- * @param {GridChen.JSONPatch} patch
- */
-function applyPatch(holder, patch) {
-    for (let op of patch) {
-        applyJSONPatchOperation(holder, op);
-    }
-}
-
-/**
- * Returns the mutated data (yes, data is mutated) object or, if some path is root '',
- * a new object (add) or undefined (remove).
- * This is a low budget implementation of RFC 6902 JSON Patch.
- * It does not implement the move, copy, or test operations.
- * It does not support corner cases such as the '-' path or ~ escapes.
- * It does not do any validation or error handling.
- *
- * @param {object} data
- * @param {GridChen.JSONPatch} patch
- * @returns {object|undefined}
- */
-export function applyJSONPatch(data, patch) {
-    const holder = {'': data};
-    applyPatch(holder, patch);
-    return holder[''];
 }
 
 /**

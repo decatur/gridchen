@@ -125,7 +125,7 @@ declare module GridChen {
     }
 
     export interface JSONPatch extends Array<JSONPatchOperation> {
-        cell: object;
+        //cell: object;
     }
 
     export function createView(schema: JSONSchema, view: any[] | object): MatrixView;

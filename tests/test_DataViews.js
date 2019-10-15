@@ -1,5 +1,6 @@
 import {testSync, assert, positiveTestNames} from './utils.js'
-import {createView, applyJSONPatch, reversePatch} from '../grid-chen/matrixview.js'
+import {createView} from '../grid-chen/matrixview.js'
+import {applyJSONPatch, reversePatch} from '../grid-chen/utils.js'
 
 let apply;
 if (window['jsonpatch']) {

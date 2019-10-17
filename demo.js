@@ -1,4 +1,5 @@
 import {createView} from "./grid-chen/matrixview.js"
+import {createTransactionManager} from "./grid-chen/utils.js";
 
 export function createInteractiveDemoGrid(schema, orgData) {
     const container = document.body.appendChild(document.createElement('div'));
@@ -34,6 +35,7 @@ export function createInteractiveDemoGrid(schema, orgData) {
     const patchElement = document.querySelector('.patch textarea');
     const tsvElement = document.querySelector('.tsv textarea');
     const gridElement = container.querySelector('grid-chen');
+    const tm = createTransactionManager();
     let view;
 
     function resetGrid() {
@@ -63,13 +65,16 @@ export function createInteractiveDemoGrid(schema, orgData) {
 
         patchElement.value = '';
         view = newView();
-        gridElement.resetFromView(view);
+        gridElement.resetFromView(view, tm);
         tsvElement.value = gridElement._toTSV();
     }
 
-    gridElement.addEventListener('datachanged', function (evt) {
+    /**
+     * @type {GridChen.Transaction} trans
+     */
+    tm.addEventListener('change', function (trans) {
         dataElement.value = REPR.stringify(view.getModel(), null, 2);
-        patchElement.value = REPR.stringify(evt.detail['patch'], null, 2);
+        patchElement.value = REPR.stringify(trans.patch, null, 2);
         tsvElement.value = gridElement._toTSV();
     });
     schemaElement.value = JSON.stringify(schema, null, 4);

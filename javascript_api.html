@@ -34,6 +34,7 @@
 <script type="module">
     import "./grid-chen/webcomponent.js"
     import {createView} from "./grid-chen/matrixview.js"
+    import {createTransactionManager} from "./grid-chen/utils.js"
 
     const schema = {
         title: 'Array of Row Arrays',
@@ -49,10 +50,11 @@
     const rows = [['2019-01-01', 1], ['2020-01-01', 2], ['2021-01-01', 3]];
     /** @type {GridChen.GridChen} */
     const gridChen = document.querySelector('grid-chen');
+    const tm = createTransactionManager();
     const logElem = document.forms[0].log;
     let logValue = '';
 
-    gridChen.resetFromView(createView(schema, rows));
+    gridChen.resetFromView(createView(schema, rows), tm);
 
     function logEvent(evt, msg) {
         logValue = logElem.value = logValue + evt.type + '\n' + msg + '\n';
@@ -67,8 +69,11 @@
         logEvent(evt, gridChen.selectedRange);
     });
 
-    gridChen.addEventListener('datachanged', /**@param {GridChen.DataChangedEvent} evt*/ function (evt) {
-        logEvent(evt, JSON.stringify(evt.detail.patch));
+    /**
+     * @param {GridChen.TransactionEvent} evt
+     */
+    tm.addEventListener('change', function (evt) {
+        logEvent(evt, JSON.stringify(evt.transaction.patch));
     });
 
     gridChen.addEventListener('plot', /**@param {GridChen.PlotEvent} evt*/ function (evt) {

@@ -41,6 +41,7 @@ gc.addEventListener('datachanged', (evt) => listener(evt));
         await navigator.clipboard.writeText(`0\ta\r\nNaN\tb`);
 
         listener = () => assert.equal([[0, 'a'], [0, 'a'], [NaN, 'b']], rows);
+        throw new Error('listener is not called!');
 
         dispatchKey(gc, {code: 'ArrowDown'});
         dispatchKey(gc, {code: 'KeyV', ctrlKey: true});

@@ -1,4 +1,3 @@
-
 function pad(v) {
     return String(v).padStart(2, '0');
 }
@@ -310,67 +309,94 @@ export function applyJSONPatch(data, patch) {
     return holder[''];
 }
 
-export class TransactionManager {
-    constructor() {
-        this.clear();
-    }
+/**
+ * Creator function for TransactionManager instances.
+ * @returns {GridChen.TransactionManager}
+ */
+export function createTransactionManager() {
+    const listenersByType = {change: []};
 
-    /**
-     * @param {GridChen.JSONPatch} patch
-     */
-    schedulePatch(patch) {
-        this.redoPatches = [];
-        this.scheduledPatch.push(...patch);
-    }
-
-    flushScheduledPatches(listener) {
-        if (this.scheduledPatch.length) {
-            this.scheduledPatch.listener = listener;
-            this.transactionPatches.push(this.scheduledPatch);
-            // TODO: There should be only one listener called
-            listener.flush(this.scheduledPatch);
-            this.scheduledPatch = [];
+    function fireChange(transaction) {
+        const type = 'change';
+        for (let listener of listenersByType[type]) {
+            listener({type, transaction});
         }
     }
 
-    undo() {
-        const patch = this.transactionPatches.pop();
-        if (!patch) return;
-        this.redoPatches.push(patch);
-        const reversedPatch = reversePatch(patch);
-        // TODO: Not nice!
-        reversedPatch.cell = patch.cell;
-        // TODO: Not nice!
-        reversedPatch.listener = patch.listener;
-        this.applyPatch(reversedPatch);
+    class TransactionManager {
+        constructor() {
+            this.clear();
+        }
+
+        addEventListener(type, listener) {
+            listenersByType[type].push(listener);
+        }
+
+        /**
+         * @param {function(GridChen.JSONPatch)} apply
+         * @returns {GridChen.Transaction}
+         */
+        createTransaction(apply) {
+            const tm = this;
+            const trans = /**@type{GridChen.Transaction}*/ {patch: [], apply: apply, detail: {}};
+            trans.commit = function () {
+                tm.transactions.push(trans);
+                fireChange(trans);
+            };
+            return trans
+        }
+
+        undo() {
+            const trans = this.transactions.pop();
+            if (!trans) return;
+            this.redoTransactions.push(trans);
+            const reversedTransaction = /**@type{GridChen.Transaction}*/ Object.assign({}, trans);
+            reversedTransaction.patch = reversePatch(trans.patch);
+            reversedTransaction.apply(reversedTransaction);
+            fireChange(reversedTransaction);
+        }
+
+        redo() {
+            const trans = this.redoTransactions.pop();
+            if (!trans) return;
+            this.transactions.push(trans);
+            trans.apply(trans);
+            fireChange(trans);
+        }
+
+        clear() {
+            this.transactions = [];
+            this.redoTransactions = [];
+        }
+
+        /**
+         * @returns {GridChen.JSONPatch}
+         */
+        get patch() {
+            const allPatches = /**{GridChen.JSONPatch}*/ [];
+            for (let trans of this.transactions) {
+                for (let op of trans.patch) {
+                    const clonedOp = Object.assign({}, op);
+                    clonedOp.path = trans.pathPrefix + op.path;
+                    allPatches.push(clonedOp);
+                }
+            }
+            return allPatches;
+        }
     }
 
-    redo() {
-        const patch = this.redoPatches.pop();
-        if (!patch) return;
-        this.transactionPatches.push(patch);
-        this.applyPatch(patch);
-    }
+    const tm = new TransactionManager();
+    document.body.addEventListener('keydown', function (evt) {
+        if (evt.code === 'KeyY' && evt.ctrlKey) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            tm.undo();
+        } else if (evt.code === 'KeyZ' && evt.ctrlKey) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            tm.redo();
+        }
+    });
 
-    /**
-     * @param {GridChen.JSONPatch} patch
-     */
-    applyPatch(patch) {
-        patch.listener.apply(patch);
-    }
-
-    clear() {
-        this.transactionPatches = [];
-        this.redoPatches = [];
-        this.scheduledPatch = [];
-    }
-
-    /**
-     * @returns {JSONPatchOperation[]}
-     */
-    get patch() {
-        const allPatches = [];
-        this.transactionPatches.forEach(patch => allPatches.push(...patch));
-        return allPatches;
-    }
+    return tm;
 }

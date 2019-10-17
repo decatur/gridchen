@@ -115,7 +115,7 @@ function sortedColumns(properties) {
 /**
  * @param {GridChen.JSONSchema} schema
  * @param {?} matrix
- * @returns {MatrixView}
+ * @returns {GridChen.MatrixView}
  */
 export function createView(schema, matrix) {
     const columnSchemas = createColumnSchemas(schema);
@@ -124,6 +124,7 @@ export function createView(schema, matrix) {
     }
 
     columnSchemas.readOnly = (typeof schema.readOnly === 'boolean') ? schema.readOnly : false;
+    columnSchemas.pathPrefix = schema.pathPrefix || '';
     return columnSchemas.viewCreator(columnSchemas, matrix);
 }
 

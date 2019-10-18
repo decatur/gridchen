@@ -1,5 +1,5 @@
 /////////////////////////////
-/// grid-chen APIs
+/// grid-chen JavaScript APIs
 /////////////////////////////
 
 declare module GridChen {
@@ -37,6 +37,7 @@ declare module GridChen {
     }
 
     export interface GridSchema {
+        pathPrefix: string,
         title: string;
         columnSchemas: ColumnSchema[];
         ids: string[];
@@ -158,9 +159,9 @@ declare module GridChen {
         requestTransaction: (func:() => void) => Promise<void>;
 
         /**
-         * @param {function(GridChen.JSONPatch)} apply
+         * @param apply
          */
-        openTransaction: (apply) => Transaction;
+        openTransaction: (apply:(Transaction)=>void) => Transaction;
 
         undo: () => void;
 

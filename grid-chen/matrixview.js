@@ -3,8 +3,6 @@
  * Source https://github.com/decatur/grid-chen/grid-chen/matrixview.js
  */
 
-// TODO: Rename to matrix-view.js
-
 import * as c from "./converter.js";
 import {applyJSONPatch} from './utils.js'
 
@@ -391,7 +389,10 @@ export function createRowMatrixView(schema, rows) {
          */
         getCell(rowIndex, colIndex) {
             // TODO: Should not be called with rowIndex >= rowCount.
-            if (!rows[rowIndex]) return null;
+            if (!rows[rowIndex])
+            {
+                return null;
+            }
             return rows[rowIndex][colIndex];
         }
 

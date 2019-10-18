@@ -72,9 +72,9 @@ export function createInteractiveDemoGrid(schema, orgData) {
     /**
      * @type {GridChen.Transaction} trans
      */
-    tm.addEventListener('change', function (trans) {
+    tm.addEventListener('change', function (evt) {
         dataElement.value = REPR.stringify(view.getModel(), null, 2);
-        patchElement.value = REPR.stringify(trans.patch, null, 2);
+        patchElement.value = REPR.stringify(evt.transaction.patch, null, 2);
         tsvElement.value = gridElement._toTSV();
     });
     schemaElement.value = JSON.stringify(schema, null, 4);

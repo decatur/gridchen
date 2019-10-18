@@ -256,7 +256,7 @@ export class NumberConverter {
             maximumFractionDigits: fractionDigits
         });
         // Default for maximumFractionDigits is 3.
-        this.nf1 = Intl.NumberFormat(locale, {maximumFractionDigits: 10});
+        this.nf1 = new Intl.NumberFormat(locale, {maximumFractionDigits: 10});
         let testNumber = this.nf1.format(1000.5); // 1.000,50 in de-DE
         this.thousandSep = testNumber[1];
         this.decimalSep = testNumber[5];  // Will be undefined for fractionDigits=0

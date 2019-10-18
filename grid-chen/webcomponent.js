@@ -933,8 +933,9 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         if (rowIndex === -1) {
             trans.patch.push(...viewModel.removeModel());
         }
-        trans.commit();
+
         refresh();
+        trans.commit();
     }
 
     function deleteRows() {
@@ -950,8 +951,9 @@ function createGrid(container, viewModel, gridchenElement, tm) {
                 trans.patch.push(...viewModel.deleteRow(r.rowIndex));  // Note: Always the first row
             });
         }
-        trans.commit();
+
         refresh();
+        trans.commit();
     }
 
     function insertRow() {
@@ -961,8 +963,9 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         }
         const trans = openTransaction();
         trans.patch = viewModel.splice(activeCell.row);
-        trans.commit();
+
         refresh();
+        trans.commit();
     }
 
     function copySelection(doCut, withHeaders) {
@@ -1305,10 +1308,12 @@ function createGrid(container, viewModel, gridchenElement, tm) {
                     value = schemas[colIndex].converter.fromEditable(value.trim());
                     //value = value.replace(/\\n/g, '\n');
                 }
+
                 const trans = openTransaction();
                 trans.patch = viewModel.setCell(rowIndex, colIndex, value);
-                trans.commit();
+                // Note: First refresh, then commit!
                 refresh();
+                trans.commit();
             }
         }
 
@@ -1473,8 +1478,8 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             }
         }
 
-        trans.commit();
         refresh();
+        trans.commit();
     }
 
     function updateViewportRows(matrix) {

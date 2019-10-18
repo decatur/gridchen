@@ -6,6 +6,7 @@ declare module GridChen {
 
     export interface JSONSchema {
         title: string;
+        pathPrefix: string,
         type: string;
         /**
          * If properties is set, this schema describes an object.
@@ -159,7 +160,7 @@ declare module GridChen {
         /**
          * @param {function(GridChen.JSONPatch)} apply
          */
-        createTransaction: (apply) => Transaction;
+        openTransaction: (apply) => Transaction;
 
         undo: () => void;
 
@@ -168,11 +169,10 @@ declare module GridChen {
         clear: () => void;
 
         /**
-         * /**
          * Returns a flat patch set according to JSON Patch https://tools.ietf.org/html/rfc6902
          * of all performed transactions.
          */
-        patch: JSONPatch;
+        readonly patch: JSONPatch;
     }
 
 }

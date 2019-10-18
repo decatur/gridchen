@@ -906,7 +906,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             return
         }
 
-        const trans = createTransaction();
+        const trans = openTransaction();
 
         for (const r of selection.areas) {
             let rowIndex = r.rowIndex;
@@ -943,7 +943,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             return
         }
 
-        const trans = createTransaction();
+        const trans = openTransaction();
 
         for (const r of selection.areas) {
             rangeIterator(r.rowCount).forEach(function () {
@@ -959,7 +959,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             alert('This grid is locked!');
             return
         }
-        const trans = createTransaction();
+        const trans = openTransaction();
         trans.patch = viewModel.splice(activeCell.row);
         trans.commit();
         refresh();
@@ -1113,8 +1113,8 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         refresh();
     }
 
-    function createTransaction() {
-        const trans = tm.createTransaction(tmListener);
+    function openTransaction() {
+        const trans = tm.openTransaction(tmListener);
         trans.pathPrefix = schema.pathPrefix;
         trans.detail = {rowIndex: activeCell.row, columnIndex: activeCell.col};
         return trans;
@@ -1305,7 +1305,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
                     value = schemas[colIndex].converter.fromEditable(value.trim());
                     //value = value.replace(/\\n/g, '\n');
                 }
-                const trans = createTransaction();
+                const trans = openTransaction();
                 trans.patch = viewModel.setCell(rowIndex, colIndex, value);
                 trans.commit();
                 refresh();
@@ -1455,7 +1455,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             alert('You have nothing to paste')
         }
 
-        const trans = createTransaction();
+        const trans = openTransaction();
 
         const sourceRows = matrix.length;
         const sourceColumns = matrix[0].length;

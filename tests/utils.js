@@ -32,12 +32,14 @@ function err(container, err) {
 
 export async function testAsync(msg, asyncFct) {
     const div = log(msg);
+    console.log(`${msg}...`)
     try {
         await asyncFct();
     } catch(e) {
         //log.log(e);
         err(div, e);
     }
+    console.log(`...${msg}`)
 }
 
 export function testSync(msg, syncFct) {
@@ -45,6 +47,7 @@ export function testSync(msg, syncFct) {
         log('Skipping ' + msg);
         return
     }
+    console.log(`${msg}...`)
     const div = log(msg);
     try {
         syncFct();
@@ -52,6 +55,7 @@ export function testSync(msg, syncFct) {
         console.error(e);
         err(div, e);
     }
+    console.log(`...${msg}`)
 }
 
 function error(a, b) {

@@ -154,6 +154,8 @@ declare module GridChen {
 
         addEventListener: (type: string, listener: (evt: TransactionEvent) => void) => void;
 
+        requestTransaction: (func:() => void) => Promise<void>;
+
         /**
          * @param {function(GridChen.JSONPatch)} apply
          */

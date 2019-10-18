@@ -315,11 +315,16 @@ export function applyJSONPatch(data, patch) {
  */
 export function createTransactionManager() {
     const listenersByType = {change: []};
+    const resolves = [];
 
     function fireChange(transaction) {
         const type = 'change';
         for (let listener of listenersByType[type]) {
             listener({type, transaction});
+        }
+
+        while (resolves.length) {
+            resolves.pop()();
         }
     }
 
@@ -330,6 +335,21 @@ export function createTransactionManager() {
 
         addEventListener(type, listener) {
             listenersByType[type].push(listener);
+        }
+
+        removeEventListener(type, listener) {
+            for (let l of listenersByType[type]) {
+                if (l === listener) {
+                    delete listenersByType[type][l];
+                }
+            }
+        }
+
+        async requestTransaction(func) {
+            return new Promise(function(resolve) {
+                resolves.push(resolve);
+                func();
+            });
         }
 
         /**

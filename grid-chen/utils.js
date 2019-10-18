@@ -237,8 +237,8 @@ function reverseOp(op) {
 }
 
 /**
- * @param {GridChen.JSONPatch} patch
- * @returns {GridChen.JSONPatch}
+ * @param {GridChen.JSONPatchOperation[]} patch
+ * @returns {GridChen.JSONPatchOperation[]}
  */
 export function reversePatch(patch) {
     const reversedPatch = [];
@@ -283,7 +283,7 @@ function applyJSONPatchOperation(holder, op) {
 
 /**
  * @param {{'':object}} holder
- * @param {GridChen.JSONPatch} patch
+ * @param {GridChen.JSONPatchOperation[]} patch
  */
 function applyPatch(holder, patch) {
     for (let op of patch) {
@@ -300,7 +300,7 @@ function applyPatch(holder, patch) {
  * It does not do any validation or error handling.
  *
  * @param {object} data
- * @param {GridChen.JSONPatch} patch
+ * @param {GridChen.JSONPatchOperation[]} patch
  * @returns {object|undefined}
  */
 export function applyJSONPatch(data, patch) {
@@ -328,7 +328,12 @@ export function createTransactionManager() {
         }
     }
 
+    /**
+     * @implements {GridChen.TransactionManager}
+     */
     class TransactionManager {
+        patch;
+
         constructor() {
             this.clear();
         }
@@ -353,7 +358,7 @@ export function createTransactionManager() {
         }
 
         /**
-         * @param {function(GridChen.JSONPatch)} apply
+         * @param {function(GridChen.JSONPatchOperation[])} apply
          * @returns {GridChen.Transaction}
          */
         createTransaction(apply) {
@@ -390,10 +395,10 @@ export function createTransactionManager() {
         }
 
         /**
-         * @returns {GridChen.JSONPatch}
+         * @returns {GridChen.JSONPatchOperation[]}
          */
         get patch() {
-            const allPatches = /**{GridChen.JSONPatch}*/ [];
+            const allPatches = [];
             for (let trans of this.transactions) {
                 for (let op of trans.patch) {
                     const clonedOp = Object.assign({}, op);

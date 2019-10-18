@@ -110,21 +110,6 @@ results when converting light to dark mode than grid-chen's native dark mode.
 
 ## Undo & Redo
 
-````                                                             ------------- 
-  ----------               ---------------------                | Ctrl+Z Undo |
- | Web Page |<--has one-->| Transaction Manager |<--listens to->|     &       |
-  ----------               ---------------------                | Ctrl+Y Redo |
-                            ^                 |                  ------------- 
-                        commit               undo
-                       transaction        transaction
-                            |   ------------  |
-                            -- | Web Comp A |<-   
-                            |   ------------  |
-                            |                 |
-                            |  ------------   |
-                            --| Web Comp B |<--
-                               ------------
-                 
-````
+![tm](tm.png)
 
 

@@ -1411,13 +1411,13 @@ function createGrid(container, viewModel, gridchenElement, tm) {
      * @param {number} topRowIndex
      * @param {number} topColIndex
      * @param {Array<Array<string|undefined>>} matrix
-     * @returns {GridChen.JSONPatch}
+     * @returns {GridChen.JSONPatchOperation[]}
      */
     function pasteSingle(topRowIndex, topColIndex, matrix) {
         let rowIndex = topRowIndex;
         let endRowIndex = rowIndex + matrix.length;
         let endColIndex = Math.min(schemas.length, topColIndex + matrix[0].length);
-        /** @type{GridChen.JSONPatch} */
+        /** @type{GridChen.JSONPatchOperation[]} */
         let patch = [];
 
         for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {

@@ -118,7 +118,7 @@ declare module GridChen {
         oldValue?: any;
     }
 
-    export type JSONPatch = Array<JSONPatchOperation>;
+    export type JSONPatch = JSONPatchOperation[];
 
     export function createView(schema: JSONSchema, view: any[] | object): MatrixView;
 
@@ -132,7 +132,7 @@ declare module GridChen {
         getCell: (rowIndex: number, colIndex: number) => any;
         getRow: (rowIndex: number) => any;
         getColumn: (colIndex: number) => any;
-        setCell: (rowIndex: number, colIndex: number, value: any) => JSONPatch;
+        setCell: (rowIndex: number, colIndex: number, value: any) => JSONPatchOperation[];
         splice: (rowIndex: number) => GridChen.JSONPatch;
         sort: (colIndex: number) => number;
         applyJSONPatch: (patch: JSONPatch) => void;

@@ -242,7 +242,7 @@ class MatrixView {
      * @param {number} rowIndex
      * @param {number} colIndex
      * @param value
-     * @returns {GridChen.JSONPatch}
+     * @returns {GridChen.JSONPatchOperation[]}
      */
     setCell(rowIndex, colIndex, value) {
     }
@@ -264,7 +264,7 @@ class MatrixView {
     }
 
     /**
-     * @param {GridChen.JSONPatch} patch
+     * @param {GridChen.JSONPatchOperation[]} patch
      */
     applyJSONPatch(patch) {
     }
@@ -376,7 +376,7 @@ export function createRowMatrixView(schema, rows) {
 
         /**
          * @param {number} rowIndex
-         * @returns {GridChen.JSONPatch}
+         * @returns {GridChen.JSONPatchOperation[]}
          */
         deleteRow(rowIndex) {
             const oldValue = rows[rowIndex];
@@ -457,7 +457,7 @@ export function createRowMatrixView(schema, rows) {
         }
 
         applyJSONPatch(patch) {
-            rows = applyJSONPatch(rows, patch);
+            rows = /**@type{object[]}*/ applyJSONPatch(rows, patch);
         }
     }
 
@@ -737,7 +737,7 @@ export function createColumnMatrixView(schema, columns) {
         }
 
         applyJSONPatch(patch) {
-            columns = applyJSONPatch(columns, patch);
+            columns = /**@type{object[]}*/ applyJSONPatch(columns, patch);
         }
     }
 
@@ -913,7 +913,7 @@ export function createColumnObjectView(schema, columns) {
 
 /**
  * @param {GridChen.GridSchema} schema
- * @param {Array<*>} column
+ * @param {(number|string|boolean|null)[]} column
  */
 export function createColumnVectorView(schema, column) {
     let columnSchema = schema.columnSchemas[0];
@@ -1031,7 +1031,7 @@ export function createColumnVectorView(schema, column) {
         }
 
         applyJSONPatch(patch) {
-            column = applyJSONPatch(column, patch);
+            column = /**@type{(number|string|boolean|null)[]}*/ applyJSONPatch(column, patch);
         }
     }
 

@@ -56,6 +56,7 @@ See https://decatur.github.io/grid-chen
 * [ag-Grid](https://www.ag-grid.com/)
 * [canvas-datagrid](https://github.com/TonyGermaneri/canvas-datagrid)
 * [fin-hypergrid](https://github.com/fin-hypergrid/core)
+* FlexGrid
 
 # Expected Behaviour
 

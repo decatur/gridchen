@@ -1,4 +1,4 @@
-import {test, log, assert} from './utils.js'
+import {test, log, assert} from './grid-chen/utils.js'
 import * as c from "../grid-chen/converter.js";
 
 test('URIConverter', () => {

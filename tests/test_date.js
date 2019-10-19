@@ -1,4 +1,4 @@
-import {test, assert} from './utils.js'
+import {test, assert} from './grid-chen/utils.js'
 import {localeDateParser} from "../grid-chen/utils.js";
 
 test('FullDate', () => {

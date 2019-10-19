@@ -1,4 +1,4 @@
-import {test, log, assert} from './utils.js'
+import {test, log, assert} from './grid-chen/utils.js'
 import {GridChen} from '../grid-chen/webcomponent.js'
 import {createColumnMatrixView, createRowMatrixView} from "../grid-chen/matrixview.js";
 import {NumberConverter} from "../grid-chen/converter.js";

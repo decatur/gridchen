@@ -1,4 +1,4 @@
-import {test, assert} from './utils.js'
+import {test, assert} from './grid-chen/utils.js'
 import {tsvToMatrix} from '../grid-chen/webcomponent.js'
 
 test('tsvToMatrix', () => {

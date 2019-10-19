@@ -1,4 +1,4 @@
-import {assert, test} from './utils.js'
+import {assert, test} from './grid-chen/utils.js'
 import '../grid-chen/webcomponent.js'
 import {createView} from "../grid-chen/matrixview.js";
 import {createTransactionManager} from "../grid-chen/utils.js"

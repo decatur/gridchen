@@ -17,22 +17,27 @@
 <!--<script src="jsonpatch.min.js"></script>-->
 
 <script type="module">
-    import {getErrorCount} from './utils.js'
+    import {getErrorCount, execute, log} from './utils.js'
 
     const favLink = document.getElementById('favicon');
-    const m = window.location.search.match(/module=([^&]+)/);
-    if (!m) {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('module')) {
         throw new Error('Page must be loaded with module query');
     }
-    const moduleName = window.location.search.match(/module=([^&]+)/)[1];
+    const moduleName = params.get('module');
     document.title = moduleName;
     document.getElementById('moduleName').textContent = moduleName;
 
     import(`./${moduleName}.js`)
         .then(function() {
-            favLink.setAttribute('href', `${getErrorCount()?'red':'green'}.png`)
+            return execute(params.get('test'))
         })
-        .catch(() => favLink.setAttribute('href', `red.png`));
+        .then(() => favLink.setAttribute('href', `${getErrorCount()?'red':'green'}.png`))
+        .catch(function(reason) {
+            favLink.setAttribute('href', `red.png`);
+            console.error(reason);
+            log(reason);
+        });
 
 
     window.setTimeout(function() {

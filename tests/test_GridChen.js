@@ -1,4 +1,4 @@
-import {testSync, assert} from './utils.js'
+import {test, log, assert} from './utils.js'
 import {GridChen} from '../grid-chen/webcomponent.js'
 import {createColumnMatrixView, createRowMatrixView} from "../grid-chen/matrixview.js";
 import {NumberConverter} from "../grid-chen/converter.js";
@@ -22,7 +22,7 @@ const schema = {
     columnSchemas: [{title: 'number', type: 'number', width: 0}, {title: 'string', type: 'string', width: 0}]
 };
 
-testSync('Activate Cell', async function () {
+test('Activate Cell', async function () {
     const gc = new GridChen();
     const rows = [
         [0, 'a'],
@@ -31,12 +31,12 @@ testSync('Activate Cell', async function () {
     const view = createRowMatrixView(schema, rows);
     gc.resetFromView(view);
     dispatchMouseDown(gc);
-    const r = gc.getActiveCell();
+    const r = gc.activeRange;
     assert.equal([0, 0, 1, 1], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
 
 });
 
-testSync('Edit Cell', async function () {
+test('Edit Cell', async function () {
     const gc = new GridChen();
     document.body.appendChild(gc);
     const rows = [
@@ -61,7 +61,7 @@ testSync('Edit Cell', async function () {
 
 });
 
-testSync('expand selection with keys', async function () {
+test('expand selection with keys', async function () {
     const gc = new GridChen();
     const rows = [
         [0, 'a'],
@@ -73,67 +73,66 @@ testSync('expand selection with keys', async function () {
     gc.getRangeByIndexes(0, 0, 1, 1).select();
     let r = gc.selectedRange;
     assert.equal([0, 0, 1, 1], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
-    dispatch(gc, 'keydown',{code: 'ArrowRight', shiftKey: true});
+    dispatch(gc, 'keydown', {code: 'ArrowRight', shiftKey: true});
     dispatch(gc, 'keydown', {code: 'ArrowDown', shiftKey: true});
     r = gc.selectedRange;
     assert.equal([0, 0, 2, 2], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
 });
 
-testSync('Selection', () => {
+
+test('ColumnMatrix', () => {
     const gc = new GridChen();
+    gc.resetFromView(createColumnMatrixView(schema, [[new Number(0)], ['a']]));
+    log('ViewportText');
+    assert.equal(`0${decimalSep}00a`, getGridElement(gc).textContent)
 
-    testSync('ColumnMatrix', () => {
-        gc.resetFromView(createColumnMatrixView(schema, [[new Number(0)], ['a']]));
-        testSync('ViewportText', () =>
-            assert.equal(`0${decimalSep}00a`, getGridElement(gc).textContent)
-        );
+    dispatchMouseDown(gc);
+    dispatch(gc, 'keydown', {code: 'ArrowRight', shiftKey: true});
+    log('should expand selection');
+    const r = gc.selectedRange;
+    assert.equal(0, r.rowIndex);
+    assert.equal(1, r.rowCount);
+    assert.equal(0, r.columnIndex);
+    assert.equal(2, r.columnCount);
 
-        dispatchMouseDown(gc);
-        dispatch(gc, 'keydown',{code: 'ArrowRight', shiftKey: true});
-        testSync('should expand selection', () => {
-            const r = gc.selectedRange;
-            assert.equal(0, r.rowIndex);
-            assert.equal(1, r.rowCount);
-            assert.equal(0, r.columnIndex);
-            assert.equal(2, r.columnCount);
-        });
-    });
-
-    testSync('RowMatrix', () => {
-        gc.resetFromView(createRowMatrixView(schema, [[0, 'a']]));
-        testSync('ViewportText', () =>
-            assert.equal(`0${decimalSep}00a`, getGridElement(gc).textContent)
-        );
-
-        dispatchMouseDown(gc);
-        dispatch(gc, 'keydown', {code: 'ArrowRight', shiftKey: true});
-        testSync('should expand selection', () => {
-            const r = gc.selectedRange;
-            assert.equal(0, r.rowIndex);
-            assert.equal(1, r.rowCount);
-            assert.equal(0, r.columnIndex);
-            assert.equal(2, r.columnCount);
-        });
-    });
-
-    testSync('Delete Selected Rows', () => {
-        const rows = [[0, 'a'], [1, 'b']];
-        gc.resetFromView(createRowMatrixView(schema, rows));
-        dispatchMouseDown(gc);
-        // Delete first row
-        dispatch(gc, 'keydown', {key: '-', ctrlKey: true});
-        assert.equal([[1, 'b']], rows);
-
-        // Delete remaining row.
-        dispatch(gc, 'keydown', {key: '-', ctrlKey: true});
-        assert.equal([], rows);
-
-    });
-
-    testSync('View is error', () => {
-        const error = new Error('FooBar');
-        gc.resetFromView(error);
-        assert.equal(String(error), gc.shadowRoot.firstElementChild.textContent);
-    });
 });
+
+test('RowMatrix', () => {
+    const gc = new GridChen();
+    gc.resetFromView(createRowMatrixView(schema, [[0, 'a']]));
+    log('ViewportText');
+    assert.equal(`0${decimalSep}00a`, getGridElement(gc).textContent)
+
+    dispatchMouseDown(gc);
+    dispatch(gc, 'keydown', {code: 'ArrowRight', shiftKey: true});
+    log('should expand selection');
+    const r = gc.selectedRange;
+    assert.equal(0, r.rowIndex);
+    assert.equal(1, r.rowCount);
+    assert.equal(0, r.columnIndex);
+    assert.equal(2, r.columnCount);
+});
+
+test('Delete Selected Rows', () => {
+    const gc = new GridChen();
+    const rows = [[0, 'a'], [1, 'b']];
+    gc.resetFromView(createRowMatrixView(schema, rows));
+    dispatchMouseDown(gc);
+    // Delete first row
+    dispatch(gc, 'keydown', {key: '-', ctrlKey: true});
+    assert.equal([[1, 'b']], rows);
+
+    // Delete remaining row.
+    dispatch(gc, 'keydown', {key: '-', ctrlKey: true});
+    assert.equal([], rows);
+
+});
+
+test('View is error', () => {
+    const gc = new GridChen();
+    const error = new Error('FooBar');
+    gc.resetFromView(error);
+    assert.equal(String(error), gc.shadowRoot.firstElementChild.textContent);
+});
+
 

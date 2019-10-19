@@ -1,7 +1,7 @@
-import {testSync, assert} from './utils.js'
+import {test, log, assert} from './utils.js'
 import * as c from "../grid-chen/converter.js";
 
-testSync('URIConverter', () => {
+test('URIConverter', () => {
     const converter = new c.URIConverter();
     const markdown = '[foobar](http://foobar.org)';
     assert.equal(markdown, converter.toTSV(markdown));
@@ -19,7 +19,7 @@ testSync('URIConverter', () => {
     assert.equal('error', elem.className);
 });
 
-testSync('BooleanStringConverter', () => {
+test('BooleanStringConverter', () => {
     let converter = new c.BooleanStringConverter();
     assert.equal('true', converter.toTSV(true));
     assert.equal('true', converter.toEditable(true));
@@ -42,7 +42,7 @@ testSync('BooleanStringConverter', () => {
     assert.equal('error', elem.className);
 });
 
-testSync('NumberConverter', () => {
+test('NumberConverter', () => {
     function pi(locale, fractionDigits, piLongString, piShortString) {
         const converter = new c.NumberConverter(fractionDigits, locale);
         assert.equal(piLongString, converter.toTSV(Math.PI));
@@ -76,7 +76,7 @@ function assertNotADate(converter, elem) {
     assert.equal('error', elem.className);
 }
 
-testSync('FullDateStringConverter', () => {
+test('FullDateStringConverter', () => {
     function run(locale, localizedDates) {
         let converter = new c.FullDateStringConverter(locale);
         assert.equal('not_a_date', converter.toTSV('not_a_date'));
@@ -93,16 +93,16 @@ testSync('FullDateStringConverter', () => {
         assertNotADate(converter, elem);
     }
 
-    testSync('... default',
-        () => run(undefined, ['2019-10-27']));
-    testSync('... de',
-        () => run('de', ['2019-10-27', '27.10.2019']));
-    testSync('... en',
-        () => run('en', ['2019-10-27', '10/27/2019']))
+    log('... default');
+    run(undefined, ['2019-10-27']);
+    log('... de');
+    run('de', ['2019-10-27', '27.10.2019']);
+    log('... en');
+    run('en', ['2019-10-27', '10/27/2019']);
 });
 
 
-testSync('DatePartialTimeStringConverter', () => {
+test('DatePartialTimeStringConverter', () => {
     function run(locale, localizedDates) {
         let converter = new c.DatePartialTimeStringConverter('M', locale);
         assert.equal('not_a_date', converter.toTSV('not_a_date'));
@@ -119,16 +119,16 @@ testSync('DatePartialTimeStringConverter', () => {
         assertNotADate(converter, elem);
     }
 
-    testSync('... default',
-        () => run(undefined, ['2019-10-27T02:00']));
-    testSync('... de',
-        () => run('de', ['2019-10-27T02:00', '27.10.2019 02:00']));
-    testSync('... en',
-        () => run('en', ['2019-10-27T02:00', '10/27/2019 02:00']))
+    log('... default');
+    run(undefined, ['2019-10-27T02:00']);
+    log('... de');
+    run('de', ['2019-10-27T02:00', '27.10.2019 02:00']);
+    log('... en');
+    run('en', ['2019-10-27T02:00', '10/27/2019 02:00']);
 
 });
 
-testSync('DateTimeStringConverter', () => {
+test('DateTimeStringConverter', () => {
     function run(locale, localizedDates) {
         let converter = new c.DateTimeStringConverter(undefined, locale);
         assert.equal('not_a_date', converter.toTSV('not_a_date'));
@@ -146,15 +146,15 @@ testSync('DateTimeStringConverter', () => {
         assertNotADate(converter, elem);
     }
 
-    testSync('... default',
-        () => run(undefined, sampleDateTimes['default']));
-    testSync('... de',
-        () => run('de', sampleDateTimes['de']));
-    testSync('... en',
-        () => run('en', sampleDateTimes['en']))
+    log('... default');
+    run(undefined, sampleDateTimes['default']);
+    log('... de');
+    run('de', sampleDateTimes['de']);
+    log('... en');
+    run('en', sampleDateTimes['en']);
 });
 
-testSync('FullDateConverter', () => {
+test('FullDateConverter', () => {
     function run(locale, localizedDates) {
         let converter = new c.FullDateConverter(locale);
         let d = new Date(Date.UTC(2019, 9, 27));
@@ -172,15 +172,15 @@ testSync('FullDateConverter', () => {
         assertNotADate(converter, elem);
     }
 
-    testSync('... default',
-        () => run(undefined, ['2019-10-27']));
-    testSync('... de',
-        () => run('de', ['2019-10-27', '27.10.2019']));
-    testSync('... en',
-        () => run('en', ['2019-10-27', '10/27/2019']))
+    log('... default');
+    run(undefined, ['2019-10-27']);
+    log('... de');
+    run('de', ['2019-10-27', '27.10.2019']);
+    log('... en');
+    run('en', ['2019-10-27', '10/27/2019']);
 });
 
-testSync('DatePartialTimeConverter Minute', () => {
+test('DatePartialTimeConverter Minute', () => {
     function run(locale, localizedDates) {
         let converter = new c.DatePartialTimeConverter(undefined, locale);
         let d = new Date(Date.UTC(2019, 9, 27, 2, 0));
@@ -200,15 +200,15 @@ testSync('DatePartialTimeConverter Minute', () => {
         assertNotADate(converter, elem);
     }
 
-    testSync('... default',
-        () => run(undefined, ['2019-10-27 02:00', '2019-10-27T02:00']));
-    testSync('... de',
-        () => run('de', ['27.10.2019 02:00']));
-    testSync('... en',
-        () => run('en', ['10/27/2019 02:00']))
+    log('... default');
+    run(undefined, ['2019-10-27 02:00', '2019-10-27T02:00']);
+    log('... de');
+    run('de', ['27.10.2019 02:00']);
+    log('... en');
+    run('en', ['10/27/2019 02:00']);
 });
 
-testSync('DatePartialTimeConverter Hour', () => {
+test('DatePartialTimeConverter Hour', () => {
     function run(locale, localizedDates) {
         let converter = new c.DatePartialTimeConverter('H', locale);
         let d = new Date(Date.UTC(2019, 9, 27, 2, 0));
@@ -228,15 +228,15 @@ testSync('DatePartialTimeConverter Hour', () => {
         assertNotADate(converter, elem);
     }
 
-    testSync('... default',
-        () => run(undefined, ['2019-10-27 02:00', '2019-10-27T02:00']));
-    testSync('... de',
-        () => run('de', ['27.10.2019 02:00']));
-    testSync('... en',
-        () => run('en', ['10/27/2019 02:00']))
+    log('... default');
+    run(undefined, ['2019-10-27 02:00', '2019-10-27T02:00']);
+    log('... de');
+    run('de', ['27.10.2019 02:00']);
+    log('... en');
+    run('en', ['10/27/2019 02:00']);
 });
 
-testSync('DateTimeConverter Minute', () => {
+test('DateTimeConverter Minute', () => {
     function run(locale, localizedDates) {
         let converter = new c.DateTimeConverter('M', locale);
         let d = new Date('2019-10-27T02:00+02:00');
@@ -254,15 +254,15 @@ testSync('DateTimeConverter Minute', () => {
         assertNotADate(converter, elem);
     }
 
-    testSync('... default',
-        () => run(undefined, sampleDateTimes['default']));
-    testSync('... de',
-        () => run('de', sampleDateTimes['de']));
-    testSync('... en',
-        () => run('en', sampleDateTimes['en']))
+    log('... default');
+    run(undefined, sampleDateTimes['default']);
+    log('... de');
+    run('de', sampleDateTimes['de']);
+    log('... en');
+    run('en', sampleDateTimes['en']);
 });
 
-testSync('DateTimeConverter Hour', () => {
+test('DateTimeConverter Hour', () => {
     function run(locale, localizedDates) {
         let converter = new c.DateTimeConverter('H', locale);
         let d = new Date('2019-10-27T02:00+02:00');
@@ -280,12 +280,12 @@ testSync('DateTimeConverter Hour', () => {
         assertNotADate(converter, elem);
     }
 
-    testSync('... default',
-        () => run(undefined, sampleDateTimes['default']));
-    testSync('... de',
-        () => run('de', sampleDateTimes['de']));
-    testSync('... en',
-        () => run('en', sampleDateTimes['en']))
+    log('... default');
+    run(undefined, sampleDateTimes['default']);
+    log('... de');
+    run('de', sampleDateTimes['de']);
+    log('... en');
+    run('en', sampleDateTimes['en']);
 
 });
 

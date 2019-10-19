@@ -1,7 +1,7 @@
-import {testSync, assert} from './utils.js'
+import {test, assert} from './utils.js'
 import {localeDateParser} from "../grid-chen/utils.js";
 
-testSync('FullDate', () => {
+test('FullDate', () => {
     let parser = localeDateParser();
     assert.equal([2019, 9, 27], parser.fullDate('2019-10-27'));
     assert.equal(SyntaxError, parser.fullDate('27.10').constructor);
@@ -9,7 +9,7 @@ testSync('FullDate', () => {
     assert.equal(SyntaxError, parser.fullDate('27/10/2019').constructor);
 });
 
-testSync('deFullDate', () => {
+test('deFullDate', () => {
     let parser = localeDateParser('de');
     assert.equal([2019, 9, 27], parser.fullDate('2019-10-27'));
     assert.equal([2019, 9, 27], parser.fullDate('27.10.2019'));
@@ -18,7 +18,7 @@ testSync('deFullDate', () => {
     assert.equal(SyntaxError, parser.fullDate('27/10/2019').constructor);
 });
 
-testSync('enFullDate', () => {
+test('enFullDate', () => {
     let parser = localeDateParser('en');
     assert.equal([2019, 9, 27], parser.fullDate('2019-10-27'));
     assert.equal([2019, 9, 27], parser.fullDate('10/27/2019'));
@@ -27,7 +27,7 @@ testSync('enFullDate', () => {
     assert.equal(SyntaxError, parser.fullDate('27.10.2019').constructor);
 });
 
-testSync('deDatePartialTime', () => {
+test('deDatePartialTime', () => {
     let parser = localeDateParser('de');
     assert.equal([2019, 9, 27, 1, 2], parser.datePartialTime('2019-10-27 01:02'));
     assert.equal([2019, 9, 27, 1, 2], parser.datePartialTime('27.10.2019 01:02'));
@@ -35,7 +35,7 @@ testSync('deDatePartialTime', () => {
     assert.equal(SyntaxError, parser.datePartialTime('foo 01:00').constructor);
 });
 
-testSync('deDateTime', () => {
+test('deDateTime', () => {
     let parser = localeDateParser('de');
     assert.equal([2019, 9, 27, 1, 2, 0, 0], parser.dateTime('2019-10-27 01:02Z'));
     assert.equal([2019, 9, 27, 1, 2, 1, 0], parser.dateTime('27.10.2019 01:02+01:00'));

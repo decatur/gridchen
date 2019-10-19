@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Suite Runner</title>
-    <link rel="stylesheet" href="../demo.css">
-    <script src="../theme.js"></script>
+    <link rel="stylesheet" href="../../demo.css">
+    <script src="../../theme.js"></script>
 </head>
 <body>
 
-<h1><a href="../index.html">GridChen Index</a> / Test Suite Runner</h1>
+<h1><a href="../../index.html">Index</a> / Test Suite Runner</h1>
 
 <button id="runAllTests">Run all tests</button>
 
@@ -24,10 +24,10 @@
      * 2. In generated iframes access to the clipboard is restricted. So we use a new browser window, not an iframe.
      * 3. We rely on the given browser functionality such as 'Close Other Tabs'
      */
-    import "../grid-chen/webcomponent.js"
-    import {createView} from "../grid-chen/matrixview.js"
+    import "../../grid-chen/webcomponent.js"
+    import {createView} from "../../grid-chen/matrixview.js"
+    import {modules} from "../modules.js"
 
-    const modules = ['test_patch', 'test_date', 'test_GridChen', 'test_Clipboard', "test_Converter", "test_tsvToMatrix", "test_DataViews"];
     let modulesToRun;
 
     function nextModule() {
@@ -43,7 +43,6 @@
         }
     };
 
-    //nextModule()
     const schema = {
         title: 'Test Suite',
         type: 'array',

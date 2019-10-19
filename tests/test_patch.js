@@ -1,4 +1,4 @@
-import {test, assert} from './utils.js'
+import {test, assert} from './grid-chen/utils.js'
 import {applyJSONPatch} from "../grid-chen/utils.js";
 
 function apply(o, op) {

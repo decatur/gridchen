@@ -4,17 +4,15 @@
     <meta charset="UTF-8">
     <title>module name</title>
     <link id="favicon" rel="shortcut icon" type="image/png" href="yellow.png">
-    <script src="../theme.js"></script>
+    <script src="../../theme.js"></script>
 </head>
 <body>
-<h1><a href="../index.html">GridChen Index</a> / Running Unit Test <span id="moduleName"/></h1>
+<h1><a href="../../index.html">Index</a> / Running Unit Test <span id="moduleName"/></h1>
 <p>
     Open JavaScript console for details
 </p>
 
 </body>
-
-<!--<script src="jsonpatch.min.js"></script>-->
 
 <script type="module">
     import {getErrorCount, execute, log} from './utils.js'
@@ -28,7 +26,7 @@
     document.title = moduleName;
     document.getElementById('moduleName').textContent = moduleName;
 
-    import(`./${moduleName}.js`)
+    import(`../${moduleName}.js`)
         .then(function() {
             return execute(params.get('test'))
         })

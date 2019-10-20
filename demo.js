@@ -1,5 +1,5 @@
 import {createView} from "./grid-chen/matrixview.js"
-import {createTransactionManager} from "./grid-chen/utils.js";
+import {registerGlobalTransactionManager} from "./grid-chen/utils.js";
 
 export function createInteractiveDemoGrid(schema, orgData) {
     const container = document.body.appendChild(document.createElement('div'));
@@ -35,7 +35,7 @@ export function createInteractiveDemoGrid(schema, orgData) {
     const patchElement = document.querySelector('.patch textarea');
     const tsvElement = document.querySelector('.tsv textarea');
     const gridElement = container.querySelector('grid-chen');
-    const tm = createTransactionManager();
+    const tm = registerGlobalTransactionManager();
     let view;
 
     function resetGrid() {

@@ -3,10 +3,6 @@ import '../grid-chen/webcomponent.js'
 import {createView} from "../grid-chen/matrixview.js";
 import {createTransactionManager} from "../grid-chen/utils.js"
 
-function dispatchKey(gc, eventInitDict) {
-    gc.shadowRoot.firstElementChild.dispatchEvent(new KeyboardEvent('keydown', eventInitDict));
-}
-
 /**
  * @type {GridChen.JSONSchema}
  */
@@ -33,7 +29,7 @@ test('copy', async function () {
     gc.resetFromView(createView(schema, rows), tm);
 
     gc.getRangeByIndexes(0, 0, 2, 2).select();
-    dispatchKey(gc, {code: 'KeyC', ctrlKey: true});
+    gc._keyboard('keydown', {code: 'KeyC', ctrlKey: true});
     const text = await navigator.clipboard.readText();
     assert.equal(`0\ta\r\nNaN\tb`, text);
 });
@@ -51,8 +47,8 @@ test('should paste cells to (2,1)', async function () {
 
     await navigator.clipboard.writeText(`0\ta\r\nNaN\tb`);
     await tm.requestTransaction(function () {
-        dispatchKey(gc, {code: 'ArrowDown'});
-        dispatchKey(gc, {code: 'KeyV', ctrlKey: true});
+        gc._keyboard('keydown', {code: 'ArrowDown'});
+        gc._keyboard('keydown', {code: 'KeyV', ctrlKey: true});
     });
     assert.equal([[0, 'a'], [0, 'a'], [NaN, 'b']], rows);
 });
@@ -69,7 +65,7 @@ test('tiling', async function () {
     await navigator.clipboard.writeText(`3\tc`);
     gc.getRangeByIndexes(0, 0, 2, 2).select();
     await tm.requestTransaction(function () {
-        dispatchKey(gc, {code: 'KeyV', ctrlKey: true});
+        gc._keyboard('keydown',  {code: 'KeyV', ctrlKey: true});
     });
     assert.equal([[3, 'c'], [3, 'c']], rows)
 });
@@ -85,7 +81,7 @@ test('paste outside of column range', async function () {
     await navigator.clipboard.writeText(`3\tc`);
     gc.getRangeByIndexes(0, 1, 1, 1).select();
     await tm.requestTransaction(function () {
-        dispatchKey(gc, {code: 'KeyV', ctrlKey: true});
+        gc._keyboard('keydown', {code: 'KeyV', ctrlKey: true});
     });
     assert.equal([[0, '3'], [NaN, 'b']], rows);
 });

@@ -34,7 +34,7 @@
 <script type="module">
     import "./grid-chen/webcomponent.js"
     import {createView} from "./grid-chen/matrixview.js"
-    import {createTransactionManager} from "./grid-chen/utils.js"
+    import {registerGlobalTransactionManager} from "./grid-chen/utils.js"
 
     const schema = {
         title: 'Array of Row Arrays',
@@ -50,7 +50,7 @@
     const rows = [['2019-01-01', 1], ['2020-01-01', 2], ['2021-01-01', 3]];
     /** @type {GridChen.GridChen} */
     const gridChen = document.querySelector('grid-chen');
-    const tm = createTransactionManager();
+    const tm = registerGlobalTransactionManager();
     const logElem = document.forms[0].log;
     let logValue = '';
 
@@ -81,10 +81,10 @@
     });
 
     document.forms[0].save.onclick = function () {
-        const patch = gridChen.patch;
+        const patch = tm.patch;
         if (patch.length) {
             logElem.value = 'Saved...\n' + JSON.stringify(patch, null, 2);
-            gridChen.resetTransactions();
+            tm.clear();
         } else {
             logElem.value = 'Data is not modified';
         }

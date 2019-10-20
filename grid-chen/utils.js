@@ -310,7 +310,34 @@ export function applyJSONPatch(data, patch) {
 }
 
 /**
- * Creator function for TransactionManager instances.
+ * Creates and globally registers a TransactionManager instance.
+ * @returns {GridChen.TransactionManager}
+ */
+export function registerGlobalTransactionManager() {
+    const globalTransactionManager = createTransactionManager();
+
+    document.body.addEventListener('keydown', function (evt) {
+        if (evt.code === 'KeyY' && evt.ctrlKey) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            globalTransactionManager.undo();
+        } else if (evt.code === 'KeyZ' && evt.ctrlKey) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            globalTransactionManager.redo();
+        }
+    });
+    return globalTransactionManager;
+}
+
+/**
+ * Returns the globally registered Transaction Manager.
+ * @type {GridChen.TransactionManager|null}
+ */
+export let globalTransactionManager = null;
+
+/**
+ * Pure creator function for TransactionManager instances.
  * @returns {GridChen.TransactionManager}
  */
 export function createTransactionManager() {
@@ -349,7 +376,7 @@ export function createTransactionManager() {
         }
 
         async requestTransaction(func) {
-            return new Promise(function(resolve) {
+            return new Promise(function (resolve) {
                 resolves.push(resolve);
                 func();
             });
@@ -408,19 +435,5 @@ export function createTransactionManager() {
         }
     }
 
-    const tm = new TransactionManager();
-
-    document.body.addEventListener('keydown', function (evt) {
-        if (evt.code === 'KeyY' && evt.ctrlKey) {
-            evt.preventDefault();
-            evt.stopPropagation();
-            tm.undo();
-        } else if (evt.code === 'KeyZ' && evt.ctrlKey) {
-            evt.preventDefault();
-            evt.stopPropagation();
-            tm.redo();
-        }
-    });
-
-    return tm;
+    return new TransactionManager();
 }

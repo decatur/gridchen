@@ -5,18 +5,6 @@ import {NumberConverter} from "../grid-chen/converter.js";
 
 const decimalSep = new NumberConverter(1).decimalSep;
 
-function getGridElement(gc) {
-    return gc.shadowRoot.querySelector('.GRID');
-}
-
-function dispatchMouseDown(gc) {
-    getGridElement(gc).dispatchEvent(new MouseEvent('mousedown'));
-}
-
-function dispatch(gc, typeArg, eventInitDict) {
-    gc.shadowRoot.firstElementChild.dispatchEvent(new KeyboardEvent(typeArg, eventInitDict));
-}
-
 const schema = {
     title: 'test',
     columnSchemas: [{title: 'number', type: 'number', width: 0}, {title: 'string', type: 'string', width: 0}]
@@ -30,7 +18,7 @@ test('Activate Cell', async function () {
     ];
     const view = createRowMatrixView(schema, rows);
     gc.resetFromView(view);
-    dispatchMouseDown(gc);
+    gc._mousedown(0, 0);
     const r = gc.activeRange;
     assert.equal([0, 0, 1, 1], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
 
@@ -45,14 +33,13 @@ test('Edit Cell', async function () {
     ];
     const view = createRowMatrixView(schema, rows);
     gc.resetFromView(view);
-    dispatchMouseDown(gc);
-    dispatch(gc, 'keydown', {key: " "});
-    const editor = gc.shadowRoot.getElementById('editor');
-    editor.value += '123 ';
-    editor.dispatchEvent(new KeyboardEvent('keydown', {code: 'Tab'}));
-    dispatch(gc, 'keydown', {key: "a"});
-    editor.value += 'bc ';
-    editor.dispatchEvent(new KeyboardEvent('keydown', {code: 'Enter'}));
+    gc._mousedown(0, 0);
+    gc._keyboard('keydown', {key: " "});
+    gc._sendKeys('123 ');
+    gc._keyboard('keydown', {code: 'Tab'});
+    gc._keyboard('keydown', {key: "a"});
+    gc._sendKeys('bc ');
+    gc._keyboard('keydown', {code: 'Enter'});
 
     assert.equal([
         [123, 'abc'],
@@ -73,8 +60,8 @@ test('expand selection with keys', async function () {
     gc.getRangeByIndexes(0, 0, 1, 1).select();
     let r = gc.selectedRange;
     assert.equal([0, 0, 1, 1], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
-    dispatch(gc, 'keydown', {code: 'ArrowRight', shiftKey: true});
-    dispatch(gc, 'keydown', {code: 'ArrowDown', shiftKey: true});
+    gc._keyboard('keydown', {code: 'ArrowRight', shiftKey: true});
+    gc._keyboard('keydown', {code: 'ArrowDown', shiftKey: true});
     r = gc.selectedRange;
     assert.equal([0, 0, 2, 2], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
 });
@@ -84,10 +71,10 @@ test('ColumnMatrix', () => {
     const gc = new GridChen();
     gc.resetFromView(createColumnMatrixView(schema, [[new Number(0)], ['a']]));
     log('ViewportText');
-    assert.equal(`0${decimalSep}00a`, getGridElement(gc).textContent)
+    assert.equal(`0${decimalSep}00a`, gc._textContent)
 
-    dispatchMouseDown(gc);
-    dispatch(gc, 'keydown', {code: 'ArrowRight', shiftKey: true});
+    gc._mousedown(0, 0);
+    gc._keyboard('keydown', {code: 'ArrowRight', shiftKey: true});
     log('should expand selection');
     const r = gc.selectedRange;
     assert.equal(0, r.rowIndex);
@@ -101,10 +88,10 @@ test('RowMatrix', () => {
     const gc = new GridChen();
     gc.resetFromView(createRowMatrixView(schema, [[0, 'a']]));
     log('ViewportText');
-    assert.equal(`0${decimalSep}00a`, getGridElement(gc).textContent)
+    assert.equal(`0${decimalSep}00a`, gc._textContent)
 
-    dispatchMouseDown(gc);
-    dispatch(gc, 'keydown', {code: 'ArrowRight', shiftKey: true});
+    gc._mousedown(0, 0);
+    gc._keyboard('keydown', {code: 'ArrowRight', shiftKey: true});
     log('should expand selection');
     const r = gc.selectedRange;
     assert.equal(0, r.rowIndex);
@@ -117,22 +104,16 @@ test('Delete Selected Rows', () => {
     const gc = new GridChen();
     const rows = [[0, 'a'], [1, 'b']];
     gc.resetFromView(createRowMatrixView(schema, rows));
-    dispatchMouseDown(gc);
+    gc._mousedown(0, 0);
     // Delete first row
-    dispatch(gc, 'keydown', {key: '-', ctrlKey: true});
+    gc._keyboard('keydown', {key: '-', ctrlKey: true});
     assert.equal([[1, 'b']], rows);
 
     // Delete remaining row.
-    dispatch(gc, 'keydown', {key: '-', ctrlKey: true});
+    gc._keyboard('keydown', {key: '-', ctrlKey: true});
     assert.equal([], rows);
 
 });
 
-test('View is error', () => {
-    const gc = new GridChen();
-    const error = new Error('FooBar');
-    gc.resetFromView(error);
-    assert.equal(String(error), gc.shadowRoot.firstElementChild.textContent);
-});
 
 

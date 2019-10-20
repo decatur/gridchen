@@ -76,11 +76,7 @@ declare module GridChen {
          * Resets this element based on the specified view.
          * @param view
          */
-        resetFromView: (view: MatrixView, transactionManager: TransactionManager) => GridChen;
-        /**
-         * The accumulated JSON Patch since the last resetFromView() or TODO resetTransactions().
-         */
-        readonly patch: JSONPatch;
+        resetFromView: (view: MatrixView, transactionManager?: TransactionManager) => GridChen;
         /**
          * Returns the active cell.
          */
@@ -90,11 +86,6 @@ declare module GridChen {
          * This always contains the active cell.
          */
         readonly selectedRange: CellRange;
-        /**
-         * Empties the accumulated JSON Patch.
-         * TODO: delete
-         */
-        resetTransactions: () => void;
     }
 
     interface ActiveCellChanged extends Event {
@@ -167,6 +158,9 @@ declare module GridChen {
 
         redo: () => void;
 
+        /**
+         * Clears the accumulated transactions.
+         */
         clear: () => void;
 
         /**

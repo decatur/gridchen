@@ -1,4 +1,4 @@
-import {createTransactionManager} from "./utils.js";
+import {registerGlobalTransactionManager} from "./utils.js";
 
 /**
  * Author: Wolfgang Kühn 2019
@@ -107,9 +107,8 @@ function openDialog() {
  * @implements {GridChen.GridChen}
  */
 export class GridChen extends HTMLElement {
-    activeRange;
-    patch;
-    selectedRange;
+    activeRange; // Appeace PyCharm.
+    selectedRange; // Appeace PyCharm.
 
     constructor() {
         super();
@@ -117,7 +116,7 @@ export class GridChen extends HTMLElement {
 
     /**
      * @param {GridChen.MatrixView} viewModel
-     * @param {GridChen.TransactionManager} transactionManager
+     * @param {GridChen.TransactionManager?} transactionManager
      * @returns {GridChen}
      */
     resetFromView(viewModel, transactionManager) {
@@ -133,10 +132,6 @@ export class GridChen extends HTMLElement {
         container.style.position = 'relative';
         container.style.height = totalHeight + 'px';
         this.shadowRoot.appendChild(container);
-        if (viewModel instanceof Error) {
-            container.innerText = String(viewModel);
-            return this
-        }
         createGrid(container, viewModel, this, transactionManager);
         this.style.width = container.style.width;
         return this
@@ -151,9 +146,6 @@ export class GridChen extends HTMLElement {
      * @returns {GridChen.Range}
      */
     getRangeByIndexes(rowIndex, columnIndex, rowCount, columnCount) {
-    }
-
-    resetTransactions() {
     }
 }
 
@@ -368,7 +360,7 @@ class Selection extends Range {
  * @param {GridChen.TransactionManager} tm
  */
 function createGrid(container, viewModel, gridchenElement, tm) {
-    tm = tm || createTransactionManager();
+    tm = tm || registerGlobalTransactionManager();
     const schema = viewModel.schema;
     const schemas = schema.columnSchemas;
     const totalHeight = parseInt(container.style.height);
@@ -438,7 +430,6 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             color: ${inputColor};
             background-color: ${inputBackgroundColor};
             position: absolute;
-            display: none;
             height: ${innerHeight};
             padding: ${cellPadding}px;
             border-width: ${cellBorderWidth}px;
@@ -556,10 +547,12 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             /** @type{HTMLInputElement} */
             this.input = document.createElement('input');
             this.input.id = 'editor';
+            this.input.style.display = 'none';
 
             /** @type{HTMLTextAreaElement} */
             this.textarea = document.createElement('textarea');
             this.textarea.id = 'textarea';
+            this.textarea.style.display = 'none';
 
             function foo(evt) {
                 // Clicking editor should invoke default: move the caret. It should not delegate to containers action.
@@ -1532,18 +1525,6 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         }
     }
 
-    Object.defineProperty(gridchenElement, 'patch',
-        {
-            get: function () {
-                return tm.patch;
-            }
-        }
-    );
-
-    gridchenElement.resetTransactions = function () {
-        tm.clear();
-    };
-
     Object.defineProperty(gridchenElement, 'selectedRange',
         {
             get: () => new Range1(selection.rowIndex, selection.columnIndex,
@@ -1557,7 +1538,51 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
     gridchenElement.getRangeByIndexes =
         (rowIndex, columnIndex, rowCount, columnCount) => new Range1(rowIndex, columnIndex, rowCount, columnCount);
+    // TODO: Move this to matrixview module.
     gridchenElement['_toTSV'] = toTSV;
+
+    /**
+     * Hidden API for unit testing.
+     * Dispatches a mousedown event in the middle of the specified cell.
+     */
+    gridchenElement['_mousedown'] = function (rowIndex, columnIndex) {
+        const rect = cellParent.getBoundingClientRect();
+        let grid_y = rowIndex - firstRow;
+        let y = rowHeight * (grid_y + 0.5);
+        let clientY = y + rect.y;
+
+        let x = ((columnIndex === 0 ? 0 : columnEnds[columnIndex - 1]) + columnEnds[columnIndex]) / 2;
+        let clientX = x + rect.x;
+        cellParent.dispatchEvent(new MouseEvent('mousedown', {clientX: clientX, clientY: clientY}));
+    };
+
+    /**
+     * Hidden API for unit testing.
+     * Dispatches the specified keyboard event.
+     */
+    gridchenElement['_keyboard'] = function (typeArg, eventInitDict) {
+        let targetElem;
+        if (ee.input.style.display !== 'none') {
+            targetElem = ee.input;
+        } else if (ee.textarea.style.display !== 'none') {
+            targetElem = ee.textarea;
+        } else {
+            targetElem = container;
+        }
+        targetElem.dispatchEvent(new KeyboardEvent(typeArg, eventInitDict));
+    };
+
+    gridchenElement['_sendKeys'] = function (keys) {
+        if (ee.input.style.display !== 'none') {
+            ee.input.value += keys;
+        } else if (ee.textarea.style.display !== 'none') {
+            ee.textarea.value += keys;
+        }
+    };
+
+    Object.defineProperty(gridchenElement, '_textContent',
+        {get: () => cellParent.textContent}
+    );
 }
 
 /**

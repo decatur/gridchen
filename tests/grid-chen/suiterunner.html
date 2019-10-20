@@ -66,27 +66,7 @@
     window.onhashchange = function () {
         modulesToRun = [window.location.hash.substr(1)];
         nextModule();
-    }
-
-    const resolve = function (value) {
-        console.log('resolve ' + value);
     };
-    const reject = function (reason) {
-        console.log('reject ' + reason);
-    }
-    const executor = function (resolve, reject) {
-        console.log('executor');
-        reject();
-    }
-    const p = new Promise(executor);
-    p
-        .then(function () {
-            console.log('onfullfilled');
-        })
-        .catch(function () {
-            console.log('catch onrejected');
-        })
-
 
 </script>
 </html>

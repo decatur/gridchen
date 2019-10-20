@@ -27,22 +27,20 @@
     document.getElementById('moduleName').textContent = moduleName;
 
     import(`../${moduleName}.js`)
-        .then(function() {
+        .then(function () {
             return execute(params.get('test'))
         })
-        .then(() => favLink.setAttribute('href', `${getErrorCount()?'red':'green'}.png`))
-        .catch(function(reason) {
+        .then(() => favLink.setAttribute('href', `${getErrorCount() ? 'red' : 'green'}.png`))
+        .catch(function (reason) {
             favLink.setAttribute('href', `red.png`);
             console.error(reason);
             log(reason);
+        })
+        .then(function () {
+            if (window.opener) {
+                window.opener.moduleDone(moduleName);
+            }
         });
-
-
-    window.setTimeout(function() {
-        if (window.opener) {
-            window.opener.moduleDone(moduleName);
-        }
-    }, 1000);
 
 </script>
 </html>

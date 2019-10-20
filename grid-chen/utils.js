@@ -314,7 +314,7 @@ export function applyJSONPatch(data, patch) {
  * @returns {GridChen.TransactionManager}
  */
 export function registerGlobalTransactionManager() {
-    const globalTransactionManager = createTransactionManager();
+    globalTransactionManager = createTransactionManager();
 
     document.body.addEventListener('keydown', function (evt) {
         if (evt.code === 'KeyY' && evt.ctrlKey) {
@@ -388,7 +388,7 @@ export function createTransactionManager() {
          */
         openTransaction(apply) {
             const tm = this;
-            const trans = /**@type{GridChen.Transaction}*/ {patch: [], apply: apply, detail: {}};
+            const trans = /**@type{GridChen.Transaction}*/ {patch: [], apply: apply, detail: {}, pathPrefix: ''};
             trans.commit = function () {
                 tm.transactions.push(trans);
                 fireChange(trans);

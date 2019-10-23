@@ -388,12 +388,24 @@ export function createTransactionManager() {
          */
         openTransaction(apply) {
             const tm = this;
-            const trans = /**@type{GridChen.Transaction}*/ {patch: [], apply: apply, detail: {}, pathPrefix: ''};
-            trans.commit = function () {
-                tm.transactions.push(trans);
-                fireChange(trans);
+            return /**@type{GridChen.Transaction}*/ {
+                patches: [],
+                commit() {
+                    tm.transactions.push(this);
+                    fireChange(this);
+                },
+                get operations() {
+                    const flattend = [];
+                    for (let patch of this.patches) {
+                        for (let op of patch.operations) {
+                            const clonedOp = Object.assign({}, op);
+                            clonedOp.path = patch.pathPrefix + op.path;
+                            flattend.push(clonedOp);
+                        }
+                    }
+                    return flattend;
+                }
             };
-            return trans
         }
 
         undo() {
@@ -401,8 +413,14 @@ export function createTransactionManager() {
             if (!trans) return;
             this.redoTransactions.push(trans);
             const reversedTransaction = /**@type{GridChen.Transaction}*/ Object.assign({}, trans);
-            reversedTransaction.patch = reversePatch(trans.patch);
-            reversedTransaction.apply(reversedTransaction);
+            reversedTransaction.patches = [];
+            for (let patch of Object.assign([], trans.patches).reverse()) {
+                const reversedPatch = /**@type{GridChen.Patch}*/ Object.assign({}, patch);
+                reversedPatch.operations = reversePatch(patch.operations);
+                reversedTransaction.patches.push(reversedPatch);
+                reversedPatch.apply(reversedPatch);
+            }
+
             fireChange(reversedTransaction);
         }
 
@@ -410,12 +428,16 @@ export function createTransactionManager() {
             const trans = this.redoTransactions.pop();
             if (!trans) return;
             this.transactions.push(trans);
-            trans.apply(trans);
+            for (let patch of trans.patches) {
+                patch.apply(patch);
+            }
             fireChange(trans);
         }
 
         clear() {
+            /** @type {GridChen.Transaction[]} */
             this.transactions = [];
+            /** @type {GridChen.Transaction[]} */
             this.redoTransactions = [];
         }
 
@@ -425,11 +447,7 @@ export function createTransactionManager() {
         get patch() {
             const allPatches = [];
             for (let trans of this.transactions) {
-                for (let op of trans.patch) {
-                    const clonedOp = Object.assign({}, op);
-                    clonedOp.path = trans.pathPrefix + op.path;
-                    allPatches.push(clonedOp);
-                }
+                allPatches.push(...trans.operations);
             }
             return allPatches;
         }
@@ -437,3 +455,4 @@ export function createTransactionManager() {
 
     return new TransactionManager();
 }
+

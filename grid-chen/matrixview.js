@@ -208,6 +208,9 @@ export function createColumnSchemas(schema) {
     return invalidError
 }
 
+/**
+ * @implements1 {GridChen.MatrixView}
+ */
 class MatrixView {
 
     getModel() {

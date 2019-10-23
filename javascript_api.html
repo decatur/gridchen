@@ -73,7 +73,7 @@
      * @param {GridChen.TransactionEvent} evt
      */
     tm.addEventListener('change', function (evt) {
-        logEvent(evt, JSON.stringify(evt.transaction.patch));
+        logEvent(evt, JSON.stringify(evt.transaction.operations));
     });
 
     gridChen.addEventListener('plot', /**@param {GridChen.PlotEvent} evt*/ function (evt) {

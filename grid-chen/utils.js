@@ -318,10 +318,15 @@ export function registerGlobalTransactionManager() {
 
     document.body.addEventListener('keydown', function (evt) {
         if (evt.code === 'KeyY' && evt.ctrlKey) {
-            evt.preventDefault();
-            evt.stopPropagation();
-            globalTransactionManager.undo();
+            if (evt.target.tagName === 'INPUT' && evt.target.value != evt.target.defaultValue) {
+                // Let the default browser undo action be performed on this input element.
+            } else {
+                evt.preventDefault();
+                evt.stopPropagation();
+                globalTransactionManager.undo();
+            }
         } else if (evt.code === 'KeyZ' && evt.ctrlKey) {
+            // Note: It it too complex to support default browser redos. We do not support those!
             evt.preventDefault();
             evt.stopPropagation();
             globalTransactionManager.redo();

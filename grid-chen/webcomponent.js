@@ -1,4 +1,5 @@
 import {registerGlobalTransactionManager} from "./utils.js";
+import {Rect} from "./geometry.js";
 
 /**
  * Author: Wolfgang Kühn 2019
@@ -292,11 +293,14 @@ class Selection extends Range {
     constructor(repainter, eventTarget) {
         super(0, 0, 1, 1);
         this.initial = {row: 0, col: 0};
-        this.head = {row: 0, col: 0}; // Cell opposite the initial.
+        this.pilot = {row: 0, col: 0}; // Cell relative to which selection expansion occurs.
         this.repainter = repainter;
         this.eventTarget = eventTarget;
         /** @type{Array<Range>} */
         this.areas = [];
+        this.set(0, 0);
+        ///** @type{Range} */
+        //this.activeCell = this.activeArea = this.areas[0];
     }
 
     /**
@@ -321,10 +325,9 @@ class Selection extends Range {
     set(rowIndex, columnIndex) {
         logger.log('Selection.set');
         this.hide(); // TODO: Why?
-        this.initial = {row: rowIndex, col: columnIndex};
-        this.head = {row: rowIndex, col: columnIndex};
+
         this.areas = [];
-        this.add(rowIndex, columnIndex);
+        this.toggle(rowIndex, columnIndex);
     }
 
     /**
@@ -335,7 +338,7 @@ class Selection extends Range {
         logger.log('Selection.expand');
         this.hide();
 
-        this.head = {row: rowIndex, col: columnIndex};
+        this.pilot = {row: rowIndex, col: columnIndex};
         const r = this.areas.pop();
         r.rowIndex = Math.min(this.initial.row, rowIndex);
         r.columnIndex = Math.min(this.initial.col, columnIndex);
@@ -351,10 +354,33 @@ class Selection extends Range {
      * @param {number} rowIndex
      * @param {number} columnIndex
      */
-    add(rowIndex, columnIndex) {
+    toggle(rowIndex, columnIndex) {
         logger.log('Selection.add');
         this.hide(); // TODO: Why?
-        this.areas.push(new Range(rowIndex, columnIndex, 1, 1));
+        let i;
+        const pivot = new Rect(columnIndex, rowIndex, 1, 1);
+        const newAreas = [];
+        let doesIntersect = false;
+
+        for (const area of this.areas) {
+            const r = new Rect(area.columnIndex, area.rowIndex, area.columnCount, area.rowCount);
+            if (pivot.intersects(r)) {
+                doesIntersect = true;
+                const minus = r.subtract(pivot);
+                for (let part of minus) {
+                    newAreas.push(new Range(part.top, part.left, part.height, part.width));
+                }
+            } else {
+                newAreas.push(area);
+            }
+        }
+        if (!doesIntersect) {
+            this.initial = {row: rowIndex, col: columnIndex};
+            this.pilot = {row: rowIndex, col: columnIndex};
+            this.areas.push(new Range(rowIndex, columnIndex, 1, 1));
+        } else {
+            this.areas = newAreas;
+        }
         this.convexHull();
         this.eventTarget.dispatchEvent(new Event('selectionChanged'));
     }
@@ -593,6 +619,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             logger.log('editor.onkeydown: ' + evt.code);
             // Clicking editor should invoke default: move caret. It should not delegate to containers action.
             evt.stopPropagation();
+            let isExpansion = evt.shiftKey && !(evt.code === 'Tab' || evt.code === 'Enter');
 
             if (evt.code === 'F2') {
                 evt.preventDefault();
@@ -603,12 +630,12 @@ function createGrid(container, viewModel, gridchenElement, tm) {
                 evt.preventDefault();
                 evt.stopPropagation();
                 commit();
-                navigateCell(evt, 0, -1);
+                navigateCell(0, -1, isExpansion);
             } else if (evt.code === 'ArrowRight' && activeCell.mode === 'input') {
                 evt.preventDefault();
                 evt.stopPropagation();
                 commit();
-                navigateCell(evt, 0, 1);
+                navigateCell(0, 1, isExpansion);
             } else if (evt.code === 'Enter' && evt.altKey) {
                 evt.preventDefault();
                 evt.stopPropagation();
@@ -622,12 +649,12 @@ function createGrid(container, viewModel, gridchenElement, tm) {
                 evt.preventDefault();
                 evt.stopPropagation();
                 commit();
-                navigateCell(evt, evt.shiftKey ? -1 : 1, 0);
+                navigateCell(evt.shiftKey ? -1 : 1, 0), isExpansion;
             } else if (evt.code === 'Tab') {
                 evt.preventDefault();
                 evt.stopPropagation();
                 commit();
-                navigateCell(evt, 0, evt.shiftKey ? -1 : 1);
+                navigateCell(0, evt.shiftKey ? -1 : 1, isExpansion);
             } else if (evt.code === 'Escape') {
                 // Leave edit mode.
                 evt.preventDefault();
@@ -826,13 +853,14 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
         let {rowIndex, colIndex} = index(evt);
 
-        if (evt.shiftKey) {
+        if (evt.shiftKey && !evt.ctrlKey) {
             selection.expand(rowIndex, colIndex);
-        } else if (evt.ctrlKey) {
-            selection.add(rowIndex, colIndex);
+        } else if (evt.ctrlKey && !evt.shiftKey) {
+            selection.toggle(rowIndex, colIndex);
+            activeCell.move(rowIndex, colIndex);
             selection.show();
         } else {
-            navigateCell(evt, rowIndex - activeCell.row, colIndex - activeCell.col);
+            navigateCell(rowIndex - activeCell.row, colIndex - activeCell.col, false);
         }
 
         function resetHandlers() {
@@ -944,7 +972,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         }
 
         if (rowIndex === -1) {
-            operations.push(...viewModel.removeModel());
+            viewModel.removeModel();  // We can ignore this patch, because it is included in the patch from removeValue().
             trans.patches.push(gridchenElement.context.removeValue());
         }
 
@@ -1007,30 +1035,32 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         //         The reason is documented in the handler code.
         // Note 2: For responsiveness, make sure this code is executed fast.
 
+        let isExpansion = evt.shiftKey && !(evt.code === 'Tab' || evt.code === 'Enter');
+
         if (evt.code === 'ArrowLeft' || (evt.code === "Tab" && evt.shiftKey)) {
             evt.preventDefault();
             evt.stopPropagation();
-            navigateCell(evt, 0, -1);
+            navigateCell(0, -1, isExpansion);
         } else if (evt.code === 'ArrowRight' || evt.code === 'Tab') {
             evt.preventDefault();
             evt.stopPropagation();
-            navigateCell(evt, 0, 1);
+            navigateCell(0, 1, isExpansion);
         } else if (evt.code === "ArrowUp" || (evt.code === "Enter" && evt.shiftKey)) {
             evt.preventDefault();
             evt.stopPropagation();
-            navigateCell(evt, -1, 0);
+            navigateCell(-1, 0, isExpansion);
         } else if (evt.code === 'ArrowDown' || evt.code === 'Enter') {
             evt.preventDefault();
             evt.stopPropagation();
-            navigateCell(evt, 1, 0);
+            navigateCell(1, 0, isExpansion);
         } else if (evt.code === 'PageUp') {
             evt.preventDefault();
             evt.stopPropagation();
-            navigateCell(evt, -pageIncrement, 0);
+            navigateCell(-pageIncrement, 0, isExpansion);
         } else if (evt.code === 'PageDown') {
             evt.preventDefault();
             evt.stopPropagation();
-            navigateCell(evt, pageIncrement, 0);
+            navigateCell(pageIncrement, 0, isExpansion);
         } else if (evt.code === 'KeyA' && evt.ctrlKey) {
             // Like MS-Excel selects all non-empty cells, in our case the complete grid.
             // This is reverted on the next onblur event.
@@ -1241,18 +1271,16 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         gridchenElement.dispatchEvent(new CustomEvent('plot', {detail: detail}));
     }
 
-    function navigateCell(evt, rowOffset, colOffset) {
+    function navigateCell(rowOffset, colOffset, isExpansion) {
         logger.log('navigateCell');
 
         if (activeCell.mode !== 'display') {
             commit();
         }
 
-        let isExpansion = evt.shiftKey && !(evt.code === 'Tab' || evt.code === 'Enter');
-
         let cell;
         if (isExpansion) {
-            cell = selection.head;
+            cell = selection.pilot;
         } else {
             cell = activeCell;
         }
@@ -1343,9 +1371,9 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
                 if (model !== viewModel.getModel()) {
                     trans.patches.push(gridchenElement.context.setValue(viewModel.getModel()));
+                } else {
+                    trans.patches.push(createPatch(operations));
                 }
-
-                trans.patches.push(createPatch(operations));
                 // Note: First refresh, then commit!
                 refresh();
                 trans.commit();
@@ -1631,6 +1659,8 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     Object.defineProperty(gridchenElement, '_textContent',
         {get: () => cellParent.textContent}
     );
+
+    gridchenElement['_refresh'] = refresh;
 }
 
 /**

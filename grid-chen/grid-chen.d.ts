@@ -137,6 +137,7 @@ declare module GridChen {
     export interface MatrixView {
         schema: GridSchema;
         getModel: () => object;
+        setModel: (obj) => void;
         columnCount: () => number;
         rowCount: () => number;
         removeModel: () => JSONPatch;

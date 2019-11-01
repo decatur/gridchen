@@ -520,6 +520,16 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     makeDataLists();
 
     /**
+     * @param {GridChen.Transaction} trans
+     */
+    function commitTransaction(trans) {
+        // Note: First refresh, then commit!
+        refresh();
+        trans.commit();
+        gridchenElement.dispatchEvent(new CustomEvent('change', {detail: {patch: trans.patches}}));
+    }
+
+    /**
      * For each enum restricted column with index columnIndex,
      * generate a datalist element with id enum<columnIndex>.
      */
@@ -976,8 +986,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             trans.patches.push(gridchenElement.context.removeValue());
         }
 
-        refresh();
-        trans.commit();
+        commitTransaction(trans);
     }
 
     function deleteRows() {
@@ -997,8 +1006,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             });
         }
 
-        refresh();
-        trans.commit();
+        commitTransaction(trans);
     }
 
     function insertRow() {
@@ -1009,8 +1017,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         const trans = tm.openTransaction();
         trans.patches.push(createPatch(viewModel.splice(activeCell.row)));
 
-        refresh();
-        trans.commit();
+        commitTransaction(trans);
     }
 
     function copySelection(doCut, withHeaders) {
@@ -1374,9 +1381,8 @@ function createGrid(container, viewModel, gridchenElement, tm) {
                 } else {
                     trans.patches.push(createPatch(operations));
                 }
-                // Note: First refresh, then commit!
-                refresh();
-                trans.commit();
+
+                commitTransaction(trans);
             }
         }
 
@@ -1544,8 +1550,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             }
         }
 
-        refresh();
-        trans.commit();
+        commitTransaction(trans);
     }
 
     function updateViewportRows(matrix) {

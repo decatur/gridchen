@@ -69,12 +69,16 @@
         logEvent(evt, gridChen.selectedRange);
     });
 
-    /**
-     * @param {GridChen.TransactionEvent} evt
-     */
-    tm.addEventListener('change', function (evt) {
-        logEvent(evt, JSON.stringify(evt.transaction.operations));
+    gridChen.addEventListener('change', /**@param {CustomEvent} evt*/ function (evt) {
+        logEvent(evt, JSON.stringify(evt.detail.patch));
     });
+
+    // /**
+    //  * @param {GridChen.TransactionEvent} evt
+    //  */
+    // tm.addEventListener('change', function (evt) {
+    //     logEvent(evt, JSON.stringify(evt.transaction.operations));
+    // });
 
     gridChen.addEventListener('plot', /**@param {GridChen.PlotEvent} evt*/ function (evt) {
         logEvent(evt, JSON.stringify(evt.detail));

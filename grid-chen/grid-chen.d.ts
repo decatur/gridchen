@@ -55,7 +55,7 @@ declare module GridChen {
     /**
      * A rectangular range of grid cells.
      */
-    export interface CellRange {
+    export interface Range {
         /**
          * Returns the lowest row index in the range.
          */
@@ -77,18 +77,13 @@ declare module GridChen {
          * @param view
          */
         resetFromView: (view: MatrixView, transactionManager?: TransactionManager) => GridChen;
-        /**
-         * Returns the active cell.
-         */
-        readonly activeRange: CellRange;
-        /**
-         * Returns the convex hull of all selected areas.
-         * This always contains the active cell.
-         */
-        readonly selectedRange: CellRange;
-    }
 
-    interface ActiveCellChanged extends Event {
+        /**
+         * Returns the selection as a rectangle.
+         */
+        readonly selectedRange: Range;
+
+        select: (Range) => void;
     }
 
     interface SelectionChanged extends Event {

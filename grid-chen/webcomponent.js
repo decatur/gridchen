@@ -2,6 +2,7 @@ import {registerGlobalTransactionManager} from "./utils.js";
 import {Selection, Range} from "./selection.js";
 import {logger} from "./utils.js";
 import {keyDownHandler} from "./selection.js";
+import {createEditor} from "./editor.js"
 
 /**
  * Author: Wolfgang Kühn 2019
@@ -88,8 +89,11 @@ function openDialog() {
  * @implements {GridChen.GridChen}
  */
 export class GridChen extends HTMLElement {
-    activeRange; // Appeace PyCharm.
-    selectedRange; // Appeace PyCharm.
+    selectedRange; // Appease IDE.
+
+    select(range) {
+        // Appease IDE.
+    }
 
     constructor() {
         super();
@@ -121,29 +125,16 @@ export class GridChen extends HTMLElement {
              * @returns {GridChen.Patch}
              */
             removeValue() {
-                throw new Error('context.setValue()');
             },
             /**
              * @param {object} value
              * @returns {GridChen.Patch}
              */
             setValue(value) {
-                throw new Error('context.setValue()');
             }
         };
 
         return this
-    }
-
-    /**
-     * TODO: Move this to matrixview.js?
-     * @param {number} rowIndex
-     * @param {number} columnIndex
-     * @param {number} rowCount
-     * @param {number} columnCount
-     * @returns {GridChen.Range}
-     */
-    getRangeByIndexes(rowIndex, columnIndex, rowCount, columnCount) {
     }
 }
 
@@ -407,172 +398,12 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     body.style.height = (viewPortHeight) + 'px';
     container.appendChild(body);
 
-
     let cellParent = /** @type {HTMLElement} */ document.createElement('div');
     cellParent.className = 'GRID';
     cellParent.style.position = 'absolute';  // Must be absolute otherwise contentEditable=true produces strange behaviour
-    //cellParent.style.display = 'inline-block';
     cellParent.style.width = gridWidth + 'px';
     cellParent.style.height = viewPortHeight + 'px';
     container.tabIndex = 0;
-
-    class Editor {
-
-        constructor(container) {
-            this.mode = 'hidden';
-            /** @type{HTMLInputElement} */
-            this.input = document.createElement('input');
-            this.input.id = 'editor';
-            this.input.style.display = 'none';
-
-            /** @type{HTMLTextAreaElement} */
-            this.textarea = document.createElement('textarea');
-            this.textarea.id = 'textarea';
-            this.textarea.style.display = 'none';
-
-            function foo(evt) {
-                // Clicking editor should invoke default: move the caret. It should not delegate to containers action.
-                evt.stopPropagation();
-            }
-
-            this.input.addEventListener('keydown', Editor.keydownHandler);
-            this.textarea.addEventListener('keydown', Editor.keydownHandler);
-
-            this.input.addEventListener('mousedown', foo);
-            this.textarea.addEventListener('mousedown', foo);
-
-            container.appendChild(this.input);
-            container.appendChild(this.textarea);
-        }
-
-        /**
-         * @param {KeyboardEvent} evt
-         */
-        static keydownHandler(evt) {
-            logger.log('editor.onkeydown: ' + evt.code);
-            // Clicking editor should invoke default: move caret. It should not delegate to containers action.
-            evt.stopPropagation();
-
-            if (evt.code === 'ArrowLeft' && editor.mode === 'input') {
-                evt.preventDefault();
-                evt.stopPropagation();
-                commit();
-                selection.move(0, -1);
-            } else if (evt.code === 'ArrowRight' && editor.mode === 'input') {
-                evt.preventDefault();
-                evt.stopPropagation();
-                commit();
-                selection.move(0, 1);
-            } else if (evt.code === 'Enter' && evt.altKey) {
-                evt.preventDefault();
-                evt.stopPropagation();
-                if (editor.input.style.display !== 'none') {
-                    editor.showTextArea();
-                    editor.textarea.value += '\n';
-                } else {
-                    editor.textarea.setRangeText('\n', editor.textarea.selectionStart, editor.textarea.selectionEnd, 'end');
-                }
-            } else if (evt.code === 'Enter') {
-                evt.preventDefault();
-                evt.stopPropagation();
-                commit();
-                selection.move(evt.shiftKey ? -1 : 1, 0);
-            } else if (evt.code === 'Tab') {
-                evt.preventDefault();
-                evt.stopPropagation();
-                commit();
-                selection.move(0, evt.shiftKey ? -1 : 1);
-            } else if (evt.code === 'Escape') {
-                // Leave edit mode.
-                evt.preventDefault();
-                evt.stopPropagation();
-                commit();
-            }
-        }
-
-        static blurHandler(evt) {
-            logger.log('editor.onblur');
-            if (editor.mode !== 'hidden') {
-                commit();
-            }
-
-            if (!container.contains(evt.relatedTarget)) {
-                container.blur();
-                selection.hide();
-            }
-        }
-
-        hide() {
-            this.mode = 'hidden';
-            this.setValue('');
-            if (this.input.style.display !== 'none') {
-                this.input.style.display = 'none';
-            } else {
-                this.textarea.style.display = 'none';
-            }
-        }
-
-        showInput(top, left, width) {
-            const style = this.input.style;
-            style.top = top;
-            style.left = left;
-            style.width = (parseInt(width) + lineHeight) + 'px';  // Account for the resize handle, which is about 20px
-            //style.height = innerHeight;
-            if (schemas[selection.active.columnIndex].enum) {
-                this.input.setAttribute('list', 'enum' + selection.active.columnIndex);
-            } else {
-                this.input.removeAttribute('list');
-            }
-
-            this.input.readOnly = activeCell.isReadOnly();  // Must not use disabled!
-
-            style.display = 'inline-block';
-            // focus on input element, which will then receive this keyboard event.
-            // Note: focus after display!
-            // Note: It is ok to scroll on focus here.
-            this.input.focus();
-            this.input.addEventListener('blur', Editor.blurHandler);
-        }
-
-        showTextArea() {
-            const style = this.input.style;
-            style.display = 'none';
-            this.input.removeEventListener('blur', Editor.blurHandler);
-            this.textarea.style.left = style.left;
-            this.textarea.style.top = style.top;
-            this.textarea.style.width = style.width;
-            this.textarea.style.display = 'inline-block';
-
-            this.textarea.readOnly = activeCell.isReadOnly();  // Must not use disabled!
-
-            this.textarea.value = this.input.value;
-            this.textarea.focus();
-            this.textarea.addEventListener('blur', Editor.blurHandler);
-        }
-
-        /**
-         * @param {string} value
-         */
-        setValue(value) {
-            if (this.input.style.display !== 'none') {
-                this.input.value = value;
-                if (value.includes('\n')) {
-                    this.showTextArea();
-                    this.textarea.value = value;
-                }
-            } else {
-                this.textarea.value = value;
-            }
-        }
-
-        getValue() {
-            if (this.input.style.display !== 'none') {
-                return this.input.value;
-            } else {
-                return this.textarea.value;
-            }
-        }
-    }
 
     const activeCell = {
         enterMode: function () {
@@ -999,14 +830,13 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     /** @type{number} */
     let rowCount = 0;
 
-    function commit() {
-        logger.log('commit');
+    function commitCellEdit(value) {
+        logger.log('commitCellEdit');
         getCell(selection.active).style.display = 'inline-block';
 
         if (!activeCell.isReadOnly()) {
             const rowIndex = selection.active.rowIndex;
             const colIndex = selection.active.columnIndex;
-            let value = editor.getValue().trim();
 
             if (value === '') {
                 value = undefined;
@@ -1027,7 +857,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
             commitTransaction(trans);
         }
-        editor.hide();
+
         container.focus({preventScroll: true});
     }
 
@@ -1040,9 +870,6 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         selection.hide();
 
         firstRow = _firstRow;
-        //if (rowCount < firstRow + viewPortRowCount) {
-        //    rowCount = firstRow + viewPortRowCount;
-        //}
 
         if (caller !== scrollBar) {
             // TODO: remove caller.
@@ -1218,8 +1045,6 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         }
     }
 
-    const editor = new Editor(cellParent);
-
     let selection = new Selection(repaintSelection);
     selection.grid = {
         container,
@@ -1231,41 +1056,37 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
     selection.setRange(0, 0, 1, 1);
 
-    container.addEventListener('selectionChanged', function() {
+    container.addEventListener('selectionChanged', function () {
         logger.log('selectionChanged');
-        headerRow.style.backgroundColor = selection.headerSelected?headerRowSelectedBackgroundColor:headerRowBackgroundColor;
+        headerRow.style.backgroundColor = selection.headerSelected ? headerRowSelectedBackgroundColor : headerRowBackgroundColor;
     });
 
     // Important: add in this order!
     container.addEventListener('keydown', (evt) => keyDownHandler(evt, selection));
     container.addEventListener('keydown', keyDownListener);
 
+    const editor = createEditor(cellParent, commitCellEdit, selection, schemas, activeCell, lineHeight);
+
     firstRow = 0;
     refresh();
 
-    class Range1 extends Range {
-        constructor(rowIndex, columnIndex, rowCount, columnCount) {
-            super(rowIndex, columnIndex, rowCount, columnCount);
-        }
-
-        select() {
-            selection.setRange(this.rowIndex, this.columnIndex, this.rowCount, this.columnCount);
-        }
-    }
-
     Object.defineProperty(gridchenElement, 'selectedRange',
         {
-            get: () => new Range1(selection.rowIndex, selection.columnIndex,
-                selection.rowCount, selection.columnCount)
+            get: () => ({
+                rowIndex: selection.rowIndex, columnIndex: selection.columnIndex,
+                rowCount: selection.rowCount, columnCount: selection.columnCount
+            })
         }
     );
 
-    Object.defineProperty(gridchenElement, 'activeRange',
-        {get: () => new Range1(selection.active.rowIndex, selection.active.columnIndex, 1, 1)}
-    );
+    /**
+     * @param {GridChen.Range} range
+     */
+    gridchenElement.select = function (range) {
+        container.focus();
+        selection.setRange(range.rowIndex, range.columnIndex, range.rowCount, range.columnCount);
+    };
 
-    gridchenElement.getRangeByIndexes =
-        (rowIndex, columnIndex, rowCount, columnCount) => new Range1(rowIndex, columnIndex, rowCount, columnCount);
     // TODO: Move this to matrixview module.
     gridchenElement['_toTSV'] = toTSV;
 

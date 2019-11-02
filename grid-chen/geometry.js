@@ -1,6 +1,7 @@
 /*
  * Taken from https://gist.github.com/Noitidart/90ea1ebd30156df9ef530c6a9a1b6ea7
  * Original was converted to ES2015 modules and some linter warnings fixed.
+ * This module is transient.
  */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this

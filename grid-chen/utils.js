@@ -283,7 +283,7 @@ function applyJSONPatchOperation(holder, op) {
 }
 
 /**
- * @param {{'':object}} holder
+ * @param {{'':*}} holder
  * @param {GridChen.JSONPatchOperation[]} patch
  */
 function applyPatch(holder, patch) {
@@ -317,9 +317,14 @@ export function applyJSONPatch(data, patch) {
 export function registerGlobalTransactionManager() {
     globalTransactionManager = createTransactionManager();
 
-    document.body.addEventListener('keydown', function (evt) {
+    /**
+     * @param {KeyboardEvent} evt
+     */
+    function listener(evt) {
         if (evt.code === 'KeyY' && evt.ctrlKey) {
-            if (evt.target.tagName === 'INPUT' && evt.target.value != evt.target.defaultValue) {
+            /** type{HTMLElement} */
+            const target = evt.target;
+            if (target.tagName === 'INPUT' && target.value !== target.defaultValue) {
                 // Let the default browser undo action be performed on this input element.
             } else {
                 evt.preventDefault();
@@ -332,7 +337,9 @@ export function registerGlobalTransactionManager() {
             evt.stopPropagation();
             globalTransactionManager.redo();
         }
-    });
+    }
+
+    document.body.addEventListener('keydown', listener);
     return globalTransactionManager;
 }
 

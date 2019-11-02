@@ -26,6 +26,7 @@
 
 <form style="display: inline-block;margin-left:1em;vertical-align: top; width: 50%;">
     <button name="save" type="button">Save</button>
+    <button name="select" type="button">Select Cell [3, 1]</button>
     <label style="display:block">Log <textarea name="log"></textarea></label>
 </form>
 
@@ -61,12 +62,8 @@
         logElem.scrollTop = logElem.scrollHeight;
     }
 
-    gridChen.addEventListener('activeCellChanged', /**@param {Event} evt*/ function (evt) {
-        logEvent(evt, gridChen.activeRange);
-    });
-
     gridChen.addEventListener('selectionChanged', /**@param {Event} evt*/ function (evt) {
-        logEvent(evt, gridChen.selectedRange);
+        logEvent(evt, JSON.stringify(gridChen.selectedRange));
     });
 
     gridChen.addEventListener('change', /**@param {CustomEvent} evt*/ function (evt) {
@@ -90,9 +87,15 @@
             logElem.value = 'Saved...\n' + JSON.stringify(patch, null, 2);
             tm.clear();
         } else {
-            logElem.value = 'Data is not modified';
+            logElem.value = 'Nothing to save, data is not modified';
         }
         logValue = '';
-    }
+    };
+
+    document.forms[0].select.onclick = function () {
+        window.requestAnimationFrame(function () {
+            gridChen.select({rowIndex:3, columnIndex:1, rowCount:1, columnCount:1});
+        });
+    };
 
 </script>

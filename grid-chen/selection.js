@@ -2,7 +2,7 @@ import {Rect} from "./geometry.js";
 import {logger} from "./utils.js";
 
 /**
- * @implements {GridChen.CellRange}
+ * @implements {GridChen.Range}
  */
 export class Range {
     /**
@@ -19,10 +19,10 @@ export class Range {
     }
 
     /**
-     * @returns {GridChen.Range}
+     * @returns {Range}
      */
     clone() {
-        return Object.assign(new Range(), this);
+        return Object.assign(new Range(0, 0,0,0), this);
     }
 
     toString() {
@@ -61,16 +61,11 @@ export class Range {
     }
 }
 
-/**
- * @implements {GridChen.Selection}
- */
 export class Selection extends Range {
     constructor(uiRefresher) {
         super(0, 0, 1, 1);
         this.uiRefresher = uiRefresher;
-        // Trick PyCharm into not dropping the type information on member field.
-        // TODO: Is there a better way?
-        //this['areas'.trim()] = [];
+        this.lastEvt = undefined;
     }
 
     /**
@@ -81,7 +76,7 @@ export class Selection extends Range {
         }
 
         this.grid.repaintActiveCell(this.active);
-        this.grid.container.dispatchEvent(new Event('selectionChanged'));
+        this.grid.container.dispatchEvent(new Event('selectionChanged', {bubbles: true, cancelable:true, composed:true}));
     }
 
     hide() {
@@ -170,7 +165,7 @@ export class Selection extends Range {
 
 /**
  * @param evt
- * @param {GridChen.Selection} selection
+ * @param {Selection} selection
  */
 export function keyDownHandler(evt, selection) {
     logger.log('selection.onkeydown ' + evt.code);
@@ -248,7 +243,7 @@ export function keyDownHandler(evt, selection) {
         if (selection.lastEvt.code === 'KeyA' && selection.lastEvt.ctrlKey) {
             // Already all data cells selected.
             selection.headerSelected = true;
-            selection.grid.container.dispatchEvent(new Event('selectionChanged'));
+            selection.grid.container.dispatchEvent(new Event('selectionChanged', {bubbles: true, cancelable:true, composed:true}));
         } else {
             selection.setRange(0, 0, grid.rowCount, grid.colCount);
         }
@@ -320,15 +315,12 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
     selection.pilot = current.clone();
     selection.headerSelected = false;
 
-    /** @type{GridChen.CellRange} */
+    /** @type{GridChen.Range} */
     let initial = selection.initial;
 
     if (evt.shiftKey && !evt.ctrlKey) {
-        //selection.expand(rowIndex, colIndex);
     } else if (evt.ctrlKey && !evt.shiftKey) {
         selection.uiRefresher(current, true);
-        //activeCell.move(rowIndex, colIndex);
-        //selection.show();
     } else {
         selection.hide();
         selection.areas.length = 0;

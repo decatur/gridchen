@@ -1,17 +1,10 @@
 declare module GridChen {
 
-    export interface Range extends CellRange {
-        // Selects this range.
-        select: () => undefined;
-        // Returns the live values of the range as an array of rows.
-        values: () => any[][];
-    }
-
-    export interface Selection {
-        areas: CellRange[];
-        active: CellRange;
-        setRange: (rowIndex: number, columnIndex: number, rowCount: number, columnCount: number) => undefined;
-    }
+    // export interface Selection {
+    //     areas: Range[];
+    //     active: Range;
+    //     setRange: (rowIndex: number, columnIndex: number, rowCount: number, columnCount: number) => void;
+    // }
 
     export interface Interval {
         min: number;

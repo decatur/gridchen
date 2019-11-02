@@ -7,6 +7,12 @@ declare module GridChen {
         values: () => any[][];
     }
 
+    export interface Selection {
+        areas: CellRange[];
+        active: CellRange;
+        setRange: (rowIndex: number, columnIndex: number, rowCount: number, columnCount: number) => undefined;
+    }
+
     export interface Interval {
         min: number;
         sup: number;

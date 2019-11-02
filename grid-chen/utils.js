@@ -1,3 +1,5 @@
+const DEBUG = (location.hostname === 'localhost');
+
 function pad(v) {
     return String(v).padStart(2, '0');
 }
@@ -54,7 +56,6 @@ export function toLocaleISODateTimeString(d, displayResolution) {
     if (dh < 0) dh += 24;
     return s + '+' + pad(String(dh)) + ':00';
 }
-
 
 const localeDateParsers = {};
 
@@ -460,4 +461,12 @@ export function createTransactionManager() {
 
     return new TransactionManager();
 }
+
+let logCounter = 0;
+export const logger = {
+    log: (DEBUG ? (a, b) => window.console.log(logCounter++ + ': ' + a, b) : () => undefined),
+    error: function (a, b) {
+        window.console.error(logCounter++ + ': ' + a, b);
+    }
+};
 

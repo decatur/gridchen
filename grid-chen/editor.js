@@ -44,8 +44,12 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
     }
 
     function commit() {
-        commitCellEdit(getValue().trim());
+        const value = getValue().trim();
+        // Very nasty side effect: We need first to hide editor, then call commitCellEdit().
+        // The reason is duplicate commits involving JavaScript breakpoints in commitCellEdit() and
+        // then triggering blurHandler when pressing the resume button.
         hide();
+        commitCellEdit(value);
     }
 
     function showInput(top, left, width) {

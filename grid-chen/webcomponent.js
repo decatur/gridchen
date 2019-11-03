@@ -118,21 +118,6 @@ export class GridChen extends HTMLElement {
         this.shadowRoot.appendChild(container);
         createGrid(container, viewModel, this, transactionManager);
         this.style.width = container.style.width;
-
-        this.context = {
-            /**
-             * @returns {GridChen.Patch}
-             */
-            removeValue() {
-            },
-            /**
-             * @param {object} value
-             * @returns {GridChen.Patch}
-             */
-            setValue(value) {
-            }
-        };
-
         return this
     }
 }
@@ -567,7 +552,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
         if (rowIndex === -1) {
             viewModel.removeModel();  // We can ignore this patch, because it is included in the patch from removeValue().
-            trans.patches.push(gridchenElement.context.removeValue());
+            trans.patches.push(viewModel.updateHolder());
         }
 
         commitTransaction(trans);
@@ -691,7 +676,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
      */
     function tmListener(patch) {
         viewModel.applyJSONPatch(patch.operations);
-        gridchenElement.context.setValue(viewModel.getModel());
+        viewModel.updateHolder();
         const {rowIndex, columnIndex} = patch.detail;
         selection.setRange(rowIndex, columnIndex, 1, 1);
         // TODO: refresh on transaction level!
@@ -844,7 +829,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             const trans = tm.openTransaction();
 
             if (model !== viewModel.getModel()) {
-                trans.patches.push(gridchenElement.context.setValue(viewModel.getModel()));
+                trans.patches.push(viewModel.updateHolder());
             } else {
                 trans.patches.push(createPatch(operations));
             }

@@ -271,6 +271,11 @@ class MatrixView {
      */
     applyJSONPatch(patch) {
     }
+
+    /**
+     * @returns {Patch}
+     */
+    updateHolder() {}
 }
 
 // # Notes about JSON Patch
@@ -326,7 +331,7 @@ function padArray(a, targetLength, prefix) {
 
 /**
  * @param {GridChen.GridSchema} schema
- * @param {Array<object>} rows
+ * @param {object[]} rows
  * @returns {GridChen.MatrixView | Error}
  */
 export function createRowMatrixView(schema, rows) {
@@ -348,8 +353,12 @@ export function createRowMatrixView(schema, rows) {
             return rows;
         }
 
+        /**
+         * @returns {JSONPatchOperation[]}
+         */
         removeModel() {
-            const patch = [{op: 'remove', path: '', oldValue: rows}];
+            //const patch = [{op: 'remove', path: '', oldValue: rows}];
+            const patch = [Object.create({}, {op: 'remove', path: '', oldValue: rows})];
             rows = null;
             return patch
         }

@@ -551,7 +551,9 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         }
 
         if (rowIndex === -1) {
-            viewModel.removeModel();  // We can ignore this patch, because it is included in the patch from removeValue().
+            // We can ignore this patch, because it is included in the patch from updateHolder().
+            // TODO: Do we need removeModel()s patch at all? => No, but there is a unit test to that effect.
+            void viewModel.removeModel();
             trans.patches.push(viewModel.updateHolder());
         }
 

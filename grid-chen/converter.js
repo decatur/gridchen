@@ -1,8 +1,8 @@
 /**
  * Author: Wolfgang Kühn 2019
- * Source https://github.com/decatur/grid-chen/grid-chen/converter.js
+ * Source located at https://github.com/decatur/grid-chen/grid-chen
  *
- * See README.md
+ * Module implementing data mapping for some common data types.
  */
 
 import * as u from './utils.js'

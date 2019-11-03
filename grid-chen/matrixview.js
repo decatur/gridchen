@@ -1,6 +1,8 @@
 /**
  * Author: Wolfgang Kühn 2019
- * Source https://github.com/decatur/grid-chen/grid-chen/matrixview.js
+ * Source located at https://github.com/decatur/grid-chen/grid-chen
+ *
+ * Module implementing data (model) abstraction for some common matrix representations.
  */
 
 import * as c from "./converter.js";

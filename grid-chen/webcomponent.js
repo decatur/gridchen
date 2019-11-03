@@ -1,15 +1,14 @@
-import {registerGlobalTransactionManager} from "./utils.js";
-import {Selection, Range} from "./selection.js";
-import {logger} from "./utils.js";
-import {keyDownHandler} from "./selection.js";
-import {createEditor} from "./editor.js"
-
 /**
  * Author: Wolfgang Kühn 2019
- * Source https://github.com/decatur/grid-chen/grid-chen/component.js
+ * Source located at https://github.com/decatur/grid-chen/grid-chen
  *
- * See README.md
+ * Module implementing the visual grid and scrolling behaviour.
  */
+
+import {logger} from "./utils.js";
+import {registerGlobalTransactionManager} from "./utils.js";
+import {Selection, Range, keyDownHandler} from "./selection.js";
+import {createEditor} from "./editor.js"
 
 //////////////////////
 // Start Configuration
@@ -406,29 +405,24 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     container.tabIndex = 0;
 
     const activeCell = {
-        enterMode: function () {
+        openEditor: function (mode, value) {
             // TODO: rowIncrement should depend on scroll direction.
             scrollIntoView(selection.active.rowIndex, selection.active.rowIndex - firstRow);
-
             const spanStyle = getCell(selection.active).style;
             spanStyle.display = 'none';
-            editor.showInput(spanStyle.top, spanStyle.left, spanStyle.width);
+            editor.open(mode, value, spanStyle, schemas[selection.active.columnIndex], activeCell.isReadOnly());
         },
         enterInputMode: function (value) {
-            editor.mode = 'input';
-            this.enterMode();
-            editor.input.value = value;
+            activeCell.openEditor('input', value);
         },
         enterEditMode: function () {
-            editor.mode = 'edit';
-            this.enterMode();
             let value = viewModel.getCell(selection.active.rowIndex, selection.active.columnIndex);
             if (value == null) {
                 value = '';
             } else {
                 value = schemas[selection.active.columnIndex].converter.toEditable(value);
             }
-            editor.setValue(value);
+            activeCell.openEditor('edit', value);
         },
         isReadOnly: function () {
             return isColumnReadOnly(selection.active.columnIndex)
@@ -1065,7 +1059,9 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     container.addEventListener('keydown', (evt) => keyDownHandler(evt, selection));
     container.addEventListener('keydown', keyDownListener);
 
-    const editor = createEditor(cellParent, commitCellEdit, selection, schemas, activeCell, lineHeight);
+    const editor = createEditor(cellParent, commitCellEdit, selection,
+        activeCell,
+        lineHeight);
 
     firstRow = 0;
     refresh();
@@ -1095,14 +1091,15 @@ function createGrid(container, viewModel, gridchenElement, tm) {
      * Dispatches a mousedown event in the middle of the specified cell.
      */
     gridchenElement['_mousedown'] = function (rowIndex, columnIndex) {
+        // TODO: This is the inverse of selection.startSelection.index(), so bring it together.
         const rect = cellParent.getBoundingClientRect();
         let grid_y = rowIndex - firstRow;
         let y = rowHeight * (grid_y + 0.5);
         let clientY = y + rect.y;
-
         let x = ((columnIndex === 0 ? 0 : columnEnds[columnIndex - 1]) + columnEnds[columnIndex]) / 2;
         let clientX = x + rect.x;
-        cellParent.dispatchEvent(new MouseEvent('mousedown', {clientX: clientX, clientY: clientY}));
+
+        container.dispatchEvent(new MouseEvent('mousedown', {clientX: clientX, clientY: clientY}));
     };
 
     /**
@@ -1110,25 +1107,18 @@ function createGrid(container, viewModel, gridchenElement, tm) {
      * Dispatches the specified keyboard event.
      */
     gridchenElement['_keyboard'] = function (typeArg, eventInitDict) {
-        let targetElem;
-        if (editor.input.style.display !== 'none') {
-            targetElem = editor.input;
-        } else if (editor.textarea.style.display !== 'none') {
-            targetElem = editor.textarea;
+        if (editor.mode !== 'hidden') {
+            editor._keyboard(typeArg, eventInitDict);
         } else {
-            targetElem = container;
+            container.dispatchEvent(new KeyboardEvent(typeArg, eventInitDict));
         }
-        targetElem.dispatchEvent(new KeyboardEvent(typeArg, eventInitDict));
     };
 
-    gridchenElement['_sendKeys'] = function (keys) {
-        if (editor.input.style.display !== 'none') {
-            editor.input.value += keys;
-        } else if (editor.textarea.style.display !== 'none') {
-            editor.textarea.value += keys;
+    gridchenElement['_sendKeys'] = function(keys) {
+        if (editor.mode !== 'hidden') {
+            editor._sendKeys(keys);
         } else if (!activeCell.isReadOnly()) {
-            activeCell.enterInputMode('');
-            editor.input.value = keys;
+            activeCell.enterInputMode(keys);
         }
     };
 

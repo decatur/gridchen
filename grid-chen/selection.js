@@ -1,7 +1,16 @@
+/**
+ * Author: Wolfgang Kühn 2019
+ * Source located at https://github.com/decatur/grid-chen/grid-chen
+ *
+ * Module implementing Excel style multi area selection behaviour on a grid.
+ */
+
 import {Rect} from "./geometry.js";
 import {logger} from "./utils.js";
 
 /**
+ * TODO: Resolve name collision with lib.dom.Range?
+ * lib.dom.Range is not really prolific.
  * @implements {GridChen.Range}
  */
 export class Range {
@@ -325,7 +334,6 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
         selection.hide();
         selection.areas.length = 0;
         selection.uiRefresher(current, true);
-        //navigateCell(rowIndex - activeCell.row, colIndex - activeCell.col, false);
     }
 
     function resetHandlers() {

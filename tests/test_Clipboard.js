@@ -2,6 +2,7 @@ import {assert, test} from './grid-chen/utils.js'
 import '../grid-chen/webcomponent.js'
 import {createView} from "../grid-chen/matrixview.js";
 import {createTransactionManager} from "../grid-chen/utils.js"
+import {Range} from "../grid-chen/selection.js";
 
 /**
  * @type {GridChen.JSONSchema}
@@ -28,7 +29,7 @@ test('copy', async function () {
     const gc = new (customElements.get('grid-chen'))();
     gc.resetFromView(createView(schema, rows), tm);
 
-    gc.getRangeByIndexes(0, 0, 2, 2).select();
+    gc.select(new Range(0, 0, 2, 2));
     gc._keyboard('keydown', {code: 'KeyC', ctrlKey: true});
     const text = await navigator.clipboard.readText();
     assert.equal(`0\ta\r\nNaN\tb`, text);
@@ -63,7 +64,7 @@ test('tiling', async function () {
     gc.resetFromView(createView(schema, rows), tm);
 
     await navigator.clipboard.writeText(`3\tc`);
-    gc.getRangeByIndexes(0, 0, 2, 2).select();
+    gc.select(new Range(0, 0, 2, 2));
     await tm.requestTransaction(function () {
         gc._keyboard('keydown',  {code: 'KeyV', ctrlKey: true});
     });
@@ -79,7 +80,7 @@ test('paste outside of column range', async function () {
     gc.resetFromView(createView(schema, rows), tm);
 
     await navigator.clipboard.writeText(`3\tc`);
-    gc.getRangeByIndexes(0, 1, 1, 1).select();
+    gc.select(new Range(0, 1, 1, 1));
     await tm.requestTransaction(function () {
         gc._keyboard('keydown', {code: 'KeyV', ctrlKey: true});
     });

@@ -1,10 +1,112 @@
+/**
+ * Author: Wolfgang Kühn 2019
+ * Source located at https://github.com/decatur/grid-chen/grid-chen
+ *
+ * Module implementing edit and display (for read-only cells) capabilities for cell values.
+ */
+
 import {logger} from "./utils.js";
 
-export function createEditor(container, commitCellEdit, selection, schemas, activeCell, lineHeight) {
+export function createEditor(container, commitCellEdit, selection, lineHeight) {
+    let currentMode = 'hidden';
+    let currentSchema = undefined;
+    /** @type{boolean} */
+    let currentReadOnly;
+
+    /** @type{HTMLInputElement} */
+    const input = document.createElement('input');
+    input.id = 'editor';
+    input.style.display = 'none';
+
+    /** @type{HTMLTextAreaElement} */
+    const textarea = document.createElement('textarea');
+    textarea.id = 'textarea';
+    textarea.style.display = 'none';
+
+    input.addEventListener('keydown', keydownHandler);
+    textarea.addEventListener('keydown', keydownHandler);
+
+    // Clicking editor should invoke default: move the caret. It should not delegate to ancestors.
+    input.addEventListener('mousedown', (evt) => evt.stopPropagation());
+    textarea.addEventListener('mousedown', (evt) => evt.stopPropagation());
+
+    container.appendChild(input);
+    container.appendChild(textarea);
+
+    function hide() {
+        currentMode = 'hidden';
+        setValue('');
+        if (input.style.display !== 'none') {
+            input.style.display = 'none';
+        } else {
+            textarea.style.display = 'none';
+        }
+    }
 
     function commit() {
-        commitCellEdit(editor.getValue().trim());
-        editor.hide();
+        commitCellEdit(getValue().trim());
+        hide();
+    }
+
+    function showInput(top, left, width) {
+        const style = input.style;
+        style.top = top;
+        style.left = left;
+        style.width = (parseInt(width) + lineHeight) + 'px';  // Account for the resize handle, which is about 20px
+        //style.height = innerHeight;
+        if (currentSchema.enum) {
+            input.setAttribute('list', 'enum' + selection.active.columnIndex);
+        } else {
+            input.removeAttribute('list');
+        }
+
+        input.readOnly = currentReadOnly;  // Must not use disabled!
+
+        style.display = 'inline-block';
+        // focus on input element, which will then receive this keyboard event.
+        // Note: focus after display!
+        // Note: It is ok to scroll on focus here.
+        input.focus();
+        input.addEventListener('blur', blurHandler);
+    }
+
+    function showTextArea() {
+        const style = input.style;
+        style.display = 'none';
+        input.removeEventListener('blur', blurHandler);
+        textarea.style.left = style.left;
+        textarea.style.top = style.top;
+        textarea.style.width = style.width;
+        textarea.style.display = 'inline-block';
+
+        textarea.readOnly = currentReadOnly;  // Must not use disabled!
+
+        textarea.value = input.value;
+        textarea.focus();
+        textarea.addEventListener('blur', blurHandler);
+    }
+
+    /**
+     * @param {string} value
+     */
+    function setValue(value) {
+        if (input.style.display !== 'none') {
+            input.value = value;
+            if (value.includes('\n')) {
+                showTextArea();
+                textarea.value = value;
+            }
+        } else {
+            textarea.value = value;
+        }
+    }
+
+    function getValue() {
+        if (input.style.display !== 'none') {
+            return input.value;
+        } else {
+            return textarea.value;
+        }
     }
 
     /**
@@ -15,12 +117,12 @@ export function createEditor(container, commitCellEdit, selection, schemas, acti
         // Clicking editor should invoke default: move caret. It should not delegate to containers action.
         evt.stopPropagation();
 
-        if (evt.code === 'ArrowLeft' && editor.mode === 'input') {
+        if (evt.code === 'ArrowLeft' && currentMode === 'input') {
             evt.preventDefault();
             evt.stopPropagation();
             commit();
             selection.move(0, -1);
-        } else if (evt.code === 'ArrowRight' && editor.mode === 'input') {
+        } else if (evt.code === 'ArrowRight' && currentMode === 'input') {
             evt.preventDefault();
             evt.stopPropagation();
             commit();
@@ -28,11 +130,11 @@ export function createEditor(container, commitCellEdit, selection, schemas, acti
         } else if (evt.code === 'Enter' && evt.altKey) {
             evt.preventDefault();
             evt.stopPropagation();
-            if (editor.input.style.display !== 'none') {
-                editor.showTextArea();
-                editor.textarea.value += '\n';
+            if (input.style.display !== 'none') {
+                showTextArea();
+                textarea.value += '\n';
             } else {
-                editor.textarea.setRangeText('\n', editor.textarea.selectionStart, editor.textarea.selectionEnd, 'end');
+                textarea.setRangeText('\n', textarea.selectionStart, textarea.selectionEnd, 'end');
             }
         } else if (evt.code === 'Enter') {
             evt.preventDefault();
@@ -53,114 +155,59 @@ export function createEditor(container, commitCellEdit, selection, schemas, acti
     }
 
     function blurHandler(evt) {
-            logger.log('editor.onblur');
-            if (editor.mode !== 'hidden') {
-                commit();
-            }
-
-            if (!container.contains(evt.relatedTarget)) {
-                container.blur();
-                selection.hide();
-            }
+        logger.log('editor.onblur');
+        if (currentMode !== 'hidden') {
+            commit();
         }
 
+        if (!container.contains(evt.relatedTarget)) {
+            container.blur();
+            selection.hide();
+        }
+    }
+
+    /**
+     * Stateless and closed class pattern.
+     */
     class Editor {
-
         constructor() {
-            this.mode = 'hidden';
-            /** @type{HTMLInputElement} */
-            this.input = document.createElement('input');
-            this.input.id = 'editor';
-            this.input.style.display = 'none';
-
-            /** @type{HTMLTextAreaElement} */
-            this.textarea = document.createElement('textarea');
-            this.textarea.id = 'textarea';
-            this.textarea.style.display = 'none';
-
-            this.input.addEventListener('keydown', keydownHandler);
-            this.textarea.addEventListener('keydown', keydownHandler);
-
-            // Clicking editor should invoke default: move the caret. It should not delegate to ancestors.
-            this.input.addEventListener('mousedown', (evt) => evt.stopPropagation());
-            this.textarea.addEventListener('mousedown', (evt) => evt.stopPropagation());
-
-            container.appendChild(this.input);
-            container.appendChild(this.textarea);
         }
 
-        hide() {
-            this.mode = 'hidden';
-            this.setValue('');
-            if (this.input.style.display !== 'none') {
-                this.input.style.display = 'none';
+        get mode() {
+            return currentMode
+        }
+
+        open(mode, value, spanStyle, schema, readOnly) {
+            currentMode = mode;
+            currentSchema = schema;
+            currentReadOnly = readOnly;
+            showInput(spanStyle.top, spanStyle.left, spanStyle.width);
+            setValue(value);
+        }
+
+
+        _keyboard(typeArg, eventInitDict) {
+            let targetElem;
+            if (input.style.display !== 'none') {
+                targetElem = input;
+            } else if (textarea.style.display !== 'none') {
+                targetElem = textarea;
             } else {
-                this.textarea.style.display = 'none';
+                throw new Error('Event send to editor but editor does not show.');
             }
+            targetElem.dispatchEvent(new KeyboardEvent(typeArg, eventInitDict));
         }
 
-        showInput(top, left, width) {
-            const style = this.input.style;
-            style.top = top;
-            style.left = left;
-            style.width = (parseInt(width) + lineHeight) + 'px';  // Account for the resize handle, which is about 20px
-            //style.height = innerHeight;
-            if (schemas[selection.active.columnIndex].enum) {
-                this.input.setAttribute('list', 'enum' + selection.active.columnIndex);
+        _sendKeys(keys) {
+            if (input.style.display !== 'none') {
+                input.value += keys;
+            } else if (textarea.style.display !== 'none') {
+                textarea.value += keys;
             } else {
-                this.input.removeAttribute('list');
-            }
-
-            this.input.readOnly = activeCell.isReadOnly();  // Must not use disabled!
-
-            style.display = 'inline-block';
-            // focus on input element, which will then receive this keyboard event.
-            // Note: focus after display!
-            // Note: It is ok to scroll on focus here.
-            this.input.focus();
-            this.input.addEventListener('blur', blurHandler);
-        }
-
-        showTextArea() {
-            const style = this.input.style;
-            style.display = 'none';
-            this.input.removeEventListener('blur', blurHandler);
-            this.textarea.style.left = style.left;
-            this.textarea.style.top = style.top;
-            this.textarea.style.width = style.width;
-            this.textarea.style.display = 'inline-block';
-
-            this.textarea.readOnly = activeCell.isReadOnly();  // Must not use disabled!
-
-            this.textarea.value = this.input.value;
-            this.textarea.focus();
-            this.textarea.addEventListener('blur', blurHandler);
-        }
-
-        /**
-         * @param {string} value
-         */
-        setValue(value) {
-            if (this.input.style.display !== 'none') {
-                this.input.value = value;
-                if (value.includes('\n')) {
-                    this.showTextArea();
-                    this.textarea.value = value;
-                }
-            } else {
-                this.textarea.value = value;
-            }
-        }
-
-        getValue() {
-            if (this.input.style.display !== 'none') {
-                return this.input.value;
-            } else {
-                return this.textarea.value;
+                throw new Error('Send keys to editor but editor does not show.');
             }
         }
     }
 
-    const editor = new Editor();
-    return editor;
+    return new Editor();
 }

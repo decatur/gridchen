@@ -2,6 +2,7 @@ import {test, log, assert} from './grid-chen/utils.js'
 import {GridChen} from '../grid-chen/webcomponent.js'
 import {createColumnMatrixView, createRowMatrixView} from "../grid-chen/matrixview.js";
 import {NumberConverter} from "../grid-chen/converter.js";
+import {Range} from "../grid-chen/selection.js";
 
 const decimalSep = new NumberConverter(1).decimalSep;
 
@@ -19,7 +20,7 @@ test('Activate Cell', async function () {
     const view = createRowMatrixView(schema, rows);
     gc.resetFromView(view);
     gc._mousedown(0, 0);
-    const r = gc.activeRange;
+    const r = gc.selectedRange;
     assert.equal([0, 0, 1, 1], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
 
 });
@@ -57,7 +58,7 @@ test('expand selection with keys', async function () {
     const view = createRowMatrixView(schema, rows);
     gc.resetFromView(view);
 
-    gc.getRangeByIndexes(0, 0, 1, 1).select();
+    gc.select(new Range(0, 0, 1, 1));
     let r = gc.selectedRange;
     assert.equal([0, 0, 1, 1], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
     gc._keyboard('keydown', {code: 'ArrowRight', shiftKey: true});

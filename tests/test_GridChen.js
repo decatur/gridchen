@@ -19,7 +19,7 @@ test('Activate Cell', async function () {
     ];
     const view = createRowMatrixView(schema, rows);
     gc.resetFromView(view);
-    gc._mousedown(0, 0);
+    gc._click(0, 0);
     const r = gc.selectedRange;
     assert.equal([0, 0, 1, 1], [r.rowIndex, r.columnIndex, r.rowCount, r.columnCount]);
 
@@ -34,7 +34,7 @@ test('Edit Cell', async function () {
     ];
     const view = createRowMatrixView(schema, rows);
     gc.resetFromView(view);
-    gc._mousedown(0, 0);
+    gc._click(0, 0);
     gc._keyboard('keydown', {key: " "});
     gc._sendKeys('123 ');
     gc._keyboard('keydown', {code: 'Tab'});
@@ -74,7 +74,7 @@ test('ColumnMatrix', () => {
     log('ViewportText');
     assert.equal(`0${decimalSep}00a`, gc._textContent)
 
-    gc._mousedown(0, 0);
+    gc._click(0, 0);
     gc._keyboard('keydown', {code: 'ArrowRight', shiftKey: true});
     log('should expand selection');
     const r = gc.selectedRange;
@@ -91,7 +91,7 @@ test('RowMatrix', () => {
     log('ViewportText');
     assert.equal(`0${decimalSep}00a`, gc._textContent)
 
-    gc._mousedown(0, 0);
+    gc._click(0, 0);
     gc._keyboard('keydown', {code: 'ArrowRight', shiftKey: true});
     log('should expand selection');
     const r = gc.selectedRange;
@@ -105,7 +105,7 @@ test('Delete Selected Rows', () => {
     const gc = new GridChen();
     const rows = [[0, 'a'], [1, 'b']];
     gc.resetFromView(createRowMatrixView(schema, rows));
-    gc._mousedown(0, 0);
+    gc._click(0, 0);
     // Delete first row
     gc._keyboard('keydown', {key: '-', ctrlKey: true});
     assert.equal([[1, 'b']], rows);

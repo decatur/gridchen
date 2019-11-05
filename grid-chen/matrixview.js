@@ -354,13 +354,12 @@ export function createRowMatrixView(schema, rows) {
         }
 
         /**
-         * @returns {JSONPatchOperation[]}
+         * @returns {GridChen.JSONPatchOperation[]}
          */
         removeModel() {
-            //const patch = [{op: 'remove', path: '', oldValue: rows}];
-            const patch = [Object.create({}, {op: 'remove', path: '', oldValue: rows})];
+            const oldValue = rows;
             rows = null;
-            return patch
+            return [{op: 'remove', path: '', oldValue: oldValue}];
         }
 
         /**

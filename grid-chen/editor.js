@@ -7,6 +7,13 @@
 
 import {logger} from "./utils.js";
 
+/**
+ * @param {HTMLElement} container
+ * @param {function} commitCellEdit
+ * @param {GridChen.Selection} selection
+ * @param {number} lineHeight
+ * @returns {Editor}
+ */
 export function createEditor(container, commitCellEdit, selection, lineHeight) {
     let currentMode = 'hidden';
     let currentSchema = undefined;

@@ -66,6 +66,7 @@ declare module GridChen {
         columnIndex: number;
         rowCount: number;
         columnCount: number;
+        offset: (rowOffset: number, colOffset: number) => Range;
     }
 
     /**

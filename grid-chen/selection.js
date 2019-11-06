@@ -5,13 +5,15 @@
  * Module implementing Excel style multi area selection behaviour on a grid.
  */
 
+ //@ts-check
+
 import {Rect} from "./geometry.js";
 import {logger} from "./utils.js";
 
 /**
  * TODO: Resolve name collision with lib.dom.Range?
  * lib.dom.Range is not really prolific.
- * @implements {GridChen.Range}
+ * @implements {GridChenNS.Range}
  */
 export class Range {
     /**
@@ -28,7 +30,7 @@ export class Range {
     }
 
     /**
-     * @returns {GridChen.Range}
+     * @returns {GridChenNS.Range}
      */
     clone() {
         return Object.assign(new Range(0, 0,0,0), this);
@@ -41,16 +43,16 @@ export class Range {
     /**
      * TODO: Merge Range and Rect.
      * Intersect this range with another range.
-     * @param {GridChen.Range} other
-     * @returns {GridChen.Range}
+     * @param {GridChenNS.Range} other
+     * @returns {GridChenNS.Range}
      */
     intersect(other) {
         const row = intersectInterval(
-            /**@type{GridChen.Interval}*/{min: this.rowIndex, sup: this.rowIndex + this.rowCount},
-            /**@type{GridChen.Interval}*/{min: other.rowIndex, sup: other.rowIndex + other.rowCount});
+            /**@type{GridGridChenNSChen.Interval}*/{min: this.rowIndex, sup: this.rowIndex + this.rowCount},
+            /**@type{GridChenNS.Interval}*/{min: other.rowIndex, sup: other.rowIndex + other.rowCount});
         const col = intersectInterval(
-            /**@type{GridChen.Interval}*/{min: this.columnIndex, sup: this.columnIndex + this.columnCount},
-            /**@type{GridChen.Interval}*/{min: other.columnIndex, sup: other.columnIndex + other.columnCount});
+            /**@type{GridChenNS.Interval}*/{min: this.columnIndex, sup: this.columnIndex + this.columnCount},
+            /**@type{GridChenNS.Interval}*/{min: other.columnIndex, sup: other.columnIndex + other.columnCount});
         if (col === undefined || row === undefined) {
             return undefined;
         }
@@ -61,7 +63,7 @@ export class Range {
      * Copy this range to an offset position.
      * @param {number} rowOffset
      * @param {number} colOffset
-     * @returns {GridChen.Range}
+     * @returns {GridChenNS.Range}
      */
     offset(rowOffset, colOffset) {
         return new Range(
@@ -70,11 +72,20 @@ export class Range {
     }
 }
 
+/** @implements{GridChenNS.Selection} */
 export class Selection extends Range {
     constructor(uiRefresher) {
         super(0, 0, 1, 1);
         this.uiRefresher = uiRefresher;
         this.lastEvt = undefined;
+        /**@type{GridChenNS.Range}*/
+        this.active;
+        /**@type{GridChenNS.Range}*/
+        this.pilot;
+        /**@type{GridChenNS.Range}*/
+        this.initial;
+        /**@type{GridChenNS.Range[]}*/
+        this.areas;
     }
 
     /**
@@ -174,7 +185,7 @@ export class Selection extends Range {
 
 /**
  * @param {KeyboardEvent} evt
- * @param {GridChen.Selection} selection
+ * @param {GridChenNS.Selection} selection
  */
 export function keyDownHandler(evt, selection) {
     logger.log('selection.onkeydown ' + evt.code);
@@ -260,9 +271,9 @@ export function keyDownHandler(evt, selection) {
 }
 
 /**
- * @param {GridChen.Interval} i1
- * @param {GridChen.Interval} i2
- * @returns {GridChen.Interval}
+ * @param {GridChenNS.Interval} i1
+ * @param {GridChenNS.Interval} i2
+ * @returns {GridChenNS.Interval}
  */
 function intersectInterval(i1, i2) {
     const min = Math.max(i1.min, i2.min);
@@ -270,7 +281,7 @@ function intersectInterval(i1, i2) {
     if (sup <= min) {
         return undefined;
     }
-    return /**@type{GridChen.Interval}*/ {min, sup}
+    return {min, sup}
 }
 
 /**
@@ -301,8 +312,8 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
     const rect = cellParent.getBoundingClientRect();
 
     function index(evt) {
-        const y = evt.clientY - rect.y;
-        const x = evt.clientX - rect.x;
+        const y = evt.clientY - rect.top;
+        const x = evt.clientX - rect.left;
         // log.log(x + ' ' + y);
         const grid_y = Math.trunc(y / rowHeight);
         let grid_x = 0;
@@ -322,7 +333,6 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
     selection.pilot = current.clone();
     selection.headerSelected = false;
 
-    /** @type{GridChen.Range} */
     let initial = selection.initial;
 
     if (evt.shiftKey && !evt.ctrlKey) {

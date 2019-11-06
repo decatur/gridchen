@@ -2,7 +2,7 @@
 /// grid-chen JavaScript APIs
 /////////////////////////////
 
-declare module GridChen {
+declare module GridChenNS {
 
     export interface JSONSchema {
         title: string;
@@ -31,7 +31,7 @@ declare module GridChen {
         sortDirection?: number;
         converter?: Converter;
         // TODO: Rename according ISO
-        frequency?: String;
+        frequency?: string;
         enum?: (string|number)[];
         readOnly?: boolean;
     }
@@ -67,6 +67,8 @@ declare module GridChen {
         rowCount: number;
         columnCount: number;
         offset: (rowOffset: number, colOffset: number) => Range;
+        intersect: (Range) => Range | void;  // TODO: Do not return void, work with empty.
+        clone: () => Range;
     }
 
     /**

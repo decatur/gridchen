@@ -70,7 +70,7 @@ export function createInteractiveDemoGrid(schema, orgData) {
     }
 
     /**
-     * @type {GridChen.Transaction} trans
+     * @type {GridChenNS.Transaction} trans
      */
     tm.addEventListener('change', function (evt) {
         dataElement.value = REPR.stringify(view.getModel(), null, 2);
@@ -103,8 +103,8 @@ export const REPR = {
      * Return a string containing a printable representation of an object.
      * @param {*} v
      * @param {null} replacer
-     * @param {number?} depth
-     * @param {number?} level
+     * @param {number=} depth
+     * @param {number=} level
      * @returns {string}
      */
     stringify(v, replacer, depth, level) {

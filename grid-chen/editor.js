@@ -5,12 +5,14 @@
  * Module implementing edit and display (for read-only cells) capabilities for cell values.
  */
 
+//@ts-check
+
 import {logger} from "./utils.js";
 
 /**
  * @param {HTMLElement} container
  * @param {function} commitCellEdit
- * @param {GridChen.Selection} selection
+ * @param {GridChenNS.Selection} selection
  * @param {number} lineHeight
  * @returns {Editor}
  */

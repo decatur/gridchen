@@ -12,6 +12,7 @@ import {registerGlobalTransactionManager} from "./utils.js";
 import {Selection, Range, keyDownHandler} from "./selection.js";
 import {createEditor} from "./editor.js"
 
+
 //////////////////////
 // Start Configuration
 const cellPadding = 3;
@@ -74,8 +75,7 @@ function rangeIterator(count) {
  * @returns {HTMLElement}
  */
 function openDialog() {
-    /* @type{HTMLDialogElement} */
-    let dialog = document.getElementById('gridchenDialog');
+    let dialog = /** @type{HTMLDialogElement} */ (document.getElementById('gridchenDialog'));
     if (!dialog) {
         dialog = document.createElement('dialog');
         dialog.id = 'gridchenDialog';
@@ -88,7 +88,7 @@ function openDialog() {
 
 /**
  * We export for testability.
- * @implements {GridChen.GridChen}
+ * @implements {GridChenNS.GridChen}
  */
 export class GridChen extends HTMLElement {
 
@@ -101,8 +101,8 @@ export class GridChen extends HTMLElement {
     }
 
     /**
-     * @param {GridChen.MatrixView} viewModel
-     * @param {GridChen.TransactionManager?} transactionManager
+     * @param {GridChenNS.MatrixView} viewModel
+     * @param {GridChenNS.TransactionManager=} transactionManager
      * @returns {GridChen}
      */
     resetFromView(viewModel, transactionManager) {
@@ -173,7 +173,7 @@ class ScrollBar {
         // When this.element gains focus, container.parentElement.parentElement will loose is, so re-focus.
         this.element.oninput = () => {
             logger.log('slider oninput');
-            this.handler(Math.round(this.element.max - this.element.value));
+            this.handler(Math.round(Number(this.element.max) - Number(this.element.value)));
         };
     }
 
@@ -196,9 +196,9 @@ class ScrollBar {
 
 /**
  * @param {HTMLElement} container
- * @param {GridChen.MatrixView} viewModel
+ * @param {GridChenNS.MatrixView} viewModel
  * @param {GridChen} gridchenElement
- * @param {GridChen.TransactionManager} tm
+ * @param {GridChenNS.TransactionManager} tm
  */
 function createGrid(container, viewModel, gridchenElement, tm) {
     tm = tm || registerGlobalTransactionManager();
@@ -320,7 +320,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     makeDataLists();
 
     /**
-     * @param {GridChen.Transaction} trans
+     * @param {GridChenNS.Transaction} trans
      */
     function commitTransaction(trans) {
         // Note: First refresh, then commit!
@@ -385,7 +385,8 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     body.style.height = (viewPortHeight) + 'px';
     container.appendChild(body);
 
-    let cellParent = /** @type {HTMLElement} */ document.createElement('div');
+    /** @type {HTMLElement} */
+    let cellParent = document.createElement('div');
     cellParent.className = 'GRID';
     cellParent.style.position = 'absolute';  // Must be absolute otherwise contentEditable=true produces strange behaviour
     cellParent.style.width = gridWidth + 'px';
@@ -419,7 +420,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
     /**
      *
-     * @param {GridChen.Range} range
+     * @param {GridChenNS.Range} range
      * @param {boolean} show
      */
     function repaintSelection(range, show) {
@@ -475,7 +476,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     /** @param {WheelEvent} evt */
     cellParent.onmousewheel = function (evt) {
         logger.log('onmousewheel');
-        if ((/** @type {DocumentOrShadowRoot} */container.parentNode).activeElement !== container) return;
+        if ((/** @type {DocumentOrShadowRoot} */(container.parentNode)).activeElement !== container) return;
 
         // Do not disable zoom. Both Excel and Browsers zoom on ctrl-wheel.
         if (evt.ctrlKey) return;
@@ -491,9 +492,12 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         }
     };
 
+    /**
+     * @param {FocusEvent} evt
+     */
     container.onblur = function (evt) {
         logger.log('container.onblur: ' + evt);
-        if (!container.contains(/** @type {HTMLElement} */ evt.relatedTarget)) {
+        if (!container.contains(/** @type {HTMLElement} */ (evt.relatedTarget))) {
             // We are leaving the component.
             selection.hide();
         }
@@ -677,23 +681,23 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     }
 
     /**
-     * @param {GridChen.Patch} patch
+     * @param {GridChenNS.Patch} patch
      */
     function tmListener(patch) {
         viewModel.applyJSONPatch(patch.operations);
         viewModel.updateHolder();
-        const {rowIndex, columnIndex} = patch.detail;
+        const {rowIndex, columnIndex} = /**@type{{rowIndex: number, columnIndex: number}}*/ (patch.detail);
         selection.setRange(rowIndex, columnIndex, 1, 1);
         // TODO: refresh on transaction level!
         refresh();
     }
 
     /**
-     * @param {GridChen.JSONPatchOperation[]?} operations
-     * @returns {GridChen.Patch}
+     * @param {GridChenNS.JSONPatchOperation[]=} operations
+     * @returns {GridChenNS.Patch}
      */
     function createPatch(operations) {
-        return /** @type{GridChen.Patch} */ {
+        return /** @type{GridChenNS.Patch} */ {
             operations: operations || [],
             pathPrefix: schema.pathPrefix,
             apply: tmListener,
@@ -757,7 +761,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
         /** @type{Array<number>} */
         const columnIndices = [];
-        for (const /** @type{GridChen.Range} */ r of selection.areas) {
+        for (const r of selection.areas) {
             for (let count = 0; count < r.columnCount; count++) {
                 columnIndices.push(r.columnIndex + count);
             }
@@ -768,7 +772,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             return
         }
 
-        /** @type{GridChen.ColumnSchema[]}*/
+        /** @type{GridChenNS.ColumnSchema[]}*/
         let columnSchemas = [];
         /** @type{number[][]}*/
         const columns = [];
@@ -781,7 +785,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         // in the HTML element.
         dialog.textContent = '';
         const graphElement = dialog.appendChild(document.createElement('div'));
-        /** @type {GridChen.PlotEventDetail} */
+        /** @type {GridChenNS.PlotEventDetail} */
         let detail = Object.assign({
             graphElement: graphElement,
             title: schema.title,
@@ -882,7 +886,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     }
 
     /**
-     * @param {GridChen.Range} range
+     * @param {GridChenNS.Range} range
      * @returns {Array<Array<?>>}
      */
     function getRangeData(range) {
@@ -899,7 +903,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
     /**
      * TODO: Move this to matrixview.js
-     * @param {GridChen.Range} r
+     * @param {GridChenNS.Range} r
      * @param {string} sep
      * @param {boolean} withHeaders
      * @returns {string}
@@ -935,21 +939,26 @@ function createGrid(container, viewModel, gridchenElement, tm) {
      * @param {number} topRowIndex
      * @param {number} topColIndex
      * @param {Array<Array<string|undefined>>} matrix
-     * @returns {GridChen.JSONPatchOperation[]}
+     * @returns {GridChenNS.JSONPatchOperation[]}
      */
     function pasteSingle(topRowIndex, topColIndex, matrix) {
         let rowIndex = topRowIndex;
         let endRowIndex = rowIndex + matrix.length;
         let endColIndex = Math.min(schemas.length, topColIndex + matrix[0].length);
-        /** @type{GridChen.JSONPatchOperation[]} */
+        /** @type{GridChenNS.JSONPatchOperation[]} */
         let patch = [];
 
         for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {
             let colIndex = topColIndex;
 
             for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
-                let value = matrix[i][j];
-                if (value !== undefined) value = schemas[colIndex].converter.fromEditable(value.trim());
+                let s = matrix[i][j];
+                let value;
+                if (s !== undefined) {
+                    value = schemas[colIndex].converter.fromEditable(s.trim());
+                } else {
+                    value = s;
+                }
                 patch.push(...viewModel.setCell(rowIndex, colIndex, value));
             }
         }
@@ -1029,7 +1038,8 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         }
     }
 
-    let selection = /** @type{GridChen.Selection} */ new Selection(repaintSelection);
+    /** @type{GridChenNS.Selection} */
+    let selection = /** @type{GridChenNS.Selection} */ (new Selection(repaintSelection));
     selection.grid = {
         container,
         rowCount, // Will be updated on refresh().
@@ -1065,7 +1075,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     );
 
     /**
-     * @param {GridChen.Range} range
+     * @param {GridChenNS.Range} range
      */
     gridchenElement.select = function (range) {
         container.focus();

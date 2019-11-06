@@ -9,8 +9,8 @@
 /**
  * @param {HTMLElement} container
  * @param {string} title
- * @param {Array<GridChen.ColumnSchema>} schemas
- * @param {Array<Array<number>>} series
+ * @param {GridChenNS.ColumnSchema[]} schemas
+ * @param {number[][]} series
  */
 export function renderPlot(container, title, schemas, series) {
     /*

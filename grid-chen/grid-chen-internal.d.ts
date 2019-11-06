@@ -1,10 +1,4 @@
-declare module GridChen {
-
-    // export interface Selection {
-    //     areas: Range[];
-    //     active: Range;
-    //     setRange: (rowIndex: number, columnIndex: number, rowCount: number, columnCount: number) => void;
-    // }
+declare module GridChenNS {
 
     export interface Interval {
         min: number;
@@ -19,6 +13,7 @@ declare module GridChen {
 
     export interface Selection extends Range {
         active: Range;
+        initial: Range;
         pilot: Range;
         areas: Range[];
         headerSelected: boolean;

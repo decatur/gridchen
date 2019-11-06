@@ -5,6 +5,8 @@
  * Module implementing data mapping for some common data types.
  */
 
+//@ts-check
+
 import * as u from './utils.js'
 
 /**
@@ -17,7 +19,7 @@ function createSpan() {
 }
 
 /**
- * @implements {GridChen.Converter}
+ * @implements {GridChenNS.Converter}
  */
 export class StringConverter {
     constructor() {
@@ -184,7 +186,7 @@ export class URIConverter {
 }
 
 /**
- * @interface {GridChen.Converter}
+ * @interface {GridChenNS.Converter}
  */
 export class BooleanStringConverter {
     constructor() {
@@ -243,12 +245,12 @@ export class BooleanStringConverter {
 }
 
 /**
- * @interface {GridChen.Converter}
+ * @interface {GridChenNS.Converter}
  */
 export class NumberConverter {
     /**
      * @param {number} fractionDigits
-     * @param {string?} locale
+     * @param {string=} locale
      */
     constructor(fractionDigits, locale) {
         /** @type {Intl.NumberFormat} */
@@ -333,7 +335,7 @@ export class NumberConverter {
  */
 export class FullDateStringConverter {
     /**
-     * @param {string?} locale
+     * @param {string=} locale
      */
     constructor(locale) {
         this.parser = u.localeDateParser(locale);
@@ -400,8 +402,8 @@ export class FullDateStringConverter {
 export class DatePartialTimeStringConverter {
 
     /**
-     * @param {string?} displayResolution
-     * @param {string?} locale
+     * @param {string=} displayResolution
+     * @param {string=} locale
      */
     constructor(displayResolution, locale) {
         this.displayResolution = displayResolution || 'M';
@@ -476,8 +478,8 @@ export class DatePartialTimeStringConverter {
  */
 export class DateTimeStringConverter {
     /**
-     * @param {string?} displayResolution
-     * @param {string?} locale
+     * @param {string=} displayResolution
+     * @param {string=} locale
      */
     constructor(displayResolution, locale) {
         this.displayResolution = displayResolution || 'M';
@@ -549,7 +551,7 @@ export class DateTimeStringConverter {
 
 export class FullDateConverter {
     /**
-     * @param {string?} locale
+     * @param {string=} locale
      */
     constructor(locale) {
         this.parser = u.localeDateParser(locale);
@@ -612,8 +614,8 @@ export class FullDateConverter {
  */
 export class DatePartialTimeConverter {
     /**
-     * @param {string?} displayResolution
-     * @param {string?} locale
+     * @param {string=} displayResolution
+     * @param {string=} locale
      */
     constructor(displayResolution, locale) {
         this.displayResolution = displayResolution || 'M';
@@ -681,8 +683,8 @@ export class DatePartialTimeConverter {
  */
 export class DateTimeConverter {
     /**
-     * @param {string?} displayResolution
-     * @param {string?} locale
+     * @param {string=} displayResolution
+     * @param {string=} locale
      */
     constructor(displayResolution, locale) {
         this.displayResolution = displayResolution || 'M';

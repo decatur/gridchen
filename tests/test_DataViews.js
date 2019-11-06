@@ -13,7 +13,7 @@ if (window['jsonpatch']) {
 
 /**
  * Runs tests on all five supported matrix types.
- * @param {GridChen.JSONSchema} schema
+ * @param {GridChenNS.JSONSchema} schema
  * @param {function():object} createModel
  * @param {object} emptyModel
  */

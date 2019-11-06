@@ -5,6 +5,8 @@
  * Module implementing, well, utilities.
  */
 
+//@ts-check
+
 const DEBUG = (location.hostname === 'localhost');
 
 function pad(v) {
@@ -68,7 +70,7 @@ const localeDateParsers = {};
 
 /**
  * @param {string} locale
- * @returns {GridChen.LocalDateParser}
+ * @returns {GridChenNS.LocalDateParser}
  */
 export function localeDateParser(locale) {
     if (!(locale in localeDateParsers)) {
@@ -226,7 +228,7 @@ function createLocalDateParser(locale) {
 }
 
 /**
- * @param {GridChen.JSONPatchOperation} op
+ * @param {GridChenNS.JSONPatchOperation} op
  */
 function reverseOp(op) {
     if (op.op === 'replace') {
@@ -245,8 +247,8 @@ function reverseOp(op) {
 }
 
 /**
- * @param {GridChen.JSONPatchOperation[]} patch
- * @returns {GridChen.JSONPatchOperation[]}
+ * @param {GridChenNS.JSONPatchOperation[]} patch
+ * @returns {GridChenNS.JSONPatchOperation[]}
  */
 export function reversePatch(patch) {
     const reversedPatch = [];
@@ -259,7 +261,7 @@ export function reversePatch(patch) {
 /**
  * Applies a JSON Patch operation.
  * @param {{'':object}} holder
- * @param {GridChen.JSONPatchOperation} op
+ * @param {GridChenNS.JSONPatchOperation} op
  */
 function applyJSONPatchOperation(holder, op) {
     const path = op.path.split('/');
@@ -291,7 +293,7 @@ function applyJSONPatchOperation(holder, op) {
 
 /**
  * @param {{'':*}} holder
- * @param {GridChen.JSONPatchOperation[]} patch
+ * @param {GridChenNS.JSONPatchOperation[]} patch
  */
 function applyPatch(holder, patch) {
     for (let op of patch) {
@@ -308,7 +310,7 @@ function applyPatch(holder, patch) {
  * It does not do any validation or error handling.
  *
  * @param {object} data
- * @param {GridChen.JSONPatchOperation[]} patch
+ * @param {GridChenNS.JSONPatchOperation[]} patch
  * @returns {object|undefined}
  */
 export function applyJSONPatch(data, patch) {
@@ -319,7 +321,7 @@ export function applyJSONPatch(data, patch) {
 
 /**
  * Creates and globally registers a TransactionManager instance.
- * @returns {GridChen.TransactionManager}
+ * @returns {GridChenNS.TransactionManager}
  */
 export function registerGlobalTransactionManager() {
     globalTransactionManager = createTransactionManager();
@@ -352,13 +354,13 @@ export function registerGlobalTransactionManager() {
 
 /**
  * Returns the globally registered Transaction Manager.
- * @type {GridChen.TransactionManager|null}
+ * @type {GridChenNS.TransactionManager|null}
  */
 export let globalTransactionManager = null;
 
 /**
  * Pure creator function for TransactionManager instances.
- * @returns {GridChen.TransactionManager}
+ * @returns {GridChenNS.TransactionManager}
  */
 export function createTransactionManager() {
     const listenersByType = {change: []};
@@ -376,7 +378,7 @@ export function createTransactionManager() {
     }
 
     /**
-     * @implements {GridChen.TransactionManager}
+     * @implements {GridChenNS.TransactionManager}
      */
     class TransactionManager {
         constructor() {
@@ -404,11 +406,11 @@ export function createTransactionManager() {
 
         /**
          * @param {function(GridChen.JSONPatchOperation[])} apply
-         * @returns {GridChen.Transaction}
+         * @returns {GridChenNS.Transaction}
          */
         openTransaction(apply) {
             const tm = this;
-            return /**@type{GridChen.Transaction}*/ {
+            return /**@type{GridChenNS.Transaction}*/ {
                 patches: [],
                 commit() {
                     tm.transactions.push(this);
@@ -432,10 +434,10 @@ export function createTransactionManager() {
             const trans = this.transactions.pop();
             if (!trans) return;
             this.redoTransactions.push(trans);
-            const reversedTransaction = /**@type{GridChen.Transaction}*/ Object.assign({}, trans);
+            const reversedTransaction = /**@type{GridChenNS.Transaction}*/ Object.assign({}, trans);
             reversedTransaction.patches = [];
             for (let patch of Object.assign([], trans.patches).reverse()) {
-                const reversedPatch = /**@type{GridChen.Patch}*/ Object.assign({}, patch);
+                const reversedPatch = /**@type{GridChenNS.Patch}*/ Object.assign({}, patch);
                 reversedPatch.operations = reversePatch(patch.operations);
                 reversedTransaction.patches.push(reversedPatch);
                 reversedPatch.apply(reversedPatch);
@@ -455,14 +457,14 @@ export function createTransactionManager() {
         }
 
         clear() {
-            /** @type {GridChen.Transaction[]} */
+            /** @type {GridChenNS.Transaction[]} */
             this.transactions = [];
-            /** @type {GridChen.Transaction[]} */
+            /** @type {GridChenNS.Transaction[]} */
             this.redoTransactions = [];
         }
 
         /**
-         * @returns {GridChen.JSONPatchOperation[]}
+         * @returns {GridChenNS.JSONPatchOperation[]}
          */
         get patch() {
             const allPatches = [];

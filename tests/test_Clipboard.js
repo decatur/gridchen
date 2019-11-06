@@ -5,7 +5,7 @@ import {createTransactionManager} from "../grid-chen/utils.js"
 import {Range} from "../grid-chen/selection.js";
 
 /**
- * @type {GridChen.JSONSchema}
+ * @type {GridChenNS.JSONSchema}
  */
 const schema = {
     title: 'test',

@@ -17,7 +17,6 @@ declare module GridChenNS {
         pilot: Range;
         areas: Range[];
         headerSelected: boolean;
-        grid: GridSelectionAbstraction;
         lastEvt: KeyboardEvent;
         show: () => void;
         hide: () => void;
@@ -25,7 +24,9 @@ declare module GridChenNS {
         setRange: (rowIndex: number, columnIndex: number, rowCount: number, columnCount: number) => void;
         startSelection: (evt: MouseEvent, cellParent: HTMLElement, rowHeight: number, colCount: number,
                          columnEnds: number[], firstRow: number) => void;
-
+        convexHull: () => void;
+        uiRefresher: (area: Range, show: boolean) => void;
+        keyDownHandler: (evt: KeyboardEvent) => void;
     }
 
     export interface GridSelectionAbstraction {

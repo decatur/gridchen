@@ -5,10 +5,10 @@
  * Module implementing Excel style multi area selection behaviour on a grid.
  */
 
- //@ts-check
+//@ts-check
 
-import {Rect} from "./geometry.js";
-import {logger} from "./utils.js";
+import { Rect } from "./geometry.js";
+import { logger } from "./utils.js";
 
 /**
  * TODO: Resolve name collision with lib.dom.Range?
@@ -33,7 +33,7 @@ export class Range {
      * @returns {GridChenNS.Range}
      */
     clone() {
-        return Object.assign(new Range(0, 0,0,0), this);
+        return Object.assign(new Range(0, 0, 0, 0), this);
     }
 
     toString() {
@@ -48,11 +48,11 @@ export class Range {
      */
     intersect(other) {
         const row = intersectInterval(
-            /**@type{GridGridChenNSChen.Interval}*/{min: this.rowIndex, sup: this.rowIndex + this.rowCount},
-            /**@type{GridChenNS.Interval}*/{min: other.rowIndex, sup: other.rowIndex + other.rowCount});
+            { min: this.rowIndex, sup: this.rowIndex + this.rowCount },
+            { min: other.rowIndex, sup: other.rowIndex + other.rowCount });
         const col = intersectInterval(
-            /**@type{GridChenNS.Interval}*/{min: this.columnIndex, sup: this.columnIndex + this.columnCount},
-            /**@type{GridChenNS.Interval}*/{min: other.columnIndex, sup: other.columnIndex + other.columnCount});
+            { min: this.columnIndex, sup: this.columnIndex + this.columnCount },
+            { min: other.columnIndex, sup: other.columnIndex + other.columnCount });
         if (col === undefined || row === undefined) {
             return undefined;
         }
@@ -72,203 +72,213 @@ export class Range {
     }
 }
 
-/** @implements{GridChenNS.Selection} */
-export class Selection extends Range {
-    constructor(uiRefresher) {
-        super(0, 0, 1, 1);
-        this.uiRefresher = uiRefresher;
-        this.lastEvt = undefined;
-        /**@type{GridChenNS.Range}*/
-        this.active;
-        /**@type{GridChenNS.Range}*/
-        this.pilot;
-        /**@type{GridChenNS.Range}*/
-        this.initial;
-        /**@type{GridChenNS.Range[]}*/
-        this.areas;
-    }
-
-    /**
-     */
-    show() {
-        for (const r of this.areas) {
-            this.uiRefresher(r, true);
-        }
-
-        this.grid.repaintActiveCell(this.active);
-        this.grid.container.dispatchEvent(new Event('selectionChanged', {bubbles: true, cancelable:true, composed:true}));
-    }
-
-    hide() {
-        for (const r of this.areas) {
-            this.uiRefresher(r, false);
-        }
-    }
-
-    setRange(rowIndex, columnIndex, rowCount, columnCount) {
-        if (this.areas) {
-            this.hide();
-        }
-
-        this.headerSelected = false;
-        this.active = new Range(rowIndex, columnIndex, 1, 1);
-        this.initial = this.active.clone();
-        this.pilot = this.active.clone();
-        this.areas = [new Range(rowIndex, columnIndex, rowCount, columnCount)];
-
-        this.convexHull();
-        this.show();
-    }
-
-    /**
-     * Synchronizes the convex hull of all areas.
-     */
-    convexHull() {
-        this.rowIndex = Math.min(...this.areas.map(r => r.rowIndex));
-        this.rowCount = Math.max(...this.areas.map(r => r.rowIndex + r.rowCount)) - this.rowIndex;
-        this.columnIndex = Math.min(...this.areas.map(r => r.columnIndex));
-        this.columnCount = Math.max(...this.areas.map(r => r.columnIndex + r.columnCount)) - this.columnIndex;
-    }
-
-    startSelection(evt, cellParent, rowHeight, colCount, columnEnds, firstRow) {
-        startSelection(evt, this, cellParent, rowHeight, colCount, columnEnds, firstRow)
-    }
-
-    move(rowIncrement, columnIncrement, doExpand) {
-        const selection = this;
-        const grid = selection.grid;
-        const pilot = selection.pilot;
-
-        selection.hide();
-
-        const prevRowIndex = pilot.rowIndex;
-
-        console.assert(pilot.rowCount * pilot.columnCount === 1);
-        pilot.rowIndex += rowIncrement;
-        pilot.columnIndex += columnIncrement;
-
-        if (pilot.rowIndex < 0) {
-            rowIncrement = -1;
-            pilot.rowIndex = 0;
-        }
-
-        if (pilot.columnIndex === -1) {
-            if (pilot.rowIndex > 0) {
-                pilot.columnIndex = grid.colCount - 1;
-                pilot.rowIndex--;
-            } else {
-                pilot.columnIndex = 0;
-            }
-        } else if (pilot.columnIndex === grid.colCount) {
-            pilot.columnIndex = 0;
-            pilot.rowIndex++;
-        }
-
-        if (doExpand) {
-            const r = selection.areas[selection.areas.length - 1];
-            expand(r, selection.initial, pilot.rowIndex, pilot.columnIndex);
-        } else {
-            selection.areas = [pilot.clone()];
-            selection.initial = pilot.clone();
-            selection.active = pilot.clone();
-            selection.headerSelected = false;
-        }
-
-        selection.convexHull();
-        if (rowIncrement) {
-            grid.scrollIntoView(pilot.rowIndex, pilot.rowIndex - prevRowIndex);
-        }
-
-        selection.show();
-    }
-}
-
 /**
- * @param {KeyboardEvent} evt
- * @param {GridChenNS.Selection} selection
+ * @param {*} uiRefresher 
+ * @param {GridChenNS.GridSelectionAbstraction} grid 
+ * @returns {GridChenNS.Selection}
  */
-export function keyDownHandler(evt, selection) {
-    logger.log('selection.onkeydown ' + evt.code);
+export function createSelection(uiRefresher, grid) {
 
-    const grid = selection.grid;
-    const pilot = selection.pilot;
+    /** @implements{GridChenNS.Selection} */
+    class Selection extends Range {
+        constructor() {
+            super(0, 0, 1, 1);
+            this.uiRefresher = uiRefresher;
+            this.lastEvt = undefined;
+            /**@type{GridChenNS.Range}*/
+            this.active;
+            /**@type{GridChenNS.Range}*/
+            this.pilot;
+            /**@type{GridChenNS.Range}*/
+            this.initial;
+            /**@type{GridChenNS.Range[]}*/
+            this.areas;
+        }
 
-    function move(rowIncrement, columnIncrement, doExpand) {
-        evt.preventDefault();
-        evt.stopImmediatePropagation();
-        selection.move(rowIncrement, columnIncrement, doExpand);
+        /**
+         */
+        show() {
+            for (const r of this.areas) {
+                this.uiRefresher(r, true);
+            }
+
+            grid.repaintActiveCell(this.active);
+            grid.container.dispatchEvent(new Event('selectionChanged', { bubbles: true, cancelable: true, composed: true }));
+        }
+
+        hide() {
+            for (const r of this.areas) {
+                uiRefresher(r, false);
+            }
+        }
+
+        setRange(rowIndex, columnIndex, rowCount, columnCount) {
+            if (this.areas) {
+                this.hide();
+            }
+
+            this.headerSelected = false;
+            this.active = new Range(rowIndex, columnIndex, 1, 1);
+            this.initial = this.active.clone();
+            this.pilot = this.active.clone();
+            this.areas = [new Range(rowIndex, columnIndex, rowCount, columnCount)];
+
+            this.convexHull();
+            this.show();
+        }
+
+        /**
+         * Synchronizes the convex hull of all areas.
+         */
+        convexHull() {
+            this.rowIndex = Math.min(...this.areas.map(r => r.rowIndex));
+            this.rowCount = Math.max(...this.areas.map(r => r.rowIndex + r.rowCount)) - this.rowIndex;
+            this.columnIndex = Math.min(...this.areas.map(r => r.columnIndex));
+            this.columnCount = Math.max(...this.areas.map(r => r.columnIndex + r.columnCount)) - this.columnIndex;
+        }
+
+        startSelection(evt, cellParent, rowHeight, colCount, columnEnds, firstRow) {
+            startSelection(evt, this, cellParent, rowHeight, colCount, columnEnds, firstRow)
+        }
+
+        move(rowIncrement, columnIncrement, doExpand) {
+            const selection = this;
+            const pilot = selection.pilot;
+
+            selection.hide();
+
+            const prevRowIndex = pilot.rowIndex;
+
+            console.assert(pilot.rowCount * pilot.columnCount === 1);
+            pilot.rowIndex += rowIncrement;
+            pilot.columnIndex += columnIncrement;
+
+            if (pilot.rowIndex < 0) {
+                rowIncrement = -1;
+                pilot.rowIndex = 0;
+            }
+
+            if (pilot.columnIndex === -1) {
+                if (pilot.rowIndex > 0) {
+                    pilot.columnIndex = grid.colCount - 1;
+                    pilot.rowIndex--;
+                } else {
+                    pilot.columnIndex = 0;
+                }
+            } else if (pilot.columnIndex === grid.colCount) {
+                pilot.columnIndex = 0;
+                pilot.rowIndex++;
+            }
+
+            if (doExpand) {
+                const r = selection.areas[selection.areas.length - 1];
+                expand(r, selection.initial, pilot.rowIndex, pilot.columnIndex);
+            } else {
+                selection.areas = [pilot.clone()];
+                selection.initial = pilot.clone();
+                selection.active = pilot.clone();
+                selection.headerSelected = false;
+            }
+
+            selection.convexHull();
+            if (rowIncrement) {
+                grid.scrollIntoView(pilot.rowIndex, pilot.rowIndex - prevRowIndex);
+            }
+
+            selection.show();
+        }
+
+
+        /**
+         * @param {KeyboardEvent} evt
+        */
+        keyDownHandler(evt) {
+            logger.log('selection.onkeydown ' + evt.code);
+            const selection = this;
+            const pilot = selection.pilot;
+
+            function move(rowIncrement, columnIncrement, doExpand) {
+                evt.preventDefault();
+                evt.stopImmediatePropagation();
+                selection.move(rowIncrement, columnIncrement, doExpand);
+            }
+
+            if (evt.code === 'ArrowLeft' || (evt.code === "Tab" && evt.shiftKey)) {
+                const doExpand = (evt.code === 'ArrowLeft' && evt.shiftKey);
+                let columnIncrement;
+                if ((evt.code === 'ArrowLeft' && evt.ctrlKey)) {
+                    columnIncrement = -pilot.columnIndex;
+                } else {
+                    columnIncrement = -1;
+                }
+                move(0, columnIncrement, doExpand);
+            } else if (evt.code === 'ArrowRight' || evt.code === 'Tab') {
+                const doExpand = (evt.code === 'ArrowRight' && evt.shiftKey);
+                let columnIncrement;
+                if ((evt.code === 'ArrowRight' && evt.ctrlKey)) {
+                    columnIncrement = grid.colCount - 1 - pilot.columnIndex;
+                } else {
+                    columnIncrement = 1;
+                }
+                move(0, columnIncrement, doExpand);
+            } else if (evt.code === 'ArrowUp' || (evt.code === "Enter" && evt.shiftKey)) {
+                const doExpand = (evt.code === 'ArrowUp' && evt.shiftKey);
+                let rowIncrement;
+                if ((evt.code === 'ArrowUp' && evt.ctrlKey)) {
+                    rowIncrement = -pilot.rowIndex;
+                } else {
+                    rowIncrement = -1;
+                }
+                move(rowIncrement, 0, doExpand);
+            } else if (evt.code === 'ArrowDown' || evt.code === 'Enter') {
+                const doExpand = (evt.code === 'ArrowDown' && evt.shiftKey);
+                let rowIncrement;
+                if ((evt.code === 'ArrowDown' && evt.ctrlKey)) {
+                    rowIncrement = grid.rowCount - 1 - pilot.rowIndex;
+                } else {
+                    rowIncrement = 1;
+                }
+                move(rowIncrement, 0, doExpand);
+            } else if (evt.code === 'PageUp') {
+                move(-grid.pageIncrement, 0, evt.shiftKey);
+            } else if (evt.code === 'PageDown') {
+                move(grid.pageIncrement, 0, evt.shiftKey);
+            } else if (evt.code === 'Space' && evt.shiftKey) {
+                // Expand top area horizontally
+                evt.preventDefault();
+                evt.stopImmediatePropagation();
+                const topArea = selection.areas.pop();
+                selection.setRange(topArea.rowIndex, 0, topArea.rowCount, grid.colCount);
+            } else if (evt.code === 'Space' && evt.ctrlKey) {
+                // Expand top area vertically
+                evt.preventDefault();
+                evt.stopImmediatePropagation();
+                const topArea = selection.areas.pop();
+                selection.setRange(0, selection.active.columnIndex, grid.rowCount, topArea.columnCount);
+            }
+            else if (evt.code === 'KeyA' && evt.ctrlKey) {
+                // Like MS-Excel selects all non-empty cells, in our case the complete grid.
+                // This is reverted on the next onblur event.
+                evt.preventDefault();  // Do not select the inputs content.
+                evt.stopImmediatePropagation();
+
+                if (selection.lastEvt.code === 'KeyA' && selection.lastEvt.ctrlKey) {
+                    // Already all data cells selected.
+                    selection.headerSelected = true;
+                    grid.container.dispatchEvent(new Event('selectionChanged', { bubbles: true, cancelable: true, composed: true }));
+                } else {
+                    selection.setRange(0, 0, grid.rowCount, grid.colCount);
+                }
+            }
+
+            selection.lastEvt = evt;
+        }
     }
 
-    if (evt.code === 'ArrowLeft' || (evt.code === "Tab" && evt.shiftKey)) {
-        const doExpand = (evt.code === 'ArrowLeft' && evt.shiftKey);
-        let columnIncrement;
-        if ((evt.code === 'ArrowLeft' && evt.ctrlKey)) {
-            columnIncrement = -pilot.columnIndex;
-        } else {
-            columnIncrement = -1;
-        }
-        move(0, columnIncrement, doExpand);
-    } else if (evt.code === 'ArrowRight' || evt.code === 'Tab') {
-        const doExpand = (evt.code === 'ArrowRight' && evt.shiftKey);
-        let columnIncrement;
-        if ((evt.code === 'ArrowRight' && evt.ctrlKey)) {
-            columnIncrement = grid.colCount - 1 - pilot.columnIndex;
-        } else {
-            columnIncrement = 1;
-        }
-        move(0, columnIncrement, doExpand);
-    } else if (evt.code === 'ArrowUp' || (evt.code === "Enter" && evt.shiftKey)) {
-        const doExpand = (evt.code === 'ArrowUp' && evt.shiftKey);
-        let rowIncrement;
-        if ((evt.code === 'ArrowUp' && evt.ctrlKey)) {
-            rowIncrement = -pilot.rowIndex;
-        } else {
-            rowIncrement = -1;
-        }
-        move(rowIncrement, 0, doExpand);
-    } else if (evt.code === 'ArrowDown' || evt.code === 'Enter') {
-        const doExpand = (evt.code === 'ArrowDown' && evt.shiftKey);
-        let rowIncrement;
-        if ((evt.code === 'ArrowDown' && evt.ctrlKey)) {
-            rowIncrement = grid.rowCount - 1 - pilot.rowIndex;
-        } else {
-            rowIncrement = 1;
-        }
-        move(rowIncrement, 0, doExpand);
-    } else if (evt.code === 'PageUp') {
-        move(-grid.pageIncrement, 0, evt.shiftKey);
-    } else if (evt.code === 'PageDown') {
-        move(grid.pageIncrement, 0, evt.shiftKey);
-    } else if (evt.code === 'Space' && evt.shiftKey) {
-        // Expand top area horizontally
-        evt.preventDefault();
-        evt.stopImmediatePropagation();
-        const topArea = selection.areas.pop();
-        selection.setRange(topArea.rowIndex, 0, topArea.rowCount, grid.colCount);
-    } else if (evt.code === 'Space' && evt.ctrlKey) {
-        // Expand top area vertically
-        evt.preventDefault();
-        evt.stopImmediatePropagation();
-        const topArea = selection.areas.pop();
-        selection.setRange(0, selection.active.columnIndex, grid.rowCount, topArea.columnCount);
-    }
-    else if (evt.code === 'KeyA' && evt.ctrlKey) {
-        // Like MS-Excel selects all non-empty cells, in our case the complete grid.
-        // This is reverted on the next onblur event.
-        evt.preventDefault();  // Do not select the inputs content.
-        evt.stopImmediatePropagation();
-
-        if (selection.lastEvt.code === 'KeyA' && selection.lastEvt.ctrlKey) {
-            // Already all data cells selected.
-            selection.headerSelected = true;
-            selection.grid.container.dispatchEvent(new Event('selectionChanged', {bubbles: true, cancelable:true, composed:true}));
-        } else {
-            selection.setRange(0, 0, grid.rowCount, grid.colCount);
-        }
-    }
-
-    selection.lastEvt = evt;
+    return new Selection()
 }
+
+
 
 /**
  * @param {GridChenNS.Interval} i1
@@ -281,7 +291,7 @@ function intersectInterval(i1, i2) {
     if (sup <= min) {
         return undefined;
     }
-    return {min, sup}
+    return { min, sup }
 }
 
 /**
@@ -301,7 +311,7 @@ function expand(range, initial, rowIndex, columnIndex) {
 /**
  *
  * @param evt
- * @param {Selection} selection
+ * @param {GridChenNS.Selection} selection
  * @param {HTMLDivElement} cellParent
  * @param {number} rowHeight
  * @param {number} colCount
@@ -322,10 +332,10 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
                 break;
             }
         }
-        return {rowIndex: grid_y + firstRow, colIndex: grid_x}
+        return { rowIndex: grid_y + firstRow, colIndex: grid_x }
     }
 
-    let {rowIndex, colIndex} = index(evt);
+    let { rowIndex, colIndex } = index(evt);
 
     let current = new Range(rowIndex, colIndex, 1, 1);
     selection.initial = current.clone();
@@ -387,7 +397,7 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
     }
 
     cellParent.onmousemove = function (evt) {
-        let {rowIndex, colIndex} = index(evt);
+        let { rowIndex, colIndex } = index(evt);
         logger.log(`onmousemove ${rowIndex} ${colIndex}`);
 
         //if (rowIndex - firstRow < cellMatrix.length) {

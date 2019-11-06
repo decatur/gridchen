@@ -11,14 +11,14 @@ declare module GridChenNS {
         /**
          * If properties is set, this schema describes an object.
          */
-        properties?: Object;
+        properties?: {[key: string]: JSONSchema};
         /**
          * If items is an array object, this schema describes a fixed length tuple
          * with item at index having schema items[index].
          * If items is an object, this schema describes a variable length array
          * with each item having the object as its schema.
          */
-        items?: Object | Object[];
+        items?: JSONSchema | JSONSchema[];
         readOnly?: boolean;
     }
 
@@ -132,7 +132,7 @@ declare module GridChenNS {
         getRow: (rowIndex: number) => any;
         getColumn: (colIndex: number) => any;
         setCell: (rowIndex: number, colIndex: number, value: any) => JSONPatchOperation[];
-        splice: (rowIndex: number) => GridChen.JSONPatch;
+        splice: (rowIndex: number) => JSONPatch;
         sort: (colIndex: number) => number;
         // TODO: Return the patched object as of getModel()?
         applyJSONPatch: (patch: JSONPatch) => void;

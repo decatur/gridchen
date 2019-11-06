@@ -5,12 +5,12 @@
  * Module implementing the visual grid and scrolling behaviour.
  */
 
- //@ts-check
+//@ts-check
 
-import {logger} from "./utils.js";
-import {registerGlobalTransactionManager} from "./utils.js";
-import {Selection, Range, keyDownHandler} from "./selection.js";
-import {createEditor} from "./editor.js"
+import { logger } from "./utils.js";
+import { registerGlobalTransactionManager } from "./utils.js";
+import { createSelection, Range } from "./selection.js";
+import { createEditor } from "./editor.js"
 
 
 //////////////////////
@@ -67,7 +67,7 @@ const scrollBarWidth = scrollBarThumbWidth + 2 * scrollBarBorderWidth;
 //const numeric = new Set(['number', 'integer']);
 
 function rangeIterator(count) {
-    return Array.from({length: count}, (_, i) => i);
+    return Array.from({ length: count }, (_, i) => i);
 }
 
 
@@ -110,7 +110,7 @@ export class GridChen extends HTMLElement {
             this.shadowRoot.removeChild(this.shadowRoot.firstChild);
         } else {
             // First initialize creates shadow dom.
-            this.attachShadow({mode: 'open'});
+            this.attachShadow({ mode: 'open' });
         }
         // TODO: Attention Layout Thrashing; Do not use clientHeight.
         let totalHeight = this.clientHeight || 100;  // Default value needed for unit testing.
@@ -163,7 +163,6 @@ class ScrollBar {
         `;
         domParent.appendChild(styleSheet);
 
-        this.handler = handler;
         this.element = document.createElement('input');
         this.element.id = "slider";
         this.element.type = "range";
@@ -173,7 +172,7 @@ class ScrollBar {
         // When this.element gains focus, container.parentElement.parentElement will loose is, so re-focus.
         this.element.oninput = () => {
             logger.log('slider oninput');
-            this.handler(Math.round(Number(this.element.max) - Number(this.element.value)));
+            handler(Math.round(Number(this.element.max) - Number(this.element.value)));
         };
     }
 
@@ -282,8 +281,8 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     schemas
         .filter(schema => Math.abs(schema.sortDirection) === 1)
         .slice(1).forEach(function (schema) {
-        delete schema.sortDirection;
-    });
+            delete schema.sortDirection;
+        });
 
     const headerRow = document.createElement('div');
     headerRow.id = 'headerRow';
@@ -307,13 +306,9 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     function refresh() {
         rowCount = viewModel.rowCount();
         // TODO: Can we do better, i.e. send event to selection.grid?
-        selection.grid.rowCount = rowCount;
+        gridAbstraction.rowCount = rowCount;
         setFirstRow(firstRow);
-        /*if (window.performance.now() - lastRefreshMillis < 100) {
-            throw new Error();
-        }
-        lastRefreshMillis = window.performance.now();
-        */
+        scrollBar.setMax(Math.max(viewPortRowCount, rowCount - viewPortRowCount));
     }
 
     refreshHeaders();
@@ -326,7 +321,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         // Note: First refresh, then commit!
         refresh();
         trans.commit();
-        gridchenElement.dispatchEvent(new CustomEvent('change', {detail: {patch: trans.patches}}));
+        gridchenElement.dispatchEvent(new CustomEvent('change', { detail: { patch: trans.patches } }));
     }
 
     /**
@@ -468,15 +463,15 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         evt.preventDefault();
         // We need to prevent scroll, otherwise the evt coordinates do not relate anymore
         // with the target element coordinates. OR move this after call of index()!
-        container.focus({preventScroll: true});
+        container.focus({ preventScroll: true });
 
         selection.startSelection(evt, cellParent, rowHeight, colCount, columnEnds, firstRow)
     });
 
     /** @param {WheelEvent} evt */
-    cellParent.onmousewheel = function (evt) {
+    cellParent.onwheel = function (evt) {
         logger.log('onmousewheel');
-        if ((/** @type {DocumentOrShadowRoot} */(container.parentNode)).activeElement !== container) return;
+        if ((/** @type {DocumentOrShadowRoot} *//** @type {*} */(container.parentNode)).activeElement !== container) return;
 
         // Do not disable zoom. Both Excel and Browsers zoom on ctrl-wheel.
         if (evt.ctrlKey) return;
@@ -497,7 +492,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
      */
     container.onblur = function (evt) {
         logger.log('container.onblur: ' + evt);
-        if (!container.contains(/** @type {HTMLElement} */ (evt.relatedTarget))) {
+        if (!container.contains(/** @type {HTMLElement} */(evt.relatedTarget))) {
             // We are leaving the component.
             selection.hide();
         }
@@ -686,7 +681,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     function tmListener(patch) {
         viewModel.applyJSONPatch(patch.operations);
         viewModel.updateHolder();
-        const {rowIndex, columnIndex} = /**@type{{rowIndex: number, columnIndex: number}}*/ (patch.detail);
+        const { rowIndex, columnIndex } = /**@type{{rowIndex: number, columnIndex: number}}*/ (patch.detail);
         selection.setRange(rowIndex, columnIndex, 1, 1);
         // TODO: refresh on transaction level!
         refresh();
@@ -701,7 +696,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             operations: operations || [],
             pathPrefix: schema.pathPrefix,
             apply: tmListener,
-            detail: {rowIndex: selection.active.rowIndex, columnIndex: selection.active.columnIndex}
+            detail: { rowIndex: selection.active.rowIndex, columnIndex: selection.active.columnIndex }
         };
     }
 
@@ -792,7 +787,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             schemas: columnSchemas,
             columns: columns
         });
-        gridchenElement.dispatchEvent(new CustomEvent('plot', {detail: detail}));
+        gridchenElement.dispatchEvent(new CustomEvent('plot', { detail: detail }));
     }
 
     function scrollIntoView(rowIndex, rowIncrement) {
@@ -808,7 +803,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
 
     // Note that the slider must before the cells (we avoid using z-order)
     // so that the textarea-resize handle is in front of the slider.
-    let scrollBar = new ScrollBar(body, gridWidth, viewPortHeight, (n) => setFirstRow(n, this));
+    let scrollBar = new ScrollBar(body, gridWidth, viewPortHeight, setFirstRow);
 
     body.appendChild(cellParent);
 
@@ -846,27 +841,19 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             commitTransaction(trans);
         }
 
-        container.focus({preventScroll: true});
+        container.focus({ preventScroll: true });
     }
 
     /** @type {Array<Array<HTMLElement>>} */
     let cellMatrix = Array(viewPortRowCount);
     let pageIncrement = Math.max(1, viewPortRowCount);
 
-    function setFirstRow(_firstRow, caller) {
+    function setFirstRow(_firstRow, callerIsScrollbar) {
         refreshHeaders();
         selection.hide();
 
         firstRow = _firstRow;
-
-        if (caller !== scrollBar) {
-            // TODO: remove caller.
-            if (scrollBar.max !== rowCount - viewPortRowCount) {
-                // Note that rowCount - viewPortRowCount may be 0.
-                scrollBar.setMax(Math.max(viewPortRowCount, rowCount - viewPortRowCount));
-            }
-            scrollBar.setValue(firstRow)
-        }
+        scrollBar.setValue(firstRow)
 
         updateViewportRows(getRangeData(
             new Range(firstRow, 0, viewPortRowCount, colCount)));
@@ -891,10 +878,10 @@ function createGrid(container, viewModel, gridchenElement, tm) {
      */
     function getRangeData(range) {
         let matrix = Array(range.rowCount);
-        for (let i = 0, rowIndex = range.rowIndex; rowIndex < range.rowIndex + range.rowCount; i++, rowIndex++) {
+        for (let i = 0, rowIndex = range.rowIndex; rowIndex < range.rowIndex + range.rowCount; i++ , rowIndex++) {
             matrix[i] = Array(range.columnCount);
             if (rowIndex >= rowCount) continue;
-            for (let j = 0, colIndex = range.columnIndex; colIndex < range.columnIndex + range.columnCount; colIndex++, j++) {
+            for (let j = 0, colIndex = range.columnIndex; colIndex < range.columnIndex + range.columnCount; colIndex++ , j++) {
                 matrix[i][j] = viewModel.getCell(rowIndex, colIndex);
             }
         }
@@ -948,10 +935,10 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         /** @type{GridChenNS.JSONPatchOperation[]} */
         let patch = [];
 
-        for (let i = 0; rowIndex < endRowIndex; i++, rowIndex++) {
+        for (let i = 0; rowIndex < endRowIndex; i++ , rowIndex++) {
             let colIndex = topColIndex;
 
-            for (let j = 0; colIndex < endColIndex; colIndex++, j++) {
+            for (let j = 0; colIndex < endColIndex; colIndex++ , j++) {
                 let s = matrix[i][j];
                 let value;
                 if (s !== undefined) {
@@ -1038,9 +1025,8 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         }
     }
 
-    /** @type{GridChenNS.Selection} */
-    let selection = /** @type{GridChenNS.Selection} */ (new Selection(repaintSelection));
-    selection.grid = {
+    /** @type{GridChenNS.GridSelectionAbstraction} */
+    const gridAbstraction = {
         container,
         rowCount, // Will be updated on refresh().
         colCount,
@@ -1048,6 +1034,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         scrollIntoView,
         repaintActiveCell
     };
+    let selection = createSelection(repaintSelection, gridAbstraction);
 
     selection.setRange(0, 0, 1, 1);
 
@@ -1057,7 +1044,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     });
 
     // Important: add in this order!
-    container.addEventListener('keydown', (evt) => keyDownHandler(evt, selection));
+    container.addEventListener('keydown', (evt) => selection.keyDownHandler(evt));
     container.addEventListener('keydown', keyDownListener);
 
     const editor = createEditor(cellParent, commitCellEdit, selection, lineHeight);
@@ -1094,12 +1081,12 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         const rect = cellParent.getBoundingClientRect();
         let grid_y = rowIndex - firstRow;
         let y = rowHeight * (grid_y + 0.5);
-        let clientY = y + rect.y;
+        let clientY = y + rect.top;
         let x = ((columnIndex === 0 ? 0 : columnEnds[columnIndex - 1]) + columnEnds[columnIndex]) / 2;
-        let clientX = x + rect.x;
+        let clientX = x + rect.left;
 
-        cellParent.dispatchEvent(new MouseEvent('mousedown', {clientX: clientX, clientY: clientY}));
-        cellParent.dispatchEvent(new MouseEvent('mouseup', {clientX: clientX, clientY: clientY}));
+        cellParent.dispatchEvent(new MouseEvent('mousedown', { clientX: clientX, clientY: clientY }));
+        cellParent.dispatchEvent(new MouseEvent('mouseup', { clientX: clientX, clientY: clientY }));
     };
 
     /**
@@ -1114,7 +1101,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         }
     };
 
-    gridchenElement['_sendKeys'] = function(keys) {
+    gridchenElement['_sendKeys'] = function (keys) {
         if (editor.mode !== 'hidden') {
             editor._sendKeys(keys);
         } else if (!activeCell.isReadOnly()) {
@@ -1123,7 +1110,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     };
 
     Object.defineProperty(gridchenElement, '_textContent',
-        {get: () => cellParent.textContent}
+        { get: () => cellParent.textContent }
     );
 
     gridchenElement['_refresh'] = refresh;

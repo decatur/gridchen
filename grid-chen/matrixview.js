@@ -350,7 +350,7 @@ export function createRowMatrixView(schema, rows) {
      * @implements {GridChenNS.MatrixView}
      */
     class RowMatrixView extends MatrixView {
-        schema;
+        //schema;
 
         constructor() {
             super();

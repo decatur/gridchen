@@ -98,6 +98,12 @@ export class GridChen extends HTMLElement {
         this.selectedRange = void 0;
         // Method mixed in later
         this.select = void 0;
+        /** @type {GridChenNS.MatrixView} */
+        this._viewModel = void 0;
+        /** @type {GridChenNS.TransactionManager} */
+        this._transactionManager = void 0;
+        this.select = void 0;
+        window.addEventListener('resize', () => this.reset());
     }
 
     /**
@@ -106,6 +112,8 @@ export class GridChen extends HTMLElement {
      * @returns {GridChen}
      */
     resetFromView(viewModel, transactionManager) {
+        this._viewModel = viewModel;
+        this._transactionManager = transactionManager;
         if (this.shadowRoot) {
             this.shadowRoot.removeChild(this.shadowRoot.firstChild);
         } else {
@@ -120,6 +128,13 @@ export class GridChen extends HTMLElement {
         this.shadowRoot.appendChild(container);
         createGrid(container, viewModel, this, transactionManager);
         this.style.width = container.style.width;
+        return this
+    }
+
+    reset() {
+        if (this._viewModel) {
+            this.resetFromView(this._viewModel, this._transactionManager);
+        }
         return this
     }
 }
@@ -1110,7 +1125,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     };
 
     Object.defineProperty(gridchenElement, '_textContent',
-        { get: () => cellParent.textContent }
+        { get: () => cellParent.textContent, configurable: true }
     );
 
     gridchenElement['_refresh'] = refresh;

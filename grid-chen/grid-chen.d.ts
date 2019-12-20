@@ -82,6 +82,12 @@ declare module GridChenNS {
         resetFromView: (view: MatrixView, transactionManager?: TransactionManager) => GridChen;
 
         /**
+         * Resets this element with respect to its implicit dependencies, DOM dimensions and data view content.
+         * @param view
+         */
+        reset: () => GridChen;
+
+        /**
          * Returns the selection as a rectangle.
          */
         readonly selectedRange: Range;

@@ -264,16 +264,16 @@ export function createSelection(uiRefresher, grid) {
             }
 
             if (doExpand) {
-                const r = selection.areas[selection.areas.length - 1];
-                expand(r, selection.initial, pilot.rowIndex, pilot.columnIndex);
+                convexHull(selection, [selection.initial, pilot]);
+                selection.areas = [selection.clone()];
             } else {
+                selection.setBounds(pilot.rowIndex, pilot.columnIndex, 1, 1);
                 selection.areas = [pilot.clone()];
                 selection.initial = pilot.clone();
                 selection.active = pilot.clone();
                 selection.headerSelected = false;
             }
 
-            selection.convexHull();
             if (rowIncrement) {
                 grid.scrollIntoView(pilot.rowIndex, pilot.rowIndex - prevRowIndex);
             }
@@ -390,20 +390,6 @@ function intersectInterval(i1, i2) {
 }
 
 /**
- * Updates the target with the convex hull of target+initial+(rowIndex, columnIndex)
- * @param {Range} target
- * @param {GridChenNS.Cell} initial
- * @param {number} rowIndex
- * @param {number} columnIndex
- */
-function expand(target, initial, rowIndex, columnIndex) {
-    target.rowIndex = Math.min(initial.rowIndex, rowIndex);
-    target.columnIndex = Math.min(initial.columnIndex, columnIndex);
-    target.rowCount = 1 + Math.max(initial.rowIndex, rowIndex) - target.rowIndex;
-    target.columnCount = 1 + Math.max(initial.columnIndex, columnIndex) - target.columnIndex;
-}
-
-/**
  *
  * @param evt
  * @param {Selection} selection
@@ -447,8 +433,7 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
         selection.uiRefresher(current, true);
     } else {
         selection.hide();
-        selection.areas.length = 0;
-        selection.uiRefresher(current, true);
+        selection.setRange(current.rowIndex, current.columnIndex, current.rowCount, current.columnCount);
     }
 
     function resetHandlers() {

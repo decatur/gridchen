@@ -47,20 +47,5 @@
 
 })();
 
-// import(`./grid-chen/utils.js`)
-//     .then(function (utils) {
-//         alert(utils.pad(7));
-//     })
-//     .catch(e => alert(e));
 
-
-window.onerror = function (evt) {
-    console.error(evt);
-    // const dialog = openDialog();
-    // dialog.innerHTML = `
-    // <p>Oops, grid-chen has experienced an unexpected error!</p>
-    // <p>See log for more details...</p>`;
-    // log.error(e)
-    alert('Oops, there was an unexpected error!\nSee the debug log for more details...');
-};
 

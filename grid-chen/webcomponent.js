@@ -12,6 +12,30 @@ import { registerGlobalTransactionManager } from "./utils.js";
 import { createSelection, Range } from "./selection.js";
 import { createEditor } from "./editor.js"
 
+// window.addEventListener('error', evt => {
+//     console.log(evt);
+// });
+
+/**
+ * @param {HTMLElement} element
+ * @param {function(evt: Event)} func
+ * @returns {function(evt: Event)}
+ */
+function wrap(element, func) {
+    return function(evt) {
+        try {
+            func(evt);
+        } catch(e) {
+            console.error(e);
+            const div = document.createElement('div');
+            div.style.fontSize = 'large';
+            div.textContent = '🙈 Oops, grid-chen has experienced an unexpected error: ' + e.message;
+            let root = element.tagName === 'GRID-CHEN'?element.shadowRoot:element.getRootNode();
+            root.textContent = '';
+            root.appendChild(div);
+        }
+    }
+}
 
 //////////////////////
 // Start Configuration
@@ -159,11 +183,11 @@ class ScrollBar {
         const styleSheet = document.createElement('style');
         styleSheet.textContent = `
             #slider {
+                 -webkit-appearance: unset;
                  position: absolute;
                  cursor: pointer;
                  width: ${height - 2 * scrollBarBorderWidth}px !important;
-                 transform:translate(${xOffset - offset}px,${offset}px) rotate(-90deg);
-                 -webkit-appearance: unset;
+                 transform:translate(${xOffset - offset}px,${offset}px) rotate(90deg);
                  border: ${scrollBarBorderWidth}px solid #888;
                  margin: unset;
                  background-color: inherit;
@@ -182,13 +206,13 @@ class ScrollBar {
         this.element.id = "slider";
         this.element.type = "range";
         this.element.min = '0';
+        this.element.value = '0';
         domParent.appendChild(this.element);
 
-        // When this.element gains focus, container.parentElement.parentElement will loose is, so re-focus.
-        this.element.oninput = () => {
+        this.element.addEventListener('input', wrap(domParent, () => {
             logger.log('slider oninput');
-            handler(Math.round(Number(this.element.max) - Number(this.element.value)));
-        };
+            handler(Math.round(Number(this.element.value)));
+        }));
     }
 
     /**
@@ -203,7 +227,7 @@ class ScrollBar {
      * @param {number} value
      */
     setValue(value) {
-        this.element.value = String(Number(this.element.max) - value);
+        this.element.value = String(value);
     }
 }
 
@@ -317,7 +341,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     style.left = gridWidth + 'px';
     //style.top = '-3px';
     style.position = 'absolute';
-    info.onclick = showInfo;
+    info.addEventListener('click', showInfo);
     container.appendChild(info);
 
     //let lastRefreshMillis = -100;
@@ -380,11 +404,11 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             } else if (schema.sortDirection === -1) {
                 header.textContent += ' ↓'
             }
-            header.onclick = function () {
+            header.addEventListener('click', function () {
                 // header.textContent = schema.title + ' ' + (header.textContent.substr(-1)==='↑'?'↓':'↑');
                 viewModel.sort(index);
                 refresh();
-            };
+            });
             headerRow.appendChild(header);
             left = columnEnds[index];
         }
@@ -471,9 +495,9 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         }
     }
 
-    cellParent.ondblclick = () => activeCell.enterEditMode();
+    cellParent.addEventListener('dblclick', () => activeCell.enterEditMode());
 
-    cellParent.addEventListener('mousedown', function (evt) {
+    cellParent.addEventListener('mousedown', wrap(gridchenElement, function (evt) {
         logger.log('onmousedown');
         // But we do not want it to propagate as we want to avoid side effects.
         evt.stopPropagation();
@@ -484,11 +508,11 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         // with the target element coordinates. OR move this after call of index()!
         container.focus({ preventScroll: true });
 
-        selection.startSelection(evt, cellParent, rowHeight, colCount, columnEnds, firstRow);
-    });
+        selection.startSelection(/**@type{MouseEvent}*/(evt), cellParent, rowHeight, colCount, columnEnds, firstRow);
+    }));
 
     /** @param {WheelEvent} evt */
-    cellParent.onwheel = function (evt) {
+    cellParent.addEventListener('wheel', function (evt) {
         logger.log('onmousewheel');
         if ((/** @type {DocumentOrShadowRoot} *//** @type {*} */(container.parentNode)).activeElement !== container) return;
 
@@ -504,25 +528,27 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         if (newFirstRow >= 0) {
             setFirstRow(newFirstRow);
         }
-    };
+    });
 
     /**
      * @param {FocusEvent} evt
      */
-    container.onblur = function (evt) {
+    container.addEventListener('blur', wrap(gridchenElement,function (evt) {
+        // This is also called by UA if an alert box is shown.
         logger.log('container.onblur: ' + evt);
-        if (!container.contains(/** @type {HTMLElement} */(evt.relatedTarget))) {
+        if (!container.contains(/** @type {HTMLElement} */(/** @type {FocusEvent} */evt).relatedTarget)) {
             // We are leaving the component.
             selection.hide();
         }
-    };
+    }));
 
-    container.onfocus = function (evt) {
+    container.addEventListener('focus', wrap(gridchenElement, function (evt) {
+        // This is also called by UA after user confirms alert box. This may induce bouncing!
         logger.log('container.onfocus: ' + evt);
         evt.stopPropagation();
         evt.preventDefault();
         selection.show();
-    };
+    }));
 
     function isColumnReadOnly(columnIndex) {
         const readOnly = schemas[columnIndex].readOnly;
@@ -867,12 +893,12 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     let cellMatrix = Array(viewPortRowCount);
     let pageIncrement = Math.max(1, viewPortRowCount);
 
-    function setFirstRow(_firstRow, callerIsScrollbar) {
+    function setFirstRow(_firstRow) {
         refreshHeaders();
         selection.hide();
 
         firstRow = _firstRow;
-        scrollBar.setValue(firstRow)
+        scrollBar.setValue(firstRow);
 
         updateViewportRows(getRangeData(
             new Range(firstRow, 0, viewPortRowCount, colCount)));

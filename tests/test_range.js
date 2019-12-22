@@ -24,28 +24,39 @@ test('non-empty intersection', async function () {
     assert.equal(r2.toString(), intersection.toString());
 });
 
-test('substract hole in the middle', async function () {
+/**
+ *
+ * @param {Range} r1
+ */
+function subtractUnitHole(r1) {
     // r1  - r2
     // ###   ...   ###   ltr
     // ### - .#. = #.# = l.r = [l, t, b, r]
     // ###   ...   ###   lbr
-
-    const r1 = new Range(0, 0, 3, 3);
-    const r2 = new Range(1, 1, 1, 1);
+    const y = r1.rowIndex;
+    const x = r1.columnIndex;
+    const r2 = new Range(y + 1, x + 1, 1, 1);
     const parts = r1.subtract(r2);
-    const l = new Range(0, 0, 3, 1);
-    const t = new Range(0, 1, 1, 1);
-    const b = new Range(2, 1, 1, 1);
-    const r = new Range(0, 2, 3, 1);
+    const l = new Range(y, x , 3, 1);
+    const t = new Range(y , x + 1, 1, 1);
+    const b = new Range(y + 2, x + 1, 1, 1);
+    const r = new Range(y , x + 2, 3, 1);
     assert.equal([l, t, b, r], parts);
+}
+
+test('subtract hole in the middle of 3x3 at (0,0)', async function () {
+    subtractUnitHole(new Range(0, 0, 3, 3));
 });
 
-test('substract north-west', async function () {
+test('subtract hole in the middle of 3x3 with offset (1,1)', async function () {
+    subtractUnitHole(new Range(1, 1, 3, 3));
+});
+
+test('subtract north-west', async function () {
     // r1  - r2
     // ###   #..   .##   .rr
     // ### - ... = ### = lrr = [l, r]
     // ###   ...   ###   lrr
-
     const r1 = new Range(0, 0, 3, 3);
     const r2 = new Range(0, 0, 1, 1);
     const parts = r1.subtract(r2);
@@ -59,7 +70,6 @@ test('substract north-east', async function () {
     // ###   ..#   ##.   ll.
     // ### - ... = ### = llr = [l, r]
     // ###   ...   ###   llr
-
     const r1 = new Range(0, 0, 3, 3);
     const r2 = new Range(0, 2, 1, 1);
     const parts = r1.subtract(r2);
@@ -73,7 +83,6 @@ test('substract south-west', async function () {
     // ### = ...   ###   lrr
     // ### = ... = ### = lrr = [l, r]
     // ###   #..   .##   .rr
-
     const r1 = new Range(0, 0, 3, 3);
     const r2 = new Range(2, 0, 1, 1);
     const parts = r1.subtract(r2);
@@ -87,7 +96,6 @@ test('substract south-east', async function () {
     // ###   ...   ###   llr
     // ### - ... = ### = llr = [l, r]
     // ###   ..#   ##.   ll.
-
     const r1 = new Range(0, 0, 3, 3);
     const r2 = new Range(2, 2, 1, 1);
     const parts = r1.subtract(r2);
@@ -101,7 +109,6 @@ test('substract north', async function () {
     // ###   .#.   #.#   l.r
     // ### - ... = ### = lbr = [l, b, r]
     // ###   ...   ###   lbr
-
     const r1 = new Range(0, 0, 3, 3);
     const r2 = new Range(0, 1, 1, 1);
     const parts = r1.subtract(r2);
@@ -116,7 +123,6 @@ test('substract east', async function () {
     // ###   ...   ###   llt
     // ### - ..# = ##. = ll. = [l, t, b]
     // ###   ...   ###   llb
-
     const r1 = new Range(0, 0, 3, 3);
     const r2 = new Range(1, 2, 1, 1);
     const parts = r1.subtract(r2);
@@ -131,7 +137,6 @@ test('substract south', async function () {
     // ###   ...   ###   ltr
     // ### - ... = ### = ltr = [l, t, r]
     // ###   .#.   #.#   l.r
-
     const r1 = new Range(0, 0, 3, 3);
     const r2 = new Range(2, 1, 1, 1);
     const parts = r1.subtract(r2);
@@ -146,14 +151,13 @@ test('substract west', async function () {
     // ###   ...   ###   trr
     // ### - #.. = .## = .rr = [t, b ,r]
     // ###   ...   ###   brr
-
     const r1 = new Range(0, 0, 3, 3);
     const r2 = new Range(1, 0, 1, 1);
     const parts = r1.subtract(r2);
     const t = new Range(0, 0, 1, 1);
     const b = new Range(2, 0, 1, 1);
     const r = new Range(0, 1, 3, 2);
-    assert.equal([t, b ,r], parts);
+    assert.equal([t, b, r], parts);
 });
 
 

@@ -7,35 +7,11 @@
 
 //@ts-check
 
-import { logger } from "./utils.js";
-import { registerGlobalTransactionManager } from "./utils.js";
+import { logger, wrap, registerGlobalTransactionManager } from "./utils.js";
 import { createSelection, Range } from "./selection.js";
 import { createEditor } from "./editor.js"
 
-// window.addEventListener('error', evt => {
-//     console.log(evt);
-// });
 
-/**
- * @param {HTMLElement} element
- * @param {function(evt: Event)} func
- * @returns {function(evt: Event)}
- */
-function wrap(element, func) {
-    return function(evt) {
-        try {
-            func(evt);
-        } catch(e) {
-            console.error(e);
-            const div = document.createElement('div');
-            div.style.fontSize = 'large';
-            div.textContent = '🙈 Oops, grid-chen has experienced an unexpected error: ' + e.message;
-            let root = element.tagName === 'GRID-CHEN'?element.shadowRoot:element.getRootNode();
-            root.textContent = '';
-            root.appendChild(div);
-        }
-    }
-}
 
 //////////////////////
 // Start Configuration

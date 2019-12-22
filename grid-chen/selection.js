@@ -7,7 +7,7 @@
 
 //@ts-check
 
-import {logger} from "./utils.js";
+import {logger, wrap} from "./utils.js";
 
 /**
  * A rectangular area.
@@ -134,11 +134,11 @@ export class Range {
         if (!t.isEmpty()) {
             result.push(t.clone())
         }
-        const b = new Range(other.rowIndex + other.rowCount, other.columnIndex, this.rowCount - other.rowIndex - other.rowCount, other.columnCount);
+        const b = new Range(other.rowIndex + other.rowCount, other.columnIndex, this.rowCount - t.rowCount - other.rowCount, other.columnCount);
         if (!b.isEmpty()) {
             result.push(b.clone())
         }
-        const r = new Range(this.rowIndex, other.columnIndex + other.columnCount, this.rowCount, this.columnCount - other.columnIndex - other.columnCount);
+        const r = new Range(this.rowIndex, other.columnIndex + other.columnCount, this.rowCount, this.columnCount - l.columnCount - other.columnCount);
         if (!r.isEmpty()) {
             result.push(r.clone())
         }
@@ -468,7 +468,7 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
             selection.convexHull();
             selection.show();
         } else {
-            selection.areas.push(current);
+            selection.areas = [current];
             selection.convexHull();
             selection.show();
         }
@@ -476,7 +476,7 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
         cellParent.onmousemove = cellParent.onmouseup = cellParent.onmouseleave = undefined;
     }
 
-    cellParent.onmousemove = function (evt) {
+    cellParent.onmousemove = wrap(cellParent, function (evt) {
         selection.uiRefresher(current, false);
         let {rowIndex, colIndex} = index(evt);
         pilot.setBounds(rowIndex, colIndex, 1, 1);
@@ -485,16 +485,16 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
         convexHull(current, [initial, pilot]);
         logger.log(current);
         selection.uiRefresher(current, true);
-    };
+    });
 
-    cellParent.onmouseleave = function () {
+    cellParent.onmouseleave = wrap(cellParent, function () {
         logger.log('onmouseleave');
         resetHandlers();
-    };
+    });
 
-    cellParent.onmouseup = function () {
+    cellParent.onmouseup = wrap(cellParent, function () {
         logger.log('onmouseup');
         resetHandlers();
         cellParent.focus(); // So that we receive keyboard events.
-    }
+    });
 }

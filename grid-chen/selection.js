@@ -7,10 +7,10 @@
 
 //@ts-check
 
-import { Rect } from "./geometry.js";
-import { logger } from "./utils.js";
+import {logger} from "./utils.js";
 
 /**
+ * A rectangular area.
  * TODO: Resolve name collision with lib.dom.Range?
  * lib.dom.Range is not really prolific.
  * @implements {GridChenNS.Range}
@@ -23,6 +23,16 @@ export class Range {
      * @param {number} columnCount
      */
     constructor(rowIndex, columnIndex, rowCount, columnCount) {
+        this.setBounds(rowIndex, columnIndex, rowCount, columnCount);
+    }
+
+    /**
+     * @param {number} rowIndex
+     * @param {number} columnIndex
+     * @param {number} rowCount
+     * @param {number} columnCount
+     */
+    setBounds(rowIndex, columnIndex, rowCount, columnCount) {
         this.rowIndex = rowIndex;
         this.columnIndex = columnIndex;
         this.rowCount = rowCount;
@@ -30,7 +40,15 @@ export class Range {
     }
 
     /**
-     * @returns {GridChenNS.Range}
+     * returns true if this range is empty.
+     * @returns {boolean}
+     */
+    isEmpty() {
+        return this.rowCount <= 0 || this.columnCount <= 0
+    }
+
+    /**
+     * @returns {Range}
      */
     clone() {
         return Object.assign(new Range(0, 0, 0, 0), this);
@@ -40,59 +58,134 @@ export class Range {
         return `Range(${this.rowIndex}, ${this.columnIndex}, ${this.rowCount}, ${this.columnCount})`
     }
 
+    right() {
+        return this.columnIndex + this.columnCount
+    }
+
+    bottom() {
+        return this.rowIndex + this.rowCount
+    }
+
     /**
-     * TODO: Merge Range and Rect.
      * Intersect this range with another range.
-     * @param {GridChenNS.Range} other
-     * @returns {GridChenNS.Range}
+     * @param {Range} other
+     * @returns {Range}
      */
     intersect(other) {
         const row = intersectInterval(
-            { min: this.rowIndex, sup: this.rowIndex + this.rowCount },
-            { min: other.rowIndex, sup: other.rowIndex + other.rowCount });
+            {min: this.rowIndex, sup: this.rowIndex + this.rowCount},
+            {min: other.rowIndex, sup: other.rowIndex + other.rowCount});
         const col = intersectInterval(
-            { min: this.columnIndex, sup: this.columnIndex + this.columnCount },
-            { min: other.columnIndex, sup: other.columnIndex + other.columnCount });
+            {min: this.columnIndex, sup: this.columnIndex + this.columnCount},
+            {min: other.columnIndex, sup: other.columnIndex + other.columnCount});
         if (col === undefined || row === undefined) {
-            return undefined;
+            // TODO: Return empty range.
+            return undefined
         }
         return new Range(row.min, col.min, row.sup - row.min, col.sup - col.min)
+    }
+
+    /**
+     * Test if this range intersects with another range.
+     * @param {Range} other
+     * @returns {boolean}
+     */
+    intersects(other) {
+        return this.intersect(other) !== undefined
     }
 
     /**
      * Copy this range to an offset position.
      * @param {number} rowOffset
      * @param {number} colOffset
-     * @returns {GridChenNS.Range}
+     * @returns {Range}
      */
     offset(rowOffset, colOffset) {
         return new Range(
             this.rowIndex + rowOffset, this.columnIndex + colOffset,
             this.rowCount, this.columnCount)
     }
+
+    /**
+     * Subtract other range from this. Returns array of ranges whose union is this-other.
+     * Reimplementation of https://gist.github.com/Noitidart/90ea1ebd30156df9ef530c6a9a1b6ea7
+     * @param {Range} other
+     * @returns {Range[]}
+     */
+    subtract(other) {
+        other = other.intersect(this);
+        if (other === undefined) {
+            return [this.clone()];
+        }
+
+        // Partition into four rectangles left, top, bottom and right strip.
+        // Example: hole in the middle
+        // this - other
+        // ###   ...   ###   ltr
+        // ### - .#. = #.# = l.r = [l, t, b, r]
+        // ###   ...   ###   lbr
+
+        let result = [];
+        const l = new Range(this.rowIndex, this.columnIndex, this.rowCount, other.columnIndex - this.columnIndex);
+        if (!l.isEmpty()) {
+            result.push(l)
+        }
+        const t = new Range(this.rowIndex, other.columnIndex, other.rowIndex - this.rowIndex, other.columnCount);
+        if (!t.isEmpty()) {
+            result.push(t.clone())
+        }
+        const b = new Range(other.rowIndex + other.rowCount, other.columnIndex, this.rowCount - other.rowIndex - other.rowCount, other.columnCount);
+        if (!b.isEmpty()) {
+            result.push(b.clone())
+        }
+        const r = new Range(this.rowIndex, other.columnIndex + other.columnCount, this.rowCount, this.columnCount - other.columnIndex - other.columnCount);
+        if (!r.isEmpty()) {
+            result.push(r.clone())
+        }
+
+        return result
+    }
 }
 
 /**
- * @param {*} uiRefresher 
- * @param {GridChenNS.GridSelectionAbstraction} grid 
+ * Updates the target range with the convex hull of all areas.
+ * @param {Range[]} areas
+ * @param {Range} target
+ * @returns Range
+ */
+function convexHull(target, areas) {
+    target.rowIndex = Math.min(...areas.map(r => r.rowIndex));
+    target.rowCount = Math.max(...areas.map(r => r.rowIndex + r.rowCount)) - target.rowIndex;
+    target.columnIndex = Math.min(...areas.map(r => r.columnIndex));
+    target.columnCount = Math.max(...areas.map(r => r.columnIndex + r.columnCount)) - target.columnIndex;
+    return target
+}
+
+/**
+ * @param {*} uiRefresher
+ * @param {GridChenNS.GridSelectionAbstraction} grid
  * @returns {GridChenNS.Selection}
  */
 export function createSelection(uiRefresher, grid) {
 
     /** @implements{GridChenNS.Selection} */
     class Selection extends Range {
+        /**@type{Range}*/
+        active;
+        /**@type{Range}*/
+        pilot;
+        /**@type{Range}*/
+        initial;
+        /**@type{Range[]}*/
+        areas;
+        uiRefresher;
+        lastEvt;
+        headerSelected;
+
         constructor() {
             super(0, 0, 1, 1);
             this.uiRefresher = uiRefresher;
             this.lastEvt = undefined;
-            /**@type{GridChenNS.Range}*/
-            this.active;
-            /**@type{GridChenNS.Range}*/
-            this.pilot;
-            /**@type{GridChenNS.Range}*/
-            this.initial;
-            /**@type{GridChenNS.Range[]}*/
-            this.areas;
         }
 
         /**
@@ -103,7 +196,11 @@ export function createSelection(uiRefresher, grid) {
             }
 
             grid.repaintActiveCell(this.active);
-            grid.container.dispatchEvent(new Event('selectionChanged', { bubbles: true, cancelable: true, composed: true }));
+            grid.container.dispatchEvent(new Event('selectionChanged', {
+                bubbles: true,
+                cancelable: true,
+                composed: true
+            }));
         }
 
         hide() {
@@ -118,12 +215,11 @@ export function createSelection(uiRefresher, grid) {
             }
 
             this.headerSelected = false;
+            this.setBounds(rowIndex, columnIndex, rowCount, columnCount);
             this.active = new Range(rowIndex, columnIndex, 1, 1);
             this.initial = this.active.clone();
             this.pilot = this.active.clone();
-            this.areas = [new Range(rowIndex, columnIndex, rowCount, columnCount)];
-
-            this.convexHull();
+            this.areas = [this.clone()];
             this.show();
         }
 
@@ -131,14 +227,11 @@ export function createSelection(uiRefresher, grid) {
          * Synchronizes the convex hull of all areas.
          */
         convexHull() {
-            this.rowIndex = Math.min(...this.areas.map(r => r.rowIndex));
-            this.rowCount = Math.max(...this.areas.map(r => r.rowIndex + r.rowCount)) - this.rowIndex;
-            this.columnIndex = Math.min(...this.areas.map(r => r.columnIndex));
-            this.columnCount = Math.max(...this.areas.map(r => r.columnIndex + r.columnCount)) - this.columnIndex;
+            convexHull(this, this.areas);
         }
 
         startSelection(evt, cellParent, rowHeight, colCount, columnEnds, firstRow) {
-            startSelection(evt, this, cellParent, rowHeight, colCount, columnEnds, firstRow)
+            startSelection(evt, this, cellParent, rowHeight, colCount, columnEnds, firstRow);
         }
 
         move(rowIncrement, columnIncrement, doExpand) {
@@ -191,7 +284,7 @@ export function createSelection(uiRefresher, grid) {
 
         /**
          * @param {KeyboardEvent} evt
-        */
+         */
         keyDownHandler(evt) {
             logger.log('selection.onkeydown ' + evt.code);
             const selection = this;
@@ -255,8 +348,7 @@ export function createSelection(uiRefresher, grid) {
                 evt.stopImmediatePropagation();
                 const topArea = selection.areas.pop();
                 selection.setRange(0, selection.active.columnIndex, grid.rowCount, topArea.columnCount);
-            }
-            else if (evt.code === 'KeyA' && evt.ctrlKey) {
+            } else if (evt.code === 'KeyA' && evt.ctrlKey) {
                 // Like MS-Excel selects all non-empty cells, in our case the complete grid.
                 // This is reverted on the next onblur event.
                 evt.preventDefault();  // Do not select the inputs content.
@@ -265,7 +357,11 @@ export function createSelection(uiRefresher, grid) {
                 if (selection.lastEvt.code === 'KeyA' && selection.lastEvt.ctrlKey) {
                     // Already all data cells selected.
                     selection.headerSelected = true;
-                    grid.container.dispatchEvent(new Event('selectionChanged', { bubbles: true, cancelable: true, composed: true }));
+                    grid.container.dispatchEvent(new Event('selectionChanged', {
+                        bubbles: true,
+                        cancelable: true,
+                        composed: true
+                    }));
                 } else {
                     selection.setRange(0, 0, grid.rowCount, grid.colCount);
                 }
@@ -279,7 +375,6 @@ export function createSelection(uiRefresher, grid) {
 }
 
 
-
 /**
  * @param {GridChenNS.Interval} i1
  * @param {GridChenNS.Interval} i2
@@ -291,27 +386,27 @@ function intersectInterval(i1, i2) {
     if (sup <= min) {
         return undefined;
     }
-    return { min, sup }
+    return {min, sup}
 }
 
 /**
- * @param range
- * @param initial
+ * Updates the target with the convex hull of target+initial+(rowIndex, columnIndex)
+ * @param {Range} target
+ * @param {GridChenNS.Cell} initial
  * @param {number} rowIndex
  * @param {number} columnIndex
  */
-function expand(range, initial, rowIndex, columnIndex) {
-    const r = range;
-    r.rowIndex = Math.min(initial.rowIndex, rowIndex);
-    r.columnIndex = Math.min(initial.columnIndex, columnIndex);
-    r.rowCount = 1 + Math.max(initial.rowIndex, rowIndex) - r.rowIndex;
-    r.columnCount = 1 + Math.max(initial.columnIndex, columnIndex) - r.columnIndex;
+function expand(target, initial, rowIndex, columnIndex) {
+    target.rowIndex = Math.min(initial.rowIndex, rowIndex);
+    target.columnIndex = Math.min(initial.columnIndex, columnIndex);
+    target.rowCount = 1 + Math.max(initial.rowIndex, rowIndex) - target.rowIndex;
+    target.columnCount = 1 + Math.max(initial.columnIndex, columnIndex) - target.columnIndex;
 }
 
 /**
  *
  * @param evt
- * @param {GridChenNS.Selection} selection
+ * @param {Selection} selection
  * @param {HTMLDivElement} cellParent
  * @param {number} rowHeight
  * @param {number} colCount
@@ -332,20 +427,22 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
                 break;
             }
         }
-        return { rowIndex: grid_y + firstRow, colIndex: grid_x }
+        return {rowIndex: grid_y + firstRow, colIndex: grid_x}
     }
 
-    let { rowIndex, colIndex } = index(evt);
+    let {rowIndex, colIndex} = index(evt);
 
     let current = new Range(rowIndex, colIndex, 1, 1);
-    selection.initial = current.clone();
-    selection.active = current.clone();
-    selection.pilot = current.clone();
+    const initial = current.clone();
+    const pilot = current.clone();
     selection.headerSelected = false;
 
-    let initial = selection.initial;
-
     if (evt.shiftKey && !evt.ctrlKey) {
+        console.log('Expand Selection');
+        selection.hide();
+        selection.areas = [selection];
+        selection.convexHull();
+        selection.uiRefresher(current, true);
     } else if (evt.ctrlKey && !evt.shiftKey) {
         selection.uiRefresher(current, true);
     } else {
@@ -362,19 +459,17 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
             selection.show();
         } else if (evt.ctrlKey) {
             selection.hide();
+            selection.uiRefresher(current, false);
 
             const newAreas = [];
             let doesIntersect = false;
-            const pivot = new Rect(initial.columnIndex, initial.rowIndex, 1, 1);
 
             for (const area of selection.areas) {
-                const r = new Rect(area.columnIndex, area.rowIndex, area.columnCount, area.rowCount);
-                if (pivot.intersects(r)) {
+                if (initial.intersects(area)) {
                     doesIntersect = true;
-                    const minus = r.subtract(pivot);
-                    for (let part of minus) {
-                        newAreas.push(new Range(part.top, part.left, part.height, part.width));
-                    }
+                    const hull = new Range(0, 0, 0, 0);
+                    convexHull(hull, [initial, pilot]);
+                    newAreas.push(...area.subtract(hull));
                 } else {
                     newAreas.push(area);
                 }
@@ -397,13 +492,14 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
     }
 
     cellParent.onmousemove = function (evt) {
-        let { rowIndex, colIndex } = index(evt);
+        selection.uiRefresher(current, false);
+        let {rowIndex, colIndex} = index(evt);
+        pilot.setBounds(rowIndex, colIndex, 1, 1);
         logger.log(`onmousemove ${rowIndex} ${colIndex}`);
 
-        //if (rowIndex - firstRow < cellMatrix.length) {
-        expand(current, initial, rowIndex, colIndex);
+        convexHull(current, [initial, pilot]);
+        logger.log(current);
         selection.uiRefresher(current, true);
-        //}
     };
 
     cellParent.onmouseleave = function () {

@@ -235,6 +235,10 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     const styleSheet = document.createElement('style');
 
     styleSheet.textContent = `
+        div {
+            /* Do not confuse user with HTML-Selection. We have our own. */
+            user-select: none;
+        }
         /* Common style to all data cell elements */
         .GRID span, a {
             position: absolute;
@@ -480,7 +484,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         // with the target element coordinates. OR move this after call of index()!
         container.focus({ preventScroll: true });
 
-        selection.startSelection(evt, cellParent, rowHeight, colCount, columnEnds, firstRow)
+        selection.startSelection(evt, cellParent, rowHeight, colCount, columnEnds, firstRow);
     });
 
     /** @param {WheelEvent} evt */

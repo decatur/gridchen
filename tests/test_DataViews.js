@@ -226,9 +226,9 @@ scope('RowObjectsView', () => {
         assert.equal('b', rowView.getCell(0, 1));
 
         rowView.sort(0);
-        assert.equal([{"c1": 1, "c2": "b"}, {"c1": 2, "c2": "a"}, {"c1": 3, "c2": "c"}, {"c1": "NaN"}], rowMatrix);
+        assert.equal([{"c1": 1, "c2": "b"}, {"c1": 2, "c2": "a"}, {"c1": 3, "c2": "c"}, {"c1": NaN}], rowMatrix);
         rowView.sort(1);
-        assert.equal([{"c1": 2, "c2": "a"}, {"c1": 1, "c2": "b"}, {"c1": 3, "c2": "c"}, {"c1": "NaN"}], rowMatrix);
+        assert.equal([{"c1": 2, "c2": "a"}, {"c1": 1, "c2": "b"}, {"c1": 3, "c2": "c"}, {"c1": NaN}], rowMatrix);
     });
 
 });

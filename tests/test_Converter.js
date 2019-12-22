@@ -63,6 +63,9 @@ test('NumberConverter', () => {
     pi('en', 2, '3.1415926536', '3.14');
     pi('de', 0, '3,1415926536', '3');
     pi('en', 0, '3.1415926536', '3');
+
+    const converter = new c.NumberConverter(0);
+    assert.equal(NaN, converter.fromEditable('NaN'));
 });
 
 const sampleDateTimes = {};

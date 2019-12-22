@@ -292,6 +292,7 @@ export class NumberConverter {
     fromEditable(s) {
         s = s.trim();
         if (!s) return undefined;
+        if (s.toLowerCase() === 'nan') return NaN;
         const isPercent = s[s.length - 1] === '%';
         if (isPercent) {
             s = s.substr(0, s.length - 1);
@@ -364,7 +365,7 @@ export class FullDateStringConverter {
         }
         /**@type{number[]}*/
         const foo =  /**@type{number[]}*/ (parts);
-        return u.toUTCDateString(new Date(Date.UTC(foo[0], foo[1], ...foo)))
+        return u.toUTCDateString(new Date(Date.UTC(...foo)))
     }
 
     /**

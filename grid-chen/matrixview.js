@@ -430,7 +430,9 @@ export function createRowMatrixView(schema, rows) {
                     return patch
                 }
                 const oldValue = rows[rowIndex][colIndex];
-                delete rows[rowIndex][colIndex];
+                // Important: Must not delete rows[rowIndex][colIndex], as this would produce an empty index, which is not JSON.
+                rows[rowIndex][colIndex] = null;
+                // Note: This must not be a remove op!
                 patch.push({ op: 'replace', path: `/${rowIndex}/${colIndex}`, value: null, oldValue });
                 return patch
             }
@@ -1022,7 +1024,8 @@ export function createColumnVectorView(schema, column) {
 
             const oldValue = column[rowIndex];
             if (value == null) {
-                delete column[rowIndex];
+                // Important: Must not use delete column[rowIndex], see RowMatrixView.
+                column[rowIndex] = null;
                 patch.push({ op: 'replace', path: `/${rowIndex}`, value: null, oldValue });
                 return patch
             }

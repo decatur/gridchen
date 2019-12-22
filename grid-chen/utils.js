@@ -7,8 +7,8 @@
 
 //@ts-check
 
-// const DEBUG = (location.hostname === 'localhost');
-const DEBUG = false;
+const DEBUG = (location.hostname === 'localhost');
+// const DEBUG = false;
 
 function pad(v) {
     return String(v).padStart(2, '0');

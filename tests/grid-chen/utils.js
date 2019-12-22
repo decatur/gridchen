@@ -71,14 +71,18 @@ function error(a, b, msg) {
 }
 
 function assertEqualAtomic(a, b, msg) {
+    if (Number.isNaN(a) && Number.isNaN(b)) {
+        // Handle special case because NaN !== NaN is true
+        return
+    }
     if (a !== b) {
         error(a, b, msg);
     }
 }
 
 /**
- * @param {any} a 
- * @param {any} b
+ * @param {?} a
+ * @param {?} b
  * @param {string} [path]
  */
 function assertEqual(a, b, path) {

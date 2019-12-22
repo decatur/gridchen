@@ -66,10 +66,17 @@ declare module GridChenNS {
         columnIndex: number;
         rowCount: number;
         columnCount: number;
+        //right: () => number;
+        //bottom: () => number;
         offset: (rowOffset: number, colOffset: number) => Range;
-        intersect: (Range) => Range | void;  // TODO: Do not return void, work with empty.
+        intersect: (other: Range) => Range | void;  // TODO: Do not return void, work with empty.
+        intersects: (other: Range) => boolean;
+        subtract: (other: Range) => Range[];
         clone: () => Range;
     }
+
+    // A range of one cell only.
+    export type Cell = Range;
 
     /**
      * The Web Component.

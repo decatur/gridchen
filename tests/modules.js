@@ -5,5 +5,6 @@ export const modules = [
     'test_Clipboard',
     "test_Converter",
     "test_tsvToMatrix",
-    "test_DataViews"
+    "test_DataViews",
+    "test_range"
 ];

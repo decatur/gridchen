@@ -25,7 +25,6 @@ test('non-empty intersection', async function () {
 });
 
 /**
- *
  * @param {Range} r1
  */
 function subtractUnitHole(r1) {

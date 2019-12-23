@@ -103,7 +103,19 @@ export class GridChen extends HTMLElement {
         /** @type {GridChenNS.TransactionManager} */
         this._transactionManager = void 0;
         this.select = void 0;
-        window.addEventListener('resize', () => this.reset());
+
+        const gridChen = this;
+        function debounceResize() {
+            if (gridChen._timeOutHandle) {
+                window.clearTimeout(gridChen._timeOutHandle);
+            }
+
+            gridChen._timeOutHandle = window.setTimeout(() => {
+                gridChen._timeOutHandle = void 0;
+                gridChen.reset();
+            }, 100);
+        }
+        window.addEventListener('resize', debounceResize);
     }
 
     /**
@@ -120,11 +132,11 @@ export class GridChen extends HTMLElement {
             // First initialize creates shadow dom.
             this.attachShadow({ mode: 'open' });
         }
-        // TODO: Attention Layout Thrashing; Do not use clientHeight.
-        let totalHeight = this.clientHeight || 100;  // Default value needed for unit testing.
+        // Attention: Possible Layout Thrashing.
+        this._totalHeight = this.clientHeight || 200;  // Default value needed for unit testing.
         const container = document.createElement('div');
         container.style.position = 'relative';
-        container.style.height = totalHeight + 'px';
+        container.style.height = this._totalHeight + 'px';
         this.shadowRoot.appendChild(container);
         createGrid(container, viewModel, this, transactionManager);
         this.style.width = container.style.width;
@@ -132,10 +144,9 @@ export class GridChen extends HTMLElement {
     }
 
     reset() {
-        if (this._viewModel) {
+        if (this._viewModel && this._totalHeight !== this.clientHeight) {
             this.resetFromView(this._viewModel, this._transactionManager);
         }
-        return this
     }
 }
 

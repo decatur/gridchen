@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>README Demo</title>
+    <link rel="stylesheet" href="demo.css">
+    <script src="./theme.js"></script>
+    <style>
+        html {
+            height: 100%;
+        }
+        body {
+            display: flex; flex-direction: column; height: 100%; margin: 0;
+        }
+    </style>
+</head>
+<body>
+<h1><a href="index.html">GridChen Index</a> / CSS Flex Layout</h1>
+<header>
+    This is a fixed height header. Observe how the grid takes all available space between header and footer on window
+    resize. There must not be a vertical scrollbar, so the styles on the html and body element are
+    <pre>
+        html {
+            height: 100%;
+        }
+        body {
+            display: flex; flex-direction: column; height: 100%; margin: 0;
+        }
+    </pre>
+</header>
+<grid-chen style="flex: 1; margin-left: 2em;"></grid-chen>
+<footer>
+    This is a fixed height footer.
+</footer>
+</body>
+<script type="module">
+    import "./grid-chen/webcomponent.js"
+    import {createView} from "./grid-chen/matrixview.js"
+
+    const schema = {
+        title: 'DOM window object properties',
+        type: 'array',
+        items: {
+            type: 'array',
+            items: [
+                {title: 'Property', type: 'string', width: 200},
+                {title: 'Type', type: 'string', width: 200},
+                {title: 'Value', type: 'string', width: 200}
+            ]
+        }
+    };
+
+    const rows = Object.keys(window).map((key) => [key, typeof window[key], String(window[key])]);
+    document.querySelector('grid-chen').resetFromView(createView(schema, rows));
+</script>
+</html>

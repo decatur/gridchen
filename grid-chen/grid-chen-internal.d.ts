@@ -22,11 +22,15 @@ declare module GridChenNS {
         hide: () => void;
         move: (rowIncrement: number, columnIncrement: number, doExpand?: boolean) => void;
         setRange: (rowIndex: number, columnIndex: number, rowCount: number, columnCount: number) => void;
-        startSelection: (evt: MouseEvent, cellParent: HTMLElement, rowHeight: number, colCount: number,
-                         columnEnds: number[], firstRow: number) => void;
+        startSelection: (evt: MouseEvent, cellParent: HTMLElement, indexMapper: IndexToPixelMapper) => void;
         convexHull: () => void;
         uiRefresher: (area: Range, show: boolean) => void;
         keyDownHandler: (evt: KeyboardEvent) => void;
+    }
+
+    export interface IndexToPixelMapper {
+        cellIndexToPixelCoords: (rowIndex: number, columnIndex: number) => {clientX: number, clientY: number};
+        pixelCoordsToCellIndex: (clientX: number, clientY: number) => {rowIndex: number, columnIndex: number}
     }
 
     export interface GridSelectionAbstraction {

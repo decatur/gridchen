@@ -8,9 +8,8 @@
 //@ts-check
 
 import { logger, wrap, registerGlobalTransactionManager } from "./utils.js";
-import { createSelection, Range } from "./selection.js";
+import { createSelection, Range, IndexToPixelMapper } from "./selection.js";
 import { createEditor } from "./editor.js"
-
 
 
 //////////////////////
@@ -326,12 +325,9 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     info.innerText = '🛈';
     style = info.style;
     style.left = gridWidth + 'px';
-    //style.top = '-3px';
     style.position = 'absolute';
     info.addEventListener('click', showInfo);
     container.appendChild(info);
-
-    //let lastRefreshMillis = -100;
 
     function refresh() {
         rowCount = viewModel.rowCount();
@@ -495,7 +491,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         // with the target element coordinates. OR move this after call of index()!
         container.focus({ preventScroll: true });
 
-        selection.startSelection(/**@type{MouseEvent}*/(evt), cellParent, rowHeight, colCount, columnEnds, firstRow);
+        selection.startSelection(/**@type{MouseEvent}*/(evt), cellParent, indexMapper);
     }));
 
     /** @param {WheelEvent} evt */
@@ -844,6 +840,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     let firstRow = 0;
     /** @type{number} */
     let rowCount = 0;
+    const indexMapper = new IndexToPixelMapper(cellParent.getBoundingClientRect(), rowHeight, columnEnds);
 
     function commitCellEdit(value) {
         logger.log('commitCellEdit');
@@ -881,6 +878,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     let pageIncrement = Math.max(1, viewPortRowCount);
 
     function setFirstRow(_firstRow) {
+        indexMapper.firstRow = _firstRow;
         refreshHeaders();
         selection.hide();
 
@@ -1109,16 +1107,9 @@ function createGrid(container, viewModel, gridchenElement, tm) {
      * Dispatches a mousedown&mouseup event in the middle of the specified cell.
      */
     gridchenElement['_click'] = function (rowIndex, columnIndex) {
-        // TODO: This is the inverse of selection.startSelection.index(), so bring it together.
-        const rect = cellParent.getBoundingClientRect();
-        let grid_y = rowIndex - firstRow;
-        let y = rowHeight * (grid_y + 0.5);
-        let clientY = y + rect.top;
-        let x = ((columnIndex === 0 ? 0 : columnEnds[columnIndex - 1]) + columnEnds[columnIndex]) / 2;
-        let clientX = x + rect.left;
-
-        cellParent.dispatchEvent(new MouseEvent('mousedown', { clientX: clientX, clientY: clientY }));
-        cellParent.dispatchEvent(new MouseEvent('mouseup', { clientX: clientX, clientY: clientY }));
+        const pixelCoords = indexMapper.cellIndexToPixelCoords(rowIndex, columnIndex);
+        cellParent.dispatchEvent(new MouseEvent('mousedown', pixelCoords));
+        cellParent.dispatchEvent(new MouseEvent('mouseup', pixelCoords));
     };
 
     /**

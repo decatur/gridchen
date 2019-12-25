@@ -230,8 +230,14 @@ export function createSelection(uiRefresher, grid) {
             convexHull(this, this.areas);
         }
 
-        startSelection(evt, cellParent, rowHeight, colCount, columnEnds, firstRow) {
-            startSelection(evt, this, cellParent, rowHeight, colCount, columnEnds, firstRow);
+        /**
+         *
+         * @param evt
+         * @param cellParent
+         * @param {IndexToPixelMapper} indexMapper
+         */
+        startSelection(evt, cellParent, indexMapper) {
+            startSelection(evt, this, cellParent, indexMapper);
         }
 
         move(rowIncrement, columnIncrement, doExpand) {
@@ -391,34 +397,15 @@ function intersectInterval(i1, i2) {
 
 /**
  *
- * @param evt
+ * @param {MouseEvent} evt
  * @param {Selection} selection
  * @param {HTMLDivElement} cellParent
- * @param {number} rowHeight
- * @param {number} colCount
- * @param {number[]} columnEnds
- * @param {number} firstRow
+ * @param {IndexToPixelMapper} indexMapper
  */
-function startSelection(evt, selection, cellParent, rowHeight, colCount, columnEnds, firstRow) {
-    const rect = cellParent.getBoundingClientRect();
+function startSelection(evt, selection, cellParent, indexMapper) {
+    let {rowIndex, columnIndex} = indexMapper.pixelCoordsToCellIndex(evt.clientX, evt.clientY);
 
-    function index(evt) {
-        const y = evt.clientY - rect.top;
-        const x = evt.clientX - rect.left;
-        // log.log(x + ' ' + y);
-        const grid_y = Math.trunc(y / rowHeight);
-        let grid_x = 0;
-        for (grid_x; grid_x < colCount; grid_x++) {
-            if (columnEnds[grid_x] > x) {
-                break;
-            }
-        }
-        return {rowIndex: grid_y + firstRow, colIndex: grid_x}
-    }
-
-    let {rowIndex, colIndex} = index(evt);
-
-    let current = new Range(rowIndex, colIndex, 1, 1);
+    let current = new Range(rowIndex, columnIndex, 1, 1);
     const initial = current.clone();
     const pilot = current.clone();
     selection.headerSelected = false;
@@ -476,16 +463,20 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
         cellParent.onmousemove = cellParent.onmouseup = cellParent.onmouseleave = undefined;
     }
 
-    cellParent.onmousemove = wrap(cellParent, function (evt) {
+    /**
+     * @param {MouseEvent} evt
+     */
+    function onmousemove(evt) {
         selection.uiRefresher(current, false);
-        let {rowIndex, colIndex} = index(evt);
-        pilot.setBounds(rowIndex, colIndex, 1, 1);
-        logger.log(`onmousemove ${rowIndex} ${colIndex}`);
-
+        let {rowIndex, columnIndex} = indexMapper.pixelCoordsToCellIndex(evt.clientX, evt.clientY);
+        logger.log(`onmousemove ${rowIndex} ${columnIndex}`);
+        pilot.setBounds(rowIndex, columnIndex, 1, 1);
         convexHull(current, [initial, pilot]);
         logger.log(current);
         selection.uiRefresher(current, true);
-    });
+    }
+
+    cellParent.onmousemove = wrap(cellParent, onmousemove);
 
     cellParent.onmouseleave = wrap(cellParent, function () {
         logger.log('onmouseleave');
@@ -497,4 +488,64 @@ function startSelection(evt, selection, cellParent, rowHeight, colCount, columnE
         resetHandlers();
         cellParent.focus(); // So that we receive keyboard events.
     });
+}
+
+
+export class IndexToPixelMapper {
+
+    /**
+     *
+     * @param {DOMRect} rect
+     * @param {number} rowHeight
+     * @param {number[]} columnEnds
+     */
+    constructor(rect, rowHeight, columnEnds) {
+        this.rect = rect;
+        this.rowHeight = rowHeight;
+        this.columnEnds = columnEnds;
+        this.firstRow = 0;
+        this._columnIndexGuess = 0;
+    }
+
+    /**
+     * Returns the indexed cells center coordinates in pixels.
+     * @param {number} rowIndex
+     * @param {number} columnIndex
+     * @returns {{clientY: number, clientX: number}}
+     */
+    cellIndexToPixelCoords(rowIndex, columnIndex) {
+        let y = this.rowHeight * (rowIndex - this.firstRow + 0.5);
+        let clientY = y + this.rect.top;
+        let x = ((columnIndex === 0 ? 0 : this.columnEnds[columnIndex - 1]) + this.columnEnds[columnIndex]) / 2;
+        let clientX = x + this.rect.left;
+        return {clientX, clientY}
+    }
+
+    /**
+     * Returns the index of the cell which contains the specified pixel coordinates.
+     * One-sides inverse to cellIndexToPixelCoords.
+     *      pixelCoordsToCellIndex°cellIndexToPixelCoords = I
+     * @param {number} clientX
+     * @param {number} clientY
+     * @returns {{columnIndex: number, rowIndex: number}}
+     */
+    pixelCoordsToCellIndex(clientX, clientY) {
+        const y = clientY - this.rect.top;
+        const x = clientX - this.rect.left;
+        const rowIndex = this.firstRow + Math.trunc(y / this.rowHeight);
+
+        let columnIndex = this._columnIndexGuess;
+        if (this.columnEnds[columnIndex] > x && (columnIndex === 0 || this.columnEnds[columnIndex-1]<=x)) {
+            // pass
+        } else {
+            const colCount = this.columnEnds.length;
+            for (columnIndex=0; columnIndex < colCount; columnIndex++) {
+                if (this.columnEnds[columnIndex] > x) {
+                    break;
+                }
+            }
+            this._columnIndexGuess = columnIndex;
+        }
+        return {rowIndex, columnIndex}
+    }
 }

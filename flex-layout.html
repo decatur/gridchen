@@ -50,7 +50,8 @@
         }
     };
 
-    const rows = Object.keys(window).map((key) => [key, typeof window[key], String(window[key])]);
+    const obj = window;
+    const rows = Object.keys(obj).map((key) => [key, typeof obj[key], String(obj[key])]);
     document.querySelector('grid-chen').resetFromView(createView(schema, rows));
 </script>
 </html>

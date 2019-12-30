@@ -536,11 +536,20 @@ export class IndexToPixelMapper {
 
         let columnIndex = this._columnIndexGuess;
         if (this.columnEnds[columnIndex] > x && (columnIndex === 0 || this.columnEnds[columnIndex-1]<=x)) {
-            // pass
-        } else {
+            // our guess is correct
+        } else if (this.columnEnds[columnIndex] <= x) {
+            // Our guess is too small, so increment until we find desired index.
             const colCount = this.columnEnds.length;
-            for (columnIndex=0; columnIndex < colCount; columnIndex++) {
+            for (;columnIndex < colCount; columnIndex++) {
                 if (this.columnEnds[columnIndex] > x) {
+                    break;
+                }
+            }
+            this._columnIndexGuess = columnIndex;
+        } else {
+            // Our guess is too big, so decrement until we find desired index.
+            for (; columnIndex > 0; columnIndex--) {
+                if (this.columnEnds[columnIndex-1] <= x) {
                     break;
                 }
             }

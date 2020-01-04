@@ -29,6 +29,10 @@ grid-chen {
     height: 200px;
 }
 
+/*grid-chen:hover {
+    background-color: red;
+}*/
+
 @media (prefers-color-scheme: dark) {
     /* See https://gist.github.com/meskarune/2721790 for a template */
     :root {

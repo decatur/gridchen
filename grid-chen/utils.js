@@ -54,13 +54,38 @@ export function toUTCDateString(d) {
  */
 export function toUTCDatePartialTimeString(d, displayResolution) {
     let s = toUTCDateString(d);
-    if (displayResolution === 'H' || displayResolution === 'M') {
+    if (['H', 'M', 'S', 'MS'].includes(displayResolution)) {
         // We use space, not 'T' as time separator to apeace MS-Excel.
-        s += ' ' + pad(d.getUTCHours());
-        if (displayResolution === 'M') {
-            s += ':' + pad(d.getUTCMinutes());
-        }
+        s += ' ' + toUTCTimeString(d, displayResolution);
     }
+    return s;
+}
+
+function toUTCTimeString(d, displayResolution) {
+	let s = pad(d.getUTCHours());
+	if (['M', 'S', 'MS'].includes(displayResolution)) {
+		s += ':' + pad(d.getUTCMinutes());
+	}
+	if (['S', 'MS'].includes(displayResolution)) {
+		s += ':' + pad(d.getUTCSeconds());
+	}
+	if (['MS'].includes(displayResolution)) {
+		s += '.' + String(d.getUTCMilliseconds()).padStart(3, '0');
+	}
+    return s;
+}
+
+function toTimeString(d, displayResolution) {
+	let s = pad(d.getHours());
+	if (['M', 'S', 'MS'].includes(displayResolution)) {
+		s += ':' + pad(d.getMinutes());
+	}
+	if (['S', 'MS'].includes(displayResolution)) {
+		s += ':' + pad(d.getSeconds());
+	}
+	if (['MS'].includes(displayResolution)) {
+		s += '.' + String(d.getMilliseconds()).padStart(3, '0');
+	}
     return s;
 }
 
@@ -71,7 +96,7 @@ export function toUTCDatePartialTimeString(d, displayResolution) {
  */
 export function toUTCDateTimeString(d, displayResolution) {
     let s = toUTCDatePartialTimeString(d, displayResolution);
-    return s + '+Z';
+    return s + 'Z';
 }
 
 export function toLocalISODateString(d) {
@@ -80,12 +105,9 @@ export function toLocalISODateString(d) {
 
 export function toLocaleISODateTimeString(d, displayResolution) {
     let s = toLocalISODateString(d);
-    if (displayResolution === 'H' || displayResolution === 'M') {
+    if (['H', 'M', 'S', 'MS'].includes(displayResolution)) {
         // We use space, not 'T' as time separator to apeace MS-Excel.
-        s += ' ' + pad(d.getHours());
-        if (displayResolution === 'M') {
-            s += ':' + pad(d.getMinutes());
-        }
+        s += ' ' + toTimeString(d, displayResolution);
     }
     let dh = d.getHours() - d.getUTCHours();
     if (dh < 0) dh += 24;
@@ -120,7 +142,7 @@ function someNaN(a) {
  */
 function createLocalDateParser(locale) {
     // We do not want to use the Date constructor because
-    // * it is very a very loose parser
+    // * it is a very loose parser
     // * the time zone information is lost.
 
     // We only support numeric year-month-day formats.
@@ -146,7 +168,7 @@ function createLocalDateParser(locale) {
 
     /**
      * @param {string} s
-     * @returns {number[]|SyntaxError}
+     * @returns {{parts?: number[], error?:SyntaxError}}
      */
     function parseFullDate(s) {
         function stringParts() {
@@ -168,49 +190,66 @@ function createLocalDateParser(locale) {
 
         const numericParts = stringParts().map(p => Number(p));
         if (someNaN(numericParts)) {
-            return SyntaxError(s)
+            return {error: new SyntaxError(s)}
         }
-        return numericParts
+        return {parts: numericParts}
     }
 
+    /**
+     *
+     * @param {string} s
+     * @returns {{parts?: number[], error?: SyntaxError}}
+     */
     function parseDateTimeOptionalTimezone(s) {
-        // '2019-10-27 01:02Z' -> ["2019-10-27 01:02Z", "2019-10-
-        // '2019-10-27 01:02-01:00' -> ["2019-10-27 01:02Z", "2019-10-27", " ", "01:02", "-01:00"]
-        // '2019-10-27T01:02' -> ["2019-10-27 01:02Z", "2019-10-27", "T", "01:02", undefined]
-        const m = s.match(/^(.+)(\s|T)([0-9:]+)(Z|[+-][0-9:]+)?$/);
+        // 2020-01-02T19:52:53.3434+00:00 ->
+        //   0                                 1             2    3     4      5      6        7
+		//  ["2020-01-02T19:52:53.123456+00:00", "2020-01-02", "T", "19", ":52", ":53", ".123456", "+00:00"]
+        const m = s.match(/^(.+)(\s|T)(\d+)(:\d+)?(:\d+)?(\.[0-9]+)?(Z|[+-][0-9:]+)?$/);
         if (!m) {
-            return new SyntaxError(s);
+            return {error: new SyntaxError(s)}
         }
-        const fullDate = parseFullDate(m[1]);
-        if (fullDate.constructor === SyntaxError) {
-            return fullDate
+        const fullDateResult = parseFullDate(m[1]);
+        if (fullDateResult.error) {
+            return fullDateResult
         }
 
-        const partialTime = m[3].split(':').map(v => Number(v));
-        if (partialTime.length !== 2 || someNaN(partialTime)) {
-            return new SyntaxError(s)
+		const hours = Number(m[3]);
+		const minutes = m[4]?Number(m[4].substring(1)):0;
+		const seconds = m[5]?Number(m[5].substring(1)):0;
+		let millis = 0;
+		if (m[6]) {
+		    if (m[6].length === 4) {
+		        // These were millis
+		        millis = Number(m[6].substring(1));
+            } else if (m[6].length === 7) {
+		        // These were micros, ignore all sub-millis as JS Date does not support those.
+		        millis = Number(m[6].substring(1, 4));
+            } else {
+		        return {error: new SyntaxError(s)}
+            }
         }
         let timeZone = [];
-        if (m[4] !== undefined) {
-            if (m[4] === 'Z') {
+        if (m[7]) {
+            if (m[7] === 'Z') {
                 timeZone = [0, 0];
             } else {
                 // This will also take care of negative offsets, i.e. "-01:00" -> [-1, 0]
-                timeZone = m[4].split(':').map(v => Number(v));
+                timeZone = m[7].split(':').map(v => Number(v));
             }
             if (timeZone.length !== 2 || someNaN(timeZone)) {
-                return new SyntaxError(s);
+                return {error: new SyntaxError(s)}
             }
         }
 
-        return [...fullDate, ...partialTime, ...timeZone]
+        // Array of length 9
+        return {parts: [...fullDateResult.parts, hours, minutes, seconds, millis, ...timeZone]}
     }
 
     class LocalDateParser {
         /**
          * Parses full dates of the form 2019-10-27, 10/27/2019, ...
          * @param {string} s
-         * @returns {number[]|SyntaxError}
+         * @returns {{parts?: number[], error?:SyntaxError}}
          */
         fullDate(s) {
             return parseFullDate(s);
@@ -219,33 +258,19 @@ function createLocalDateParser(locale) {
         /**
          * Parses dates with partial time of the form 2019-10-27 00:00, 10/27/2019T01:02, ...
          * @param s
-         * @returns {SyntaxError | number[]}
+         * @returns {{parts?: number[], error?:SyntaxError}}
          */
         datePartialTime(s) {
-            const parts = parseDateTimeOptionalTimezone(s);
-            if (parts.constructor === SyntaxError) {
-                return parts
-            }
-            if (parts.length !== 5) {
-                return new SyntaxError(s)
-            }
-            return parts
+            return parseDateTimeOptionalTimezone(s)
         }
 
         /**
          * Parses date times of the form 2019-10-27 00:00Z, 10/27/2019T01:02+01:00, ...
          * @param s
-         * @returns {SyntaxError | number[]}
+         * @returns {{parts?: number[], error?:SyntaxError}}
          */
         dateTime(s) {
-            const parts = parseDateTimeOptionalTimezone(s);
-            if (parts.constructor === SyntaxError) {
-                return parts
-            }
-            if (parts.length !== 7) {
-                return new SyntaxError(s)
-            }
-            return parts
+            return parseDateTimeOptionalTimezone(s)
         }
 
     }

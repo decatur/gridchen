@@ -88,8 +88,13 @@ function assertEqualAtomic(a, b, msg) {
 function assertEqual(a, b, path) {
     path = path || '';
     //console.log(path);
-    assertEqualAtomic(typeof a, typeof b, path);
-    assertEqualAtomic(Array.isArray(a), Array.isArray(b), path);
+    if (a == null || b == null) {
+        // Take care of either null and void 0.
+        assertEqualAtomic(a, b, path);
+        return;
+    }
+    assertEqualAtomic(a.constructor, b.constructor, path);
+    // assertEqualAtomic(Array.isArray(a), Array.isArray(b), path);
     if (Array.isArray(a)) {
         assertEqualAtomic(a.length, b.length, path);
         for (let i = 0; i < a.length; i++) {
@@ -102,15 +107,8 @@ function assertEqual(a, b, path) {
             error(a, b, path);
         }
     } else if (typeof a === 'object') {
-        if (a == null && b == null) {
-            // pass
-            return
-        }
-        if (a == null || b == null) {
-            error(a, b, path);
-        }
         assertEqualAtomic(Object.keys(a).sort().join(), Object.keys(b).sort().join(), 'Keys mismatch at path ' + path);
-        for (let key in a) {
+        for (let key of Object.keys(a)) {
             assertEqual(a[key], b[key], path + '/' + key);
         }
     } else {

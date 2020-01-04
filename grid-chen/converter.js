@@ -359,13 +359,11 @@ export class FullDateStringConverter {
      * @returns {string}
      */
     fromEditable(s) {
-        const parts = this.parser.fullDate(s);
-        if (parts.constructor === SyntaxError) {
+        const r = this.parser.fullDate(s);
+        if (r.error) {
             return s
         }
-        /**@type{number[]}*/
-        const foo =  /**@type{number[]}*/ (parts);
-        return u.toUTCDateString(new Date(Date.UTC(...foo)))
+        return u.toUTCDateString(new Date(Date.UTC(...r.parts)))
     }
 
     /**
@@ -384,8 +382,7 @@ export class FullDateStringConverter {
             element.textContent = String(value);
             element.className = 'error';
         } else {
-            const parts = this.parser.fullDate(value);
-            if (parts.constructor === SyntaxError) {
+            if (this.parser.fullDate(value).error) {
                 element.textContent = String(value);
                 element.className = 'error';
             } else {
@@ -423,11 +420,11 @@ export class DatePartialTimeStringConverter {
             return String(s);
         }
 
-        let parts = this.parser.datePartialTime(s);
-        if (parts.constructor === SyntaxError) {
+        let r = this.parser.datePartialTime(s);
+        if (r.error) {
             return s
         }
-        const d = new Date(Date.UTC(...parts));
+        const d = new Date(Date.UTC(...r.parts));
         return d.toISOString().substr(0, 16).replace('T', ' ');
     }
 
@@ -441,11 +438,11 @@ export class DatePartialTimeStringConverter {
      * @returns {string}
      */
     fromEditable(s) {
-        const parts = this.parser.datePartialTime(s);
-        if (parts.constructor === SyntaxError) {
+        const r = this.parser.datePartialTime(s);
+        if (r.error) {
             return s
         }
-        return u.toUTCDatePartialTimeString(new Date(Date.UTC(...parts)), this.displayResolution).replace(' ', 'T')
+        return u.toUTCDatePartialTimeString(new Date(Date.UTC(...r.parts)), this.displayResolution).replace(' ', 'T')
     }
 
     /**
@@ -464,12 +461,12 @@ export class DatePartialTimeStringConverter {
             element.textContent = String(value);
             element.className = 'error';
         } else {
-            const parts = this.parser.datePartialTime(value);
-            if (parts.constructor === SyntaxError) {
+            const r = this.parser.datePartialTime(value);
+            if (r.error) {
                 element.textContent = value;
                 element.className = 'error';
             } else {
-                element.textContent = u.toUTCDatePartialTimeString(new Date(Date.UTC(...parts)), this.displayResolution);
+                element.textContent = u.toUTCDatePartialTimeString(new Date(Date.UTC(...r.parts)), this.displayResolution);
                 element.className = 'non-string';
             }
         }
@@ -512,13 +509,14 @@ export class DateTimeStringConverter {
             return String(s);
         }
 
-        let parts = this.parser.dateTime(s);
-        if (parts.constructor === SyntaxError) {
+        let r = this.parser.dateTime(s);
+        if (r.error) {
             return s
         }
-        parts[3] -= parts[5]; // Get rid of hour offset
-        parts[4] -= parts[6]; // Get rid of minute offset
-        const d = new Date(Date.UTC(...parts.slice(0, 5)));
+        const parts = r.parts;
+        parts[3] -= parts[7]; // Get rid of hour offset
+        parts[4] -= parts[8]; // Get rid of minute offset
+        const d = new Date(Date.UTC(...parts.slice(0, 7)));
         return u.toLocaleISODateTimeString(d, 'M').replace(' ', 'T')
     }
 
@@ -538,14 +536,15 @@ export class DateTimeStringConverter {
             element.textContent = String(value);
             element.className = 'error';
         } else {
-            const parts = this.parser.dateTime(value);
-            if (parts.constructor === SyntaxError) {
+            const r = this.parser.dateTime(value);
+            if (r.error) {
                 element.textContent = value;
                 element.className = 'error';
             } else {
-                parts[3] -= parts[5]; // Get rid of hour offset
-                parts[4] -= parts[6]; // Get rid of minute offset
-                element.textContent = u.toLocaleISODateTimeString(new Date(Date.UTC(...parts.slice(0, 5))), this.displayResolution);
+                const parts = r.parts;
+                parts[3] -= parts[7]; // Get rid of hour offset
+                parts[4] -= parts[8]; // Get rid of minute offset
+                element.textContent = u.toLocaleISODateTimeString(new Date(Date.UTC(...parts.slice(0, 7))), this.displayResolution);
                 element.className = 'non-string';
             }
         }
@@ -580,11 +579,11 @@ export class FullDateConverter {
      * @returns {Date|string}
      */
     fromEditable(s) {
-        const parts = this.parser.fullDate(s);
-        if (parts.constructor === SyntaxError) {
+        const r = this.parser.fullDate(s);
+        if (r.error) {
             return s
         }
-        return new Date(Date.UTC(...parts))
+        return new Date(Date.UTC(...r.parts))
     }
 
     /**
@@ -648,11 +647,11 @@ export class DatePartialTimeConverter {
      * @returns {Date|string}
      */
     fromEditable(s) {
-        let parts = this.parser.datePartialTime(s);
-        if (parts.constructor === SyntaxError) {
+        let r = this.parser.datePartialTime(s);
+        if (r.error) {
             return s
         }
-        return new Date(Date.UTC(...parts))
+        return new Date(Date.UTC(...r.parts))
     }
 
     /**
@@ -716,13 +715,14 @@ export class DateTimeConverter {
      * @returns {Date | string}
      */
     fromEditable(s) {
-        let parts = this.parser.dateTime(s);
-        if (parts.constructor === SyntaxError) {
+        let r = this.parser.dateTime(s);
+        if (r.error) {
             return s
         }
-        parts[3] -= parts[5]; // Get rid of hour offset
-        parts[4] -= parts[6]; // Get rid of minute offset
-        return new Date(Date.UTC(...parts.slice(0, 5)));
+        const parts = r.parts;
+        parts[3] -= parts[7]; // Get rid of hour offset
+        parts[4] -= parts[8]; // Get rid of minute offset
+        return new Date(Date.UTC(...parts.slice(0, 7)));
     }
 
     /**

@@ -78,13 +78,13 @@ function updateSchema(schemas) {
                 schema.converter.isPercent = true;
             }
         } else if (schema.type === 'string' && schema.format === 'full-date') {
-            schema.converter = new c.FullDateStringConverter();
+            schema.converter = new c.DatePartialTimeStringConverter('DAYS');
         } else if (schema.type === 'string' && schema.format === 'date-partial-time') {
             schema.converter = new c.DatePartialTimeStringConverter(schema.period || 'MINUTES');
         } else if (schema.type === 'string' && schema.format === 'date-time') {
             schema.converter = new c.DateTimeStringConverter(schema.period || 'MINUTES');
         } else if (schema.type === 'object' && schema.format === 'full-date') {
-            schema.converter = new c.FullDateConverter();
+            schema.converter = new c.DatePartialTimeConverter('DAYS');
         } else if (schema.type === 'object' && schema.format === 'date-partial-time') {
             schema.converter = new c.DatePartialTimeConverter(schema.period || 'MINUTES');
         } else if (schema.type === 'object' && schema.format === 'date-time') {
@@ -116,7 +116,6 @@ function sortedColumns(properties) {
     });
     return entries;
 }
-
 
 /**
  * @param {GridChenNS.JSONSchema} schema

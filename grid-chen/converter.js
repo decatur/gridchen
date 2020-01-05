@@ -331,69 +331,6 @@ export class NumberConverter {
 }
 
 /**
- * Converter for naive dates without time information.
- * Uses the same concept for date representation as DateTimeLocalStringConverter.
- */
-export class FullDateStringConverter {
-    /**
-     * @param {string=} locale
-     */
-    constructor(locale) {
-        this.parser = u.localeDateParser(locale);
-    }
-
-    /**
-     * @param {string} s
-     * @returns {string}
-     */
-    toTSV(s) {
-        return s
-    }
-
-    toEditable(s) {
-        return s
-    }
-
-    /**
-     * @param {string} s
-     * @returns {string}
-     */
-    fromEditable(s) {
-        const r = this.parser.fullDate(s);
-        if (r.error) {
-            return s
-        }
-        return u.toUTCDateString(new Date(Date.UTC(...r.parts)))
-    }
-
-    /**
-     * @returns {HTMLSpanElement}
-     */
-    createElement() {
-        return createSpan()
-    }
-
-    /**
-     * @param {HTMLElement} element
-     * @param {string|*} value
-     */
-    render(element, value) {
-        if (value.constructor !== String) {
-            element.textContent = String(value);
-            element.className = 'error';
-        } else {
-            if (this.parser.fullDate(value).error) {
-                element.textContent = String(value);
-                element.className = 'error';
-            } else {
-                element.textContent = value;
-                element.className = 'non-string';
-            }
-        }
-    }
-}
-
-/**
  * Converter for naive dates. Naive dates do not know about time zones
  * or daylight saving times. JavaScript does not support such naive dates.
  * As a workaround, we choose the UTC time zone as the 'naive' zone.
@@ -546,63 +483,6 @@ export class DateTimeStringConverter {
                 element.textContent = u.toLocaleISODateTimeString(new Date(Date.UTC(...parts.slice(0, 7))), this.period);
                 element.className = 'non-string';
             }
-        }
-    }
-}
-
-export class FullDateConverter {
-    /**
-     * @param {string=} locale
-     */
-    constructor(locale) {
-        this.parser = u.localeDateParser(locale);
-    }
-
-    /**
-     * @param {Date|*} d
-     * @returns {string}
-     */
-    toTSV(d) {
-        if (d.constructor !== Date) {
-            return String(d);
-        }
-        return u.toUTCDateString(d);
-    }
-
-    toEditable(d) {
-        return this.toTSV(d);
-    }
-
-    /**
-     * @param {string} s
-     * @returns {Date|string}
-     */
-    fromEditable(s) {
-        const r = this.parser.fullDate(s);
-        if (r.error) {
-            return s
-        }
-        return new Date(Date.UTC(...r.parts))
-    }
-
-    /**
-     * @returns {HTMLSpanElement}
-     */
-    createElement() {
-        return createSpan()
-    }
-
-    /**
-     * @param {HTMLElement} element
-     * @param {Date|*} value
-     */
-    render(element, value) {
-        if (value.constructor !== Date) {
-            element.textContent = String(value);
-            element.className = 'error';
-        } else {
-            element.textContent = u.toUTCDateString(value);
-            element.className = 'non-string';
         }
     }
 }

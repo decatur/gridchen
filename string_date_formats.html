@@ -11,12 +11,11 @@
 <h1><a href="index.html">grid-chen Index</a> / String Date Formats</h1>
 
 <p>
-    Supported date formats are TODO:??  <code>full-date</code>, <code>date-partial-time</code> and <code>date-time</code>.
-</p>
-
-<p>
+    Supported date formats are <code>full-date</code>, <code>date-partial-time</code> and <code>date-time</code>.
+    The formats <code>date-partial-time</code> and <code>date-time</code> can have an additional <code>period</code>
+    property, which can have values in <code>['DAYS', 'HOURS', 'MINUTES', 'SECONDS', 'MILLISECONDS']</code>.
     Dates are displayed and copied to clipboard in ISO format with local time zone offset.
-    Edit mode also allows dates in the default locale, for example 27.10.2019 de-locale.
+    Edit mode allows to input dates in the default locale, for example 27.10.2019 for de-locale.
 </p>
 
 </body>
@@ -34,7 +33,7 @@
                 items: [  // tuple schema
                     {title: 'full-date', type: 'string', format:'full-date', width: 100},
                     {title: 'date-partial-time', type: 'string', format:'date-partial-time', width: 150},
-                    {title: 'date-time', type: 'string', format:'date-time', width: 200, }
+                    {title: 'date-time', type: 'string', format:'date-time', period:'MINUTES', width: 200 }
                 ]
             }
         },

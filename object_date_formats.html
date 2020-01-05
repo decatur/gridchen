@@ -11,7 +11,7 @@
 <h1><a href="index.html">grid-chen Index</a> / Object Date Formats</h1>
 
 <p>
-    Same as string dates, but dates are stored as JavaScript Date objects
+    Same as <a href="string_date_formats.html">String Date Formats</a>, but dates are stored as JavaScript Date objects.
 </p>
 
 </body>
@@ -29,12 +29,12 @@
                 items: [  // tuple schema
                     {title: 'full-date', type: 'object', format:'full-date', width: 100},
                     {title: 'date-partial-time', type: 'object', format:'date-partial-time', width: 150},
-                    {title: 'date-time', type: 'object', format:'date-time', width: 200, }
+                    {title: 'date-time', type: 'object', format:'date-time', "period": "SECONDS", width: 220 }
                 ]
             }
         },
         [
-            [new Date(Date.UTC(2019, 9, 27)), new Date('2019-10-27T01:13Z'), new Date('2019-10-27T01:13+02:00')],
+            [new Date(Date.UTC(2019, 9, 27)), new Date('2019-10-27T01:13Z'), new Date('2019-10-27T01:13:14+02:00')],
             ['not_a_date', 'not_a_date', 'not_a_date']
         ]
     );

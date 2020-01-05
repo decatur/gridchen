@@ -20,15 +20,15 @@ const DEBUG = (location.hostname === 'localhost');
  * @returns {function(evt: Event)}
  */
 export function wrap(element, func) {
-    return function(evt) {
+    return function (evt) {
         try {
             func(evt);
-        } catch(e) {
+        } catch (e) {
             console.error(e);
             const div = document.createElement('div');
             div.style.fontSize = 'large';
             div.textContent = '🙈 Oops, grid-chen has experienced an unexpected error: ' + e.message;
-            let root = element.tagName === 'GRID-CHEN'?element.shadowRoot:element.getRootNode();
+            let root = element.tagName === 'GRID-CHEN' ? element.shadowRoot : element.getRootNode();
             root.textContent = '';
             root.appendChild(div);
         }
@@ -44,23 +44,33 @@ function pad(v) {
  * @returns {number}
  */
 export function resolvePeriod(period) {
-    const index = ['YEARS', 'MONTH', 'DAYS', 'HOURS', 'MINUTES', 'SECONDS', 'MILLISECONDS'].indexOf(period.toUpperCase());
+    const index = ['YEARS', 'MONTHS', 'DAYS', 'HOURS', 'MINUTES', 'SECONDS', 'MILLISECONDS'].indexOf(period.toUpperCase());
     if (index === -1) {
         throw new RangeError('Invalid period: ' + period);
     }
     return index;
 }
 
+const MONTHS = resolvePeriod('MONTHS');
+const DAYS = resolvePeriod('DAYS');
 const HOURS = resolvePeriod('HOURS');
 const MINUTES = resolvePeriod('MINUTES');
 const SECONDS = resolvePeriod('SECONDS');
 
 /**
  * @param {Date} d
+ * @param {number} period
  * @returns {string}
  */
-export function toUTCDateString(d) {
-    return pad(d.getUTCFullYear()) + '-' + pad(1 + d.getUTCMonth()) + '-' + pad(d.getUTCDate())
+export function toUTCDateString(d, period) {
+    let s = pad(d.getUTCFullYear());
+    if (period >= MONTHS) {
+        s += '-' + pad(1 + d.getUTCMonth());
+    }
+    if (period >= DAYS) {
+        s += '-' + pad(d.getUTCDate());
+    }
+    return s
 }
 
 /**
@@ -69,7 +79,7 @@ export function toUTCDateString(d) {
  * @returns {string}
  */
 export function toUTCDatePartialTimeString(d, period) {
-    let s = toUTCDateString(d);
+    let s = toUTCDateString(d, period);
     if (period >= HOURS) {
         // We use space, not 'T' as time separator to apeace MS-Excel.
         s += ' ' + toUTCTimeString(d, period);
@@ -83,16 +93,16 @@ export function toUTCDatePartialTimeString(d, period) {
  * @returns {string}
  */
 function toUTCTimeString(d, period) {
-	let s = pad(d.getUTCHours());
-	if (period >= MINUTES) {
-		s += ':' + pad(d.getUTCMinutes());
-	}
-	if (period >= SECONDS) {
-		s += ':' + pad(d.getUTCSeconds());
-	}
-	if (period > SECONDS) {
-		s += '.' + String(d.getUTCMilliseconds()).padStart(3, '0');
-	}
+    let s = pad(d.getUTCHours());
+    if (period >= MINUTES) {
+        s += ':' + pad(d.getUTCMinutes());
+    }
+    if (period >= SECONDS) {
+        s += ':' + pad(d.getUTCSeconds());
+    }
+    if (period > SECONDS) {
+        s += '.' + String(d.getUTCMilliseconds()).padStart(3, '0');
+    }
     return s;
 }
 
@@ -102,16 +112,16 @@ function toUTCTimeString(d, period) {
  * @returns {string}
  */
 function toTimeString(d, period) {
-	let s = pad(d.getHours());
-	if (period >= MINUTES) {
-		s += ':' + pad(d.getMinutes());
-	}
-	if (period >= SECONDS) {
-		s += ':' + pad(d.getSeconds());
-	}
-	if (period > SECONDS) {
-		s += '.' + String(d.getMilliseconds()).padStart(3, '0');
-	}
+    let s = pad(d.getHours());
+    if (period >= MINUTES) {
+        s += ':' + pad(d.getMinutes());
+    }
+    if (period >= SECONDS) {
+        s += ':' + pad(d.getSeconds());
+    }
+    if (period > SECONDS) {
+        s += '.' + String(d.getMilliseconds()).padStart(3, '0');
+    }
     return s;
 }
 
@@ -127,10 +137,19 @@ export function toUTCDateTimeString(d, period) {
 
 /**
  * @param {Date} d
+ * @param {number} period
  * @returns {string}
  */
-export function toLocalISODateString(d) {
-    return pad(d.getFullYear()) + '-' + pad(1 + d.getMonth()) + '-' + pad(d.getDate())
+export function toLocalISODateString(d, period) {
+    let s = pad(d.getFullYear());
+    if (period >= MONTHS) {
+        s += '-' + pad(1 + d.getMonth());
+    }
+    if (period >= DAYS) {
+        s += '-' + pad(d.getDate());
+    }
+
+    return s
 }
 
 /**
@@ -139,7 +158,7 @@ export function toLocalISODateString(d) {
  * @returns {string}
  */
 export function toLocaleISODateTimeString(d, period) {
-    let s = toLocalISODateString(d);
+    let s = toLocalISODateString(d, period);
     if (period >= HOURS) {
         // We use space, not 'T' as time separator to apeace MS-Excel.
         s += ' ' + toTimeString(d, period);
@@ -231,45 +250,46 @@ function createLocalDateParser(locale) {
     }
 
     /**
-     *
      * @param {string} s
      * @returns {{parts?: number[], error?: SyntaxError}}
      */
     function parseDateTimeOptionalTimezone(s) {
-        // 2020-01-02T19:52:53.3434+00:00 ->
-        //   0                                 1             2    3     4      5      6        7
-		//  ["2020-01-02T19:52:53.123456+00:00", "2020-01-02", "T", "19", ":52", ":53", ".123456", "+00:00"]
-        const m = s.match(/^(.+)(\s|T)(\d+)(:\d+)?(:\d+)?(\.[0-9]+)?(Z|[+-][0-9:]+)?$/);
-        if (!m) {
-            return {error: new SyntaxError(s)}
-        }
-        const fullDateResult = parseFullDate(m[1]);
-        if (fullDateResult.error) {
+        const dateTimeParts = s.trim().split(/\s+|T/);
+        const fullDateResult = parseFullDate(dateTimeParts[0]);
+        if (dateTimeParts.length === 1 || fullDateResult.error) {
             return fullDateResult
         }
 
-		const hours = Number(m[3]);
-		const minutes = m[4]?Number(m[4].substring(1)):0;
-		const seconds = m[5]?Number(m[5].substring(1)):0;
-		let millis = 0;
-		if (m[6]) {
-		    if (m[6].length === 4) {
-		        // These were millis
-		        millis = Number(m[6].substring(1));
-            } else if (m[6].length === 7) {
-		        // These were micros, ignore all sub-millis as JS Date does not support those.
-		        millis = Number(m[6].substring(1, 4));
+        //  19:52:53.3434+00:00 ->
+        //   0                        1     2      3      4          5
+        //  ["19:52:53.123456+00:00", "19", ":52", ":53", ".123456", "+00:00"]
+        const m = dateTimeParts[1].match(/^(\d+)(:\d+)?(:\d+)?(\.[0-9]+)?(Z|[+-][0-9:]+)?$/);
+        if (!m) {
+            return {error: new SyntaxError(s)}
+        }
+
+        const hours = Number(m[1]);
+        const minutes = m[2] ? Number(m[2].substring(1)) : 0;
+        const seconds = m[3] ? Number(m[3].substring(1)) : 0;
+        let millis = 0;
+        if (m[4]) {
+            if (m[4].length === 4) {
+                // These were millis
+                millis = Number(m[4].substring(1));
+            } else if (m[4].length === 7) {
+                // These were micros, ignore all sub-millis as JS Date does not support those.
+                millis = Number(m[4].substring(1, 4));
             } else {
-		        return {error: new SyntaxError(s)}
+                return {error: new SyntaxError(s)}
             }
         }
         let timeZone = [];
-        if (m[7]) {
-            if (m[7] === 'Z') {
+        if (m[5]) {
+            if (m[5] === 'Z') {
                 timeZone = [0, 0];
             } else {
                 // This will also take care of negative offsets, i.e. "-01:00" -> [-1, 0]
-                timeZone = m[7].split(':').map(v => Number(v));
+                timeZone = m[5].split(':').map(v => Number(v));
             }
             if (timeZone.length !== 2 || someNaN(timeZone)) {
                 return {error: new SyntaxError(s)}
@@ -287,6 +307,7 @@ function createLocalDateParser(locale) {
          * @returns {{parts?: number[], error?:SyntaxError}}
          */
         fullDate(s) {
+            // This is only used for unit testing.
             return parseFullDate(s);
         }
 
@@ -296,7 +317,13 @@ function createLocalDateParser(locale) {
          * @returns {{parts?: number[], error?:SyntaxError}}
          */
         datePartialTime(s) {
-            return parseDateTimeOptionalTimezone(s)
+            const r = parseDateTimeOptionalTimezone(s);
+            if (r.parts && r.parts.length !== 7) {
+                {
+                    error: new SyntaxError(s)
+                }
+            }
+            return r
         }
 
         /**
@@ -305,7 +332,11 @@ function createLocalDateParser(locale) {
          * @returns {{parts?: number[], error?:SyntaxError}}
          */
         dateTime(s) {
-            return parseDateTimeOptionalTimezone(s)
+            const r = parseDateTimeOptionalTimezone(s);
+            if (r.parts && r.parts.length !== 9) {
+                return {error: new SyntaxError(s)}
+            }
+            return r
         }
 
     }

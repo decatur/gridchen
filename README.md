@@ -1,12 +1,12 @@
 # About
 Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience.
-Very modern (web components, es6 modules) with **no** dependencies.
+Modern as of year 2020 (web components, es6 modules) with **no** dependencies.
 
-If you need to edit mixed hierarchical and grid data, please visit sister project https://decatur.github.io/form-chen.
+If you need to edit mixed hierarchical and grid data, please visit sister project [form-chen](https://decatur.github.io/form-chen).
 
-# Demos
+# Demos, PlayGrounds and Documentation
 
-See https://decatur.github.io/grid-chen
+See [grid-chen at github.io](https://decatur.github.io/grid-chen)
 
 # Usage
 
@@ -35,34 +35,11 @@ See https://decatur.github.io/grid-chen
 </script>
 ```
 
-# Issues
-
-* onselectionchanged fires too often
-* Paste must select pasted region (pasted region differs from selection if selection cannot be tiled by source); easy
-* Type violation of cell value must align left; easy
-
-# TODOs
-
-* Do not use JSON Patch replace for a remove operation!
-* TransactionManager: Do not add properties cell to patch array.
-* Handle clipboard not permitted errors
-* Improve encapsulation of JavaScript API 
-* Show 1 empty row at end (Slider issue)
-* Avoid refreshing complete viewport on cell change
-* Handling of Infinity and NaN (#NV in de-de)
-
-# Alternatives
-* [SlickGrid](https://github.com/mleibman/SlickGrid)
-* [ag-Grid](https://www.ag-grid.com/)
-* [canvas-datagrid](https://github.com/TonyGermaneri/canvas-datagrid)
-* [fin-hypergrid](https://github.com/fin-hypergrid/core)
-* FlexGrid
-
 # Expected Behaviour
 
 We try to mimic MS-Excel as close as possible.
 
-## Keyboard Shortcuts
+## Supported Keyboard Shortcuts
 
 See also [Keyboard shortcuts in Excel](https://support.office.com/en-us/article/keyboard-shortcuts-in-excel-1798d9d5-842a-42b8-9c99-9b7213f0040f)
 
@@ -112,5 +89,22 @@ results when converting light to dark mode than grid-chen's native dark mode.
 ## Undo & Redo
 
 ![tm](tm.png)
+
+# TODOs
+
+* Do not use JSON Patch replace for a remove operation!
+* TransactionManager: Do not add properties cell to patch array.
+* Handle clipboard not permitted errors
+* Improve encapsulation of JavaScript API 
+* Show 1 empty row at end (Slider issue)
+* Avoid refreshing complete viewport on cell change
+* Handling of Infinity and NaN (#NV in de-de)
+
+# Alternatives
+* [SlickGrid](https://github.com/mleibman/SlickGrid)
+* [ag-Grid](https://www.ag-grid.com/)
+* [canvas-datagrid](https://github.com/TonyGermaneri/canvas-datagrid)
+* [fin-hypergrid](https://github.com/fin-hypergrid/core)
+* FlexGrid
 
 

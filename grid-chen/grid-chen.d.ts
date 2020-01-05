@@ -31,7 +31,7 @@ declare module GridChenNS {
         sortDirection?: number;
         converter?: Converter;
         // TODO: Rename according ISO
-        frequency?: string;
+        period?: string;
         enum?: (string|number)[];
         readOnly?: boolean;
     }

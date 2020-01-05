@@ -80,15 +80,15 @@ function updateSchema(schemas) {
         } else if (schema.type === 'string' && schema.format === 'full-date') {
             schema.converter = new c.FullDateStringConverter();
         } else if (schema.type === 'string' && schema.format === 'date-partial-time') {
-            schema.converter = new c.DatePartialTimeStringConverter();
+            schema.converter = new c.DatePartialTimeStringConverter(schema.period || 'MINUTES');
         } else if (schema.type === 'string' && schema.format === 'date-time') {
-            schema.converter = new c.DateTimeStringConverter(schema.frequency || 'M');
+            schema.converter = new c.DateTimeStringConverter(schema.period || 'MINUTES');
         } else if (schema.type === 'object' && schema.format === 'full-date') {
             schema.converter = new c.FullDateConverter();
         } else if (schema.type === 'object' && schema.format === 'date-partial-time') {
-            schema.converter = new c.DatePartialTimeConverter(schema.frequency || 'M');
+            schema.converter = new c.DatePartialTimeConverter(schema.period || 'MINUTES');
         } else if (schema.type === 'object' && schema.format === 'date-time') {
-            schema.converter = new c.DateTimeConverter(schema.frequency || 'M');
+            schema.converter = new c.DateTimeConverter(schema.period || 'MINUTES');
         } else if (schema.type === 'boolean') {
             schema.converter = new c.BooleanStringConverter();
         } else if (schema.type === 'string' && schema.format === 'uri') {

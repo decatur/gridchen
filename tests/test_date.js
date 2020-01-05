@@ -1,8 +1,8 @@
 import {test, assert} from './grid-chen/utils.js'
-import {localeDateParser, toUTCDateTimeString} from "../grid-chen/utils.js";
+import {localeDateParser, toUTCDateTimeString, resolvePeriod} from "../grid-chen/utils.js";
 
 test('FullDate', () => {
-    let parser = localeDateParser();
+    let parser = localeDateParser(undefined);
     assert.equal([2019, 9, 27], parser.fullDate('2019-10-27').parts);
     assert.equal(true, parser.fullDate('27.10').error !== void 0);
     assert.equal(true, parser.fullDate('2019-27.10').error !== void 0);
@@ -48,7 +48,7 @@ test('deDateTime', () => {
 test('toUTCDateTimeString', () => {
     assert.equal('2020-01-04 01:02:03.012Z', toUTCDateTimeString(
         new Date(Date.UTC(2020, 0, 4, 1, 2, 3, 12)),
-        'MS'));
+        resolvePeriod('MILLISECONDS')));
 });
 
 

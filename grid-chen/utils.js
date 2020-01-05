@@ -40,6 +40,22 @@ function pad(v) {
 }
 
 /**
+ * @param {string} period
+ * @returns {number}
+ */
+export function resolvePeriod(period) {
+    const index = ['YEARS', 'MONTH', 'DAYS', 'HOURS', 'MINUTES', 'SECONDS', 'MILLISECONDS'].indexOf(period.toUpperCase());
+    if (index === -1) {
+        throw new RangeError('Invalid period: ' + period);
+    }
+    return index;
+}
+
+const HOURS = resolvePeriod('HOURS');
+const MINUTES = resolvePeriod('MINUTES');
+const SECONDS = resolvePeriod('SECONDS');
+
+/**
  * @param {Date} d
  * @returns {string}
  */
@@ -49,41 +65,51 @@ export function toUTCDateString(d) {
 
 /**
  * @param {Date} d
- * @param {string} displayResolution
+ * @param {number} period
  * @returns {string}
  */
-export function toUTCDatePartialTimeString(d, displayResolution) {
+export function toUTCDatePartialTimeString(d, period) {
     let s = toUTCDateString(d);
-    if (['H', 'M', 'S', 'MS'].includes(displayResolution)) {
+    if (period >= HOURS) {
         // We use space, not 'T' as time separator to apeace MS-Excel.
-        s += ' ' + toUTCTimeString(d, displayResolution);
+        s += ' ' + toUTCTimeString(d, period);
     }
     return s;
 }
 
-function toUTCTimeString(d, displayResolution) {
+/**
+ * @param {Date} d
+ * @param {number} period
+ * @returns {string}
+ */
+function toUTCTimeString(d, period) {
 	let s = pad(d.getUTCHours());
-	if (['M', 'S', 'MS'].includes(displayResolution)) {
+	if (period >= MINUTES) {
 		s += ':' + pad(d.getUTCMinutes());
 	}
-	if (['S', 'MS'].includes(displayResolution)) {
+	if (period >= SECONDS) {
 		s += ':' + pad(d.getUTCSeconds());
 	}
-	if (['MS'].includes(displayResolution)) {
+	if (period > SECONDS) {
 		s += '.' + String(d.getUTCMilliseconds()).padStart(3, '0');
 	}
     return s;
 }
 
-function toTimeString(d, displayResolution) {
+/**
+ * @param {Date} d
+ * @param {number} period
+ * @returns {string}
+ */
+function toTimeString(d, period) {
 	let s = pad(d.getHours());
-	if (['M', 'S', 'MS'].includes(displayResolution)) {
+	if (period >= MINUTES) {
 		s += ':' + pad(d.getMinutes());
 	}
-	if (['S', 'MS'].includes(displayResolution)) {
+	if (period >= SECONDS) {
 		s += ':' + pad(d.getSeconds());
 	}
-	if (['MS'].includes(displayResolution)) {
+	if (period > SECONDS) {
 		s += '.' + String(d.getMilliseconds()).padStart(3, '0');
 	}
     return s;
@@ -91,23 +117,32 @@ function toTimeString(d, displayResolution) {
 
 /**
  * @param {Date} d
- * @param {string} displayResolution
+ * @param {number} period
  * @returns {string}
  */
-export function toUTCDateTimeString(d, displayResolution) {
-    let s = toUTCDatePartialTimeString(d, displayResolution);
+export function toUTCDateTimeString(d, period) {
+    let s = toUTCDatePartialTimeString(d, period);
     return s + 'Z';
 }
 
+/**
+ * @param {Date} d
+ * @returns {string}
+ */
 export function toLocalISODateString(d) {
     return pad(d.getFullYear()) + '-' + pad(1 + d.getMonth()) + '-' + pad(d.getDate())
 }
 
-export function toLocaleISODateTimeString(d, displayResolution) {
+/**
+ * @param {Date} d
+ * @param {number} period
+ * @returns {string}
+ */
+export function toLocaleISODateTimeString(d, period) {
     let s = toLocalISODateString(d);
-    if (['H', 'M', 'S', 'MS'].includes(displayResolution)) {
+    if (period >= HOURS) {
         // We use space, not 'T' as time separator to apeace MS-Excel.
-        s += ' ' + toTimeString(d, displayResolution);
+        s += ' ' + toTimeString(d, period);
     }
     let dh = d.getHours() - d.getUTCHours();
     if (dh < 0) dh += 24;

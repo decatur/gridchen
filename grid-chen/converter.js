@@ -402,11 +402,11 @@ export class FullDateStringConverter {
 export class DatePartialTimeStringConverter {
 
     /**
-     * @param {string=} displayResolution
+     * @param {string} period
      * @param {string=} locale
      */
-    constructor(displayResolution, locale) {
-        this.displayResolution = displayResolution || 'M';
+    constructor(period, locale) {
+        this.period = u.resolvePeriod(period);
         this.parser = u.localeDateParser(locale);
     }
 
@@ -425,7 +425,7 @@ export class DatePartialTimeStringConverter {
             return s
         }
         const d = new Date(Date.UTC(...r.parts));
-        return d.toISOString().substr(0, 16).replace('T', ' ');
+        return u.toUTCDatePartialTimeString(d, this.period);
     }
 
     toEditable(s) {
@@ -442,7 +442,7 @@ export class DatePartialTimeStringConverter {
         if (r.error) {
             return s
         }
-        return u.toUTCDatePartialTimeString(new Date(Date.UTC(...r.parts)), this.displayResolution).replace(' ', 'T')
+        return u.toUTCDatePartialTimeString(new Date(Date.UTC(...r.parts)), this.period).replace(' ', 'T')
     }
 
     /**
@@ -466,7 +466,7 @@ export class DatePartialTimeStringConverter {
                 element.textContent = value;
                 element.className = 'error';
             } else {
-                element.textContent = u.toUTCDatePartialTimeString(new Date(Date.UTC(...r.parts)), this.displayResolution);
+                element.textContent = u.toUTCDatePartialTimeString(new Date(Date.UTC(...r.parts)), this.period);
                 element.className = 'non-string';
             }
         }
@@ -478,11 +478,11 @@ export class DatePartialTimeStringConverter {
  */
 export class DateTimeStringConverter {
     /**
-     * @param {string=} displayResolution
+     * @param {string} period
      * @param {string=} locale
      */
-    constructor(displayResolution, locale) {
-        this.displayResolution = displayResolution || 'M';
+    constructor(period, locale) {
+        this.period = u.resolvePeriod(period);
         this.parser = u.localeDateParser(locale);
     }
 
@@ -492,8 +492,7 @@ export class DateTimeStringConverter {
      * @returns {string}
      */
     toTSV(s) {
-        // Excel does not handle time zones, so just emmit the string.
-        return s.replace('T', ' ')
+        return this.fromEditable(s).replace('T', ' ')
     }
 
     toEditable(s) {
@@ -516,8 +515,8 @@ export class DateTimeStringConverter {
         const parts = r.parts;
         parts[3] -= parts[7]; // Get rid of hour offset
         parts[4] -= parts[8]; // Get rid of minute offset
-        const d = new Date(Date.UTC(...parts.slice(0, 7)));
-        return u.toLocaleISODateTimeString(d, 'M').replace(' ', 'T')
+        const d = new Date(Date.UTC(...parts.slice(0, 1 + this.period)));
+        return u.toLocaleISODateTimeString(d, this.period).replace(' ', 'T')
     }
 
     /**
@@ -544,7 +543,7 @@ export class DateTimeStringConverter {
                 const parts = r.parts;
                 parts[3] -= parts[7]; // Get rid of hour offset
                 parts[4] -= parts[8]; // Get rid of minute offset
-                element.textContent = u.toLocaleISODateTimeString(new Date(Date.UTC(...parts.slice(0, 7))), this.displayResolution);
+                element.textContent = u.toLocaleISODateTimeString(new Date(Date.UTC(...parts.slice(0, 7))), this.period);
                 element.className = 'non-string';
             }
         }
@@ -602,7 +601,7 @@ export class FullDateConverter {
             element.textContent = String(value);
             element.className = 'error';
         } else {
-            element.textContent = value.toISOString().substr(0, 10);
+            element.textContent = u.toUTCDateString(value);
             element.className = 'non-string';
         }
     }
@@ -616,11 +615,11 @@ export class FullDateConverter {
  */
 export class DatePartialTimeConverter {
     /**
-     * @param {string=} displayResolution
+     * @param {string} period
      * @param {string=} locale
      */
-    constructor(displayResolution, locale) {
-        this.displayResolution = displayResolution || 'M';
+    constructor(period, locale) {
+        this.period = u.resolvePeriod(period);
         this.parser = u.localeDateParser(locale);
     }
 
@@ -634,7 +633,7 @@ export class DatePartialTimeConverter {
             return String(d);
         }
 
-        return d.toISOString().substr(0, 16).replace('T', ' ');
+        return u.toUTCDatePartialTimeString(d, this.period)
     }
 
     toEditable(d) {
@@ -651,7 +650,7 @@ export class DatePartialTimeConverter {
         if (r.error) {
             return s
         }
-        return new Date(Date.UTC(...r.parts))
+        return new Date(Date.UTC(...r.parts.slice(0, 1+this.period)))
     }
 
     /**
@@ -670,11 +669,7 @@ export class DatePartialTimeConverter {
             element.textContent = String(value);
             element.className = 'error';
         } else {
-
-            element.textContent =
-                value.toISOString()
-                    .substr(0, this.displayResolution === 'H' ? 13 : 16)
-                    .replace('T', ' ');
+            element.textContent = u.toUTCDatePartialTimeString(value, this.period);
             element.className = 'non-string';
         }
     }
@@ -685,11 +680,11 @@ export class DatePartialTimeConverter {
  */
 export class DateTimeConverter {
     /**
-     * @param {string=} displayResolution
+     * @param {string} period
      * @param {string=} locale
      */
-    constructor(displayResolution, locale) {
-        this.displayResolution = displayResolution || 'M';
+    constructor(period, locale) {
+        this.period = u.resolvePeriod(period);
         this.parser = u.localeDateParser(locale);
     }
 
@@ -702,7 +697,7 @@ export class DateTimeConverter {
         if (d.constructor !== Date) {
             return String(d)
         }
-        return u.toLocaleISODateTimeString(d, 'M')
+        return u.toLocaleISODateTimeString(d, this.period)
     }
 
     toEditable(d) {
@@ -722,7 +717,7 @@ export class DateTimeConverter {
         const parts = r.parts;
         parts[3] -= parts[7]; // Get rid of hour offset
         parts[4] -= parts[8]; // Get rid of minute offset
-        return new Date(Date.UTC(...parts.slice(0, 7)));
+        return new Date(Date.UTC(...parts.slice(0, 1 + this.period)));
     }
 
     /**
@@ -741,7 +736,7 @@ export class DateTimeConverter {
             element.textContent = String(value);
             element.className = 'error';
         } else {
-            element.textContent = u.toLocaleISODateTimeString(value, this.displayResolution);
+            element.textContent = u.toLocaleISODateTimeString(value, this.period);
             element.className = 'non-string';
         }
     }

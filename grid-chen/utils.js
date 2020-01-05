@@ -253,10 +253,13 @@ function createLocalDateParser(locale) {
      * @param {string} s
      * @returns {{parts?: number[], error?: SyntaxError}}
      */
-    function parseDateTimeOptionalTimezone(s) {
+    function parseDateOptionalTimeTimezone(s) {
         const dateTimeParts = s.trim().split(/\s+|T/);
         const fullDateResult = parseFullDate(dateTimeParts[0]);
         if (dateTimeParts.length === 1 || fullDateResult.error) {
+            if (fullDateResult.parts) {
+                fullDateResult.parts = [...fullDateResult.parts, 0, 0, 0, 0];
+            }
             return fullDateResult
         }
 
@@ -307,7 +310,7 @@ function createLocalDateParser(locale) {
          * @returns {{parts?: number[], error?:SyntaxError}}
          */
         fullDate(s) {
-            // This is only used for unit testing.
+            // This is currently only used for unit testing.
             return parseFullDate(s);
         }
 
@@ -317,11 +320,9 @@ function createLocalDateParser(locale) {
          * @returns {{parts?: number[], error?:SyntaxError}}
          */
         datePartialTime(s) {
-            const r = parseDateTimeOptionalTimezone(s);
+            const r = parseDateOptionalTimeTimezone(s);
             if (r.parts && r.parts.length !== 7) {
-                {
-                    error: new SyntaxError(s)
-                }
+                return {error: new SyntaxError(s)}
             }
             return r
         }
@@ -332,7 +333,7 @@ function createLocalDateParser(locale) {
          * @returns {{parts?: number[], error?:SyntaxError}}
          */
         dateTime(s) {
-            const r = parseDateTimeOptionalTimezone(s);
+            const r = parseDateOptionalTimeTimezone(s);
             if (r.parts && r.parts.length !== 9) {
                 return {error: new SyntaxError(s)}
             }

@@ -337,6 +337,17 @@ function padArray(a, targetLength, prefix) {
 }
 
 /**
+ *
+ * @param {string} pattern
+ * @param {string} value
+ * @returns {boolean}
+ */
+function search(pattern, value) {
+    // TODO: Must not use String, but converter.toEditable()
+    return String(value).includes(pattern)
+}
+
+/**
  * @param {GridChenNS.GridSchema} schema
  * @param {object[]} rows
  * @returns {GridChenNS.MatrixView}
@@ -478,6 +489,22 @@ export function createRowMatrixView(schema, rows) {
             rows.sort((row1, row2) => compare(row1[colIndex], row2[colIndex]) * sortDirection);
         }
 
+        /**
+         * @param {number} startRowIndex
+         * @param {string} pattern
+         * @returns {number[]}
+         */
+        search(startRowIndex, pattern) {
+            for (let rowIndex = startRowIndex; rowIndex<rows.length; rowIndex++) {
+
+                const columnIndex = rows[rowIndex].findIndex((value) => search(pattern, value));
+                if (columnIndex !== -1) {
+                    return [rowIndex, columnIndex]
+                }
+            }
+            return [-1, -1]
+        }
+
         applyJSONPatch(patch) {
             rows = /**@type{object[]}*/ applyJSONPatch(rows, patch);
         }
@@ -608,6 +635,24 @@ export function createRowObjectsView(schema, rows) {
         sort(colIndex) {
             let [, sortDirection] = updateSortDirection(schemas, colIndex);
             rows.sort((row1, row2) => compare(row1[ids[colIndex]], row2[ids[colIndex]]) * sortDirection);
+        }
+
+        /**
+         * @param {number} startRowIndex
+         * @param {string} pattern
+         * @returns {number[]}
+         */
+        search(startRowIndex, pattern) {
+            for (let rowIndex = startRowIndex; rowIndex<rows.length; rowIndex++) {
+                const row = rows[rowIndex];
+                // TODO: Must not use String, but converter.toEditable()
+                for (const [columnIndex, id] of ids.entries()) {
+                    if (search(pattern, row[id])) {
+                        return [rowIndex, columnIndex]
+                    }
+                }
+            }
+            return [-1, -1]
         }
 
         applyJSONPatch(patch) {
@@ -756,6 +801,24 @@ export function createColumnMatrixView(schema, columns) {
                 });
                 columns[j] = sortedColumn;
             });
+        }
+
+        /**
+         * @param {number} startRowIndex
+         * @param {string} pattern
+         * @returns {number[]}
+         */
+        search(startRowIndex, pattern) {
+            const rowCount = getRowCount();
+            for (let rowIndex = startRowIndex; rowIndex<rowCount; rowIndex++) {
+                for (let columnIndex = 0; columnIndex < columns.length; columnIndex++) {
+                    const value = this.getCell(rowIndex, columnIndex);
+                    if (search(pattern, value)) {
+                        return [rowIndex, columnIndex]
+                    }
+                }
+            }
+            return [-1, -1]
         }
 
         applyJSONPatch(patch) {
@@ -923,6 +986,24 @@ export function createColumnObjectView(schema, columns) {
         }
 
         /**
+         * @param {number} startRowIndex
+         * @param {string} pattern
+         * @returns {number[]}
+         */
+        search(startRowIndex, pattern) {
+            const rowCount = getRowCount();
+            for (let rowIndex = startRowIndex; rowIndex<rowCount; rowIndex++) {
+                for (let columnIndex = 0; columnIndex < ids.length; columnIndex++) {
+                    const value = this.getCell(rowIndex, columnIndex);
+                    if (search(pattern, value)) {
+                        return [rowIndex, columnIndex]
+                    }
+                }
+            }
+            return [-1, -1]
+        }
+
+        /**
          * @param {GridChenNS.JSONPatch} patch
          */
         applyJSONPatch(patch) {
@@ -1051,6 +1132,22 @@ export function createColumnVectorView(schema, column) {
             console.assert(colIndex === 0);
             let [, sortDirection] = updateSortDirection([columnSchema], 0);
             column.sort((a, b) => compare(a, b) * sortDirection);
+        }
+
+        /**
+         * @param {number} startRowIndex
+         * @param {string} pattern
+         * @returns {number[]}
+         */
+        search(startRowIndex, pattern) {
+            const rowCount = getRowCount();
+            for (let rowIndex = startRowIndex; rowIndex<rowCount; rowIndex++) {
+                const value = column[rowIndex];
+                if (search(pattern, value)) {
+                    return [rowIndex, 0]
+                }
+            }
+            return [-1, -1]
         }
 
         applyJSONPatch(patch) {

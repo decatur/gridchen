@@ -690,6 +690,10 @@ function createGrid(container, viewModel, gridchenElement, tm) {
             evt.preventDefault();
             evt.stopPropagation();
             activeCell.enterEditMode();
+        } else if (evt.key === 'f' && evt.ctrlKey) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            find(window.prompt('Find which substring', lastSearchPattern));
         } else if (evt.key.length === 1 && !evt.ctrlKey && !evt.altKey) {
             // evt.key.length === 1 looks like a bad idea to sniff for character input, but keypress is deprecated.
             if (editor.mode === 'hidden' && !activeCell.isReadOnly()) {
@@ -701,6 +705,23 @@ function createGrid(container, viewModel, gridchenElement, tm) {
                 activeCell.enterInputMode(evt.key);
             }
         }
+    }
+
+    let lastFoundRowIndex = -1;
+    let lastSearchPattern = '';
+
+    function find(s) {
+        lastSearchPattern = s;
+        // TODO: Handle viewModel not searchable.
+        const [rowIndex, columnIndex] = viewModel.search(lastFoundRowIndex + 1, s);
+        if (rowIndex === -1) {
+            // Next search from top.
+            lastFoundRowIndex = -1;
+            return
+        }
+        lastFoundRowIndex = rowIndex;
+        setFirstRow(rowIndex);
+        selection.setRange(rowIndex, columnIndex, 1, 1);
     }
 
     /**

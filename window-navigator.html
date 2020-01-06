@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
-    <title>Flex Layout Demo</title>
+    <title>Window Navigator</title>
     <link rel="stylesheet" href="demo.css">
     <script src="./theme.js"></script>
     <style>
@@ -15,27 +15,13 @@
     </style>
 </head>
 <body>
-<h1><a href="index.html">GridChen Index</a> / CSS Flex Layout</h1>
+<h1><a href="index.html">GridChen Index</a> / Window Navigator</h1>
 <header>
-    This is a fixed height header. Observe how the grid takes all available space between header and footer on window
-    resize. There must not be a vertical scrollbar, so the styles on the html and body element
-
     <a href="#/navigator/languages">/navigator/languages</a>
     <a href="#/performance/memory">/performance/memory</a>
-
-    <pre>
-        html {
-            height: 100%;
-        }
-        body {
-            display: flex; flex-direction: column; height: 100%; margin: 0;
-        }
-    </pre>
+    Current JSON pointer is <code></code>
 </header>
 <grid-chen style="flex: 1; margin-left: 2em;"></grid-chen>
-<footer>
-    This is a fixed height footer.
-</footer>
 </body>
 <script type="module">
     import "./grid-chen/webcomponent.js"
@@ -73,7 +59,7 @@
             return [`[${key}](#${pointer})`, type, s]
         });
         document.querySelector('grid-chen').resetFromView(createView(schema, rows));
-        document.querySelector('pre').textContent = 'JSON Pointer: ' + pointer;
+        document.querySelector('code').textContent = pointer;
     };
 
     // JSON Pointer with window as root object.

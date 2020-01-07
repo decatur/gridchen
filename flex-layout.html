@@ -18,10 +18,7 @@
 <h1><a href="index.html">GridChen Index</a> / CSS Flex Layout</h1>
 <header>
     This is a fixed height header. Observe how the grid takes all available space between header and footer on window
-    resize. There must not be a vertical scrollbar, so the styles on the html and body element
-
-    <a href="#/navigator/languages">/navigator/languages</a>
-    <a href="#/performance/memory">/performance/memory</a>
+    resize. There must not be a vertical scrollbar, so styles elements like so
 
     <pre>
         html {
@@ -42,43 +39,29 @@
     import {createView} from "./grid-chen/matrixview.js"
 
     const schema = {
-        title: 'DOM window object properties',
+        title: 'DOMRect Properties',
         type: 'array',
         items: {
             type: 'array',
             items: [
-                {title: 'Property', type: 'string', format: 'uri', width: 200},
-                {title: 'Type', type: 'string', width: 200},
-                {title: 'Value', type: 'string', width: 200}
+                {title: 'Property', type: 'string', width: 200},
+                {title: 'Value', type: 'number', width: 200}
             ]
         }
     };
 
-    window.onhashchange = function(evt) {
-        pointer = window.location.hash.replace(/^#/, '');
-        let obj = window;
-        const parts = pointer.split('/');
-        parts.shift();
-        while (parts.length) {
-            obj = obj[parts.shift()];
-        }
-        const keys = new Set();
-        for(let key in obj) keys.add(key);
-        const rows = Array.from(keys).map(function (key) {
-            const type = typeof obj[key];
-            const s = String(obj[key]);
-            if (type === 'object') {
-                return [`[${key}](#${pointer}/${key})`, type, s]
-            }
-            return [`[${key}](#${pointer})`, type, s]
-        });
-        document.querySelector('grid-chen').resetFromView(createView(schema, rows));
-        document.querySelector('pre').textContent = 'JSON Pointer: ' + pointer;
-    };
+    const rows = [];
+    document.querySelector('grid-chen').resetFromView(createView(schema, rows));
 
-    // JSON Pointer with window as root object.
-    let pointer;
-    window.onhashchange(void 0);
+    window.addEventListener('resize', function(evt) {
+        const r = document.querySelector('grid-chen').getBoundingClientRect();
+        rows.length = 0;
+        for (let key in r) {
+            if (typeof r[key] === 'number') {
+                rows.push([key, r[key]]);
+            }
+        }
+    });
 
 </script>
 </html>

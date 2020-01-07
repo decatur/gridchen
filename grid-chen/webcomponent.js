@@ -132,7 +132,9 @@ export class GridChen extends HTMLElement {
             this.attachShadow({ mode: 'open' });
         }
         // Attention: Possible Layout Thrashing.
-        this._totalHeight = this.clientHeight || 200;  // Default value needed for unit testing.
+        // Default value needed for unit testing and flex layouts.
+        console.log('clientHeight:' + this.clientHeight);
+        this._totalHeight = this.clientHeight || 200;
         const container = document.createElement('div');
         container.style.position = 'relative';
         container.style.height = this._totalHeight + 'px';
@@ -143,6 +145,7 @@ export class GridChen extends HTMLElement {
     }
 
     reset() {
+        console.log('reset clientHeight:' + this.clientHeight);
         if (this._viewModel && this._totalHeight !== this.clientHeight) {
             this.resetFromView(this._viewModel, this._transactionManager);
         }

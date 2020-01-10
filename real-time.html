@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Real Time</title>
+    <link rel="stylesheet" href="demo.css">
+    <script src="./theme.js"></script>
+</head>
+<body>
+
+<h1><a href="index.html">GridChen Index</a> / Real Time Demo</h1>
+
+<p>
+    ...
+</p>
+
+<grid-chen style="display:block; margin-top: 1em;height: 400px"></grid-chen>
+
+<script type="module">
+    import "./grid-chen/webcomponent.js"
+    import {createView} from "./grid-chen/matrixview.js"
+
+    const schema = {
+        title: 'Charting Demo',
+        type: 'object',
+        properties: {
+            index: {title: 'index', type: 'array', items: {type: 'integer', width: '50'}},
+            sin: {title: 'sin(t/7)', type: 'array', items: {type: 'number', width: '70'}},
+            cos: {title: 'cos(t/5)', type: 'array', items: {type: 'number', width: '70'}}
+        }
+    };
+
+    const data = {
+        index: [], sin: [], cos: []
+    };
+
+    const gridchen = document.querySelector('grid-chen').resetFromView(createView(schema, data));
+
+    let index = 0;
+    function addTimeSlot() {
+        data.index.push(index);
+        data.sin.push(Math.sin(index / 7));
+        data.cos.push(Math.cos(index / 5));
+        index++;
+
+        gridchen.refresh();
+    }
+
+    window.setInterval(addTimeSlot, 1000);
+
+</script>
+</body>
+</html>

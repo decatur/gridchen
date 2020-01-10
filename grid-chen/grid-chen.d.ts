@@ -90,9 +90,14 @@ declare module GridChenNS {
 
         /**
          * Resets this element with respect to its implicit dependencies, DOM dimensions and data view content.
-         * @param view
+         * Currently, this is implemented by calling resetFromView().
          */
         reset: () => GridChen;
+
+        /**
+         * Rereads to data view content.
+         */
+        refresh: () => GridChen;
 
         /**
          * Returns the selection as a rectangle.

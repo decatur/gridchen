@@ -1160,7 +1160,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         { get: () => cellParent.textContent, configurable: true }
     );
 
-    gridchenElement['_refresh'] = refresh;
+    gridchenElement['refresh'] = refresh;
 }
 
 /**

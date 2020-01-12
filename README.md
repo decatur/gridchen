@@ -101,6 +101,7 @@ results when converting light to dark mode than grid-chen's native dark mode.
 * Handling of Infinity and NaN (#NV in de-de)
 
 # Alternatives
+* [SpreadJS](https://grapecity.com)
 * [SlickGrid](https://github.com/mleibman/SlickGrid)
 * [ag-Grid](https://www.ag-grid.com/)
 * [canvas-datagrid](https://github.com/TonyGermaneri/canvas-datagrid)

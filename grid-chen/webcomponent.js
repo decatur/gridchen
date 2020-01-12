@@ -242,7 +242,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         columnEnds[index] = total;
     }
 
-    let viewPortRowCount = Math.floor((totalHeight) / rowHeight) - 1;
+    let viewPortRowCount = Math.floor((totalHeight) / rowHeight) + 1;
     const viewPortHeight = rowHeight * viewPortRowCount + cellBorderWidth;
     const gridWidth = columnEnds[columnEnds.length - 1] + cellBorderWidth;
     const styleSheet = document.createElement('style');

@@ -134,12 +134,12 @@ export class GridChen extends HTMLElement {
         // Attention: Possible Layout Thrashing.
         // Default value needed for unit testing and flex layouts.
         console.log('clientHeight:' + this.clientHeight);
-        this._totalHeight = this.clientHeight || 200;
+        this._totalHeight = this.clientHeight || 100;
         const container = document.createElement('div');
-        container.style.position = 'relative';
-        container.style.height = this._totalHeight + 'px';
+        container.style.position = 'absolute';  // Needed so that container does not take up any space.
+        //container.style.height = this._totalHeight + 'px';  // Only needed to pass target height to createGrid.
         this.shadowRoot.appendChild(container);
-        createGrid(container, viewModel, this, transactionManager);
+        createGrid(container, viewModel, this, transactionManager, this._totalHeight);
         this.style.width = container.style.width;
         return this
     }
@@ -226,12 +226,12 @@ class ScrollBar {
  * @param {GridChenNS.MatrixView} viewModel
  * @param {GridChen} gridchenElement
  * @param {GridChenNS.TransactionManager} tm
+ * @param {number} totalHeight
  */
-function createGrid(container, viewModel, gridchenElement, tm) {
+function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     tm = tm || registerGlobalTransactionManager();
     const schema = viewModel.schema;
     const schemas = schema.columnSchemas;
-    const totalHeight = parseInt(container.style.height);
     const rowHeight = lineHeight + 2 * cellBorderWidth;
     const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
 
@@ -511,7 +511,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
         // TODO: Chrome seems to always give evt.deltaY +-150 pixels. Why?
         // Excel scrolls about 3 lines per wheel tick.
         let newFirstRow = firstRow + 3 * Math.sign(evt.deltaY);
-        if (newFirstRow >= 0) {
+        if (newFirstRow >= 0 && newFirstRow < rowCount) {
             setFirstRow(newFirstRow);
         }
     });
@@ -870,7 +870,7 @@ function createGrid(container, viewModel, gridchenElement, tm) {
     let firstRow = 0;
     /** @type{number} */
     let rowCount = 0;
-    const indexMapper = new IndexToPixelMapper(cellParent.getBoundingClientRect(), rowHeight, columnEnds);
+    const indexMapper = new IndexToPixelMapper(cellParent, rowHeight, columnEnds);
 
     function commitCellEdit(value) {
         logger.log('commitCellEdit');

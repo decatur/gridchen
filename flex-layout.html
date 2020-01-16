@@ -17,9 +17,8 @@
 <body>
 <h1><a href="index.html">GridChen Index</a> / CSS Flex Layout</h1>
 <header>
-    This is a fixed height header. Observe how the grid takes all available space between header and footer on window
+    This is a normal vertical box taking exactly the size of its content. Observe how the grid takes all available space between header and footer on window
     resize. There must not be a vertical scrollbar, so styles elements like so
-
     <pre>
         html {
             height: 100%;
@@ -51,17 +50,20 @@
     };
 
     const rows = [];
-    document.querySelector('grid-chen').resetFromView(createView(schema, rows));
 
-    window.addEventListener('resize', function(evt) {
-        const r = document.querySelector('grid-chen').getBoundingClientRect();
+    function clientRectPropertiestoMatrix() {
+        const rect = document.querySelector('grid-chen').getBoundingClientRect();
         rows.length = 0;
-        for (let key in r) {
-            if (typeof r[key] === 'number') {
-                rows.push([key, r[key]]);
+        for (let key in rect) {
+            if (typeof rect[key] === 'number') {
+                rows.push([key, rect[key]]);
             }
         }
-    });
+    }
+
+    clientRectPropertiestoMatrix();
+    document.querySelector('grid-chen').resetFromView(createView(schema, rows));
+    window.addEventListener('resize', clientRectPropertiestoMatrix);
 
 </script>
 </html>

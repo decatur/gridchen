@@ -495,12 +495,12 @@ export class IndexToPixelMapper {
 
     /**
      *
-     * @param {DOMRect} rect
+     * @param {HTMLElement} element
      * @param {number} rowHeight
      * @param {number[]} columnEnds
      */
-    constructor(rect, rowHeight, columnEnds) {
-        this.rect = rect;
+    constructor(element, rowHeight, columnEnds) {
+        this.element = element;
         this.rowHeight = rowHeight;
         this.columnEnds = columnEnds;
         this.firstRow = 0;
@@ -514,10 +514,11 @@ export class IndexToPixelMapper {
      * @returns {{clientY: number, clientX: number}}
      */
     cellIndexToPixelCoords(rowIndex, columnIndex) {
+        const rect = this.element.getBoundingClientRect();
         let y = this.rowHeight * (rowIndex - this.firstRow + 0.5);
-        let clientY = y + this.rect.top;
+        let clientY = y + rect.top;
         let x = ((columnIndex === 0 ? 0 : this.columnEnds[columnIndex - 1]) + this.columnEnds[columnIndex]) / 2;
-        let clientX = x + this.rect.left;
+        let clientX = x + rect.left;
         return {clientX, clientY}
     }
 
@@ -530,8 +531,9 @@ export class IndexToPixelMapper {
      * @returns {{columnIndex: number, rowIndex: number}}
      */
     pixelCoordsToCellIndex(clientX, clientY) {
-        const y = clientY - this.rect.top;
-        const x = clientX - this.rect.left;
+        const rect = this.element.getBoundingClientRect();
+        const y = clientY - rect.top;
+        const x = clientX - rect.left;
         const rowIndex = this.firstRow + Math.trunc(y / this.rowHeight);
 
         let columnIndex = this._columnIndexGuess;

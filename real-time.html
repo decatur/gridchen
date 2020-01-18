@@ -5,6 +5,21 @@
     <title>Real Time</title>
     <link rel="stylesheet" href="demo.css">
     <script src="./theme.js"></script>
+    <style>
+        .enter {
+            animation-name: fadeOut;
+            animation-duration: 2s;
+        }
+
+        @keyframes fadeOut {
+            0% {
+                background-color: red;
+            }
+            100% {
+                background-color: transparent;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -34,15 +49,18 @@
         index: [], sin: [], cos: []
     };
 
-    const gridchen = document.querySelector('grid-chen').resetFromView(createView(schema, data));
+    const view = createView(schema, data);
+    const gridchen = document.querySelector('grid-chen').resetFromView(view);
 
     let index = 0;
-    function addTimeSlot() {
-        data.index.push(index);
-        data.sin.push(Math.sin(index / 7));
-        data.cos.push(Math.cos(index / 5));
-        index++;
 
+    function addTimeSlot() {
+        view.splice(0);
+        data.index[0] = index;
+        data.sin[0] = Math.sin(index / 7);
+        data.cos[0] = Math.cos(index / 5);
+        view.getRowStyles()[0] = {createAt: new Date()};
+        index++;
         gridchen.refresh();
     }
 

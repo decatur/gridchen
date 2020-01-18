@@ -521,6 +521,7 @@ export function createRowMatrixView(schema, rows) {
 export function createRowObjectsView(schema, rows) {
     const schemas = schema.columnSchemas;
     const ids = schema.ids;
+    const rowStyles = new Array(rows.length);
     updateSchema(schemas);
 
     /**
@@ -536,6 +537,10 @@ export function createRowObjectsView(schema, rows) {
 
         getModel() {
             return rows;
+        }
+
+        getRowStyles() {
+            return rowStyles
         }
 
         /**
@@ -567,6 +572,7 @@ export function createRowObjectsView(schema, rows) {
          */
         deleteRow(rowIndex) {
             rows.splice(rowIndex, 1);
+            rowStyles.splice(rowIndex, 1);
             return [{ op: 'remove', path: `/${rowIndex}` }];
         }
 
@@ -626,6 +632,7 @@ export function createRowObjectsView(schema, rows) {
          */
         splice(rowIndex) {
             rows.splice(rowIndex, 0, null);
+            rowStyles.splice(rowIndex, 0, null);
             return [{ op: 'add', path: `/${rowIndex}`, value: null }];
         }
 
@@ -836,6 +843,7 @@ export function createColumnMatrixView(schema, columns) {
 export function createColumnObjectView(schema, columns) {
     let schemas = schema.columnSchemas;
     let ids = schema.ids;
+    const rowStyles = new Array(getRowCount());
     updateSchema(schemas);
 
     function getRowCount() {
@@ -856,6 +864,10 @@ export function createColumnObjectView(schema, columns) {
 
         getModel() {
             return columns;
+        }
+
+        getRowStyles() {
+            return rowStyles
         }
 
         /**
@@ -893,6 +905,7 @@ export function createColumnObjectView(schema, columns) {
                 column.splice(rowIndex, 1);
                 patch.push({ op: 'remove', path: `/${key}/${rowIndex}` })
             });
+            rowStyles.splice(rowIndex, 1);
             return patch;
         }
 
@@ -961,6 +974,7 @@ export function createColumnObjectView(schema, columns) {
                 column.splice(rowIndex, 0, null);
                 patch.push({ op: 'add', path: `/${key}/${rowIndex}`, value: null });
             });
+            rowStyles.splice(rowIndex, 0, null);
             return patch;
         }
 

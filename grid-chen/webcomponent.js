@@ -242,6 +242,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         columnEnds[index] = total;
     }
 
+    const customRowStyles = [];
     let viewPortRowCount = Math.max(1, Math.floor((totalHeight) / rowHeight) -1);
     const viewPortHeight = rowHeight * viewPortRowCount + cellBorderWidth;
     const gridWidth = columnEnds[columnEnds.length - 1] + cellBorderWidth;
@@ -263,6 +264,10 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             padding: ${cellPadding}px;
         }
         
+        /*.GRID {
+            background-color: red;
+         }*/
+        
         a:link {
             color: var(--a-link-color);
         }
@@ -282,6 +287,21 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             text-align: left;
             border-color: red;
             z-index: 1;
+        }
+        
+        .enter {
+            animation-name: fadeOut;
+            animation-duration: var(--m)s;
+            
+        }
+        
+        @keyframes fadeOut {
+            0% {
+                background-color: red;
+            }
+            100% {
+                background-color: transparent;
+            }
         }
         
         #headerRow {
@@ -338,6 +358,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         gridAbstraction.rowCount = rowCount;
         setFirstRow(firstRow);
         scrollBar.setMax(Math.max(viewPortRowCount, rowCount - viewPortRowCount));
+
     }
 
     refreshHeaders();
@@ -917,6 +938,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
 
         updateViewportRows(getRangeData(
             new Range(firstRow, 0, viewPortRowCount, colCount)));
+
         selection.show();
     }
 
@@ -1061,9 +1083,20 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
 
     function updateViewportRows(matrix) {
         // log.log('setRowData', rowData)
+        const now = (new Date()).getTime();
         for (let index = 0; index < cellMatrix.length; index++) {
             let elemRow = cellMatrix[index];
             let row = matrix[index];
+            let customStyle = viewModel.getRowStyles()[firstRow + index];
+            let remainingSeconds;
+            if (customStyle) {
+                remainingSeconds = (customStyle.createAt.getTime() + 10000 - now) / 1000;
+            } else {
+                remainingSeconds = 0;
+            }
+
+            if (index === 3)
+                console.log('remainingSeconds: ' + remainingSeconds)
             for (let colIndex = 0; colIndex < colCount; colIndex++) {
                 let elem = elemRow[colIndex];
                 elem.removeAttribute('class');
@@ -1072,8 +1105,38 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
                     elem.textContent = '';
                     continue;
                 }
-
                 schemas[colIndex].converter.render(elem, value);
+                //elem.style.removeProperty('transition');
+                //elem.style.removeProperty('background-color');
+                //elem.style.backgroundColor = 'black';
+                //elem.classList.remove('enter');
+                elem.style.removeProperty('animation-name');
+                elem.style.removeProperty('animation-duration');
+                elem.style.removeProperty('animation-delay');
+                if (remainingSeconds > 0) {
+
+                    window.setTimeout(() =>  {
+                        elem.style.animationName = 'fadeOut';
+                        elem.style.animationDuration = remainingSeconds + 's';
+                        //
+                        elem.style.animationDelay = (remainingSeconds - 10) + 's';
+                        //elem.style.setProperty('--m', remainingSeconds);
+                        //elem.classList.add('enter');
+                        //elem.style.backgroundColor = 'black';
+                        //elem.style.transition = `background-color ${remainingSeconds}s linear`;
+                    }, 10);
+                    //elem.classList.add('enter');
+                    //elem.style.transition = `background-color 0.5s linear`;
+                    //elem.style.backgroundColor = 'blue';
+                    //const t = (now - customStyle.createAt.getTime()) / 1000;
+                    //elem.style.animationName = 'fadeOut';
+                    //elem.style.animationDuration = remainingSeconds + 's';
+                } else {
+                    //elem.style.removeProperty('animationName');
+                    //elem.style.removeProperty('animationDuration');
+                    //elem.classList.remove('enter');
+                    //elem.style.backgroundColor = 'black';
+                }
             }
         }
     }

@@ -26,7 +26,10 @@
 <h1><a href="index.html">GridChen Index</a> / Real Time Demo</h1>
 
 <p>
-    ...
+    Update the underlying data in real time. Newly inserted rows are highlighted for some time.
+</p>
+<p>
+    🔨 Highlighting and fade out is currently only implemented for types Array of Row Objects and Object of Columns.
 </p>
 
 <grid-chen style="margin-top: 1em;height: 400px"></grid-chen>
@@ -39,29 +42,28 @@
         title: 'Charting Demo',
         type: 'object',
         properties: {
-            index: {title: 'index', type: 'array', items: {type: 'integer', width: '50'}},
+            time: {title: 'Time t', type: 'array', items: {type: 'integer', width: '50'}},
             sin: {title: 'sin(t/7)', type: 'array', items: {type: 'number', width: '70'}},
             cos: {title: 'cos(t/5)', type: 'array', items: {type: 'number', width: '70'}}
         }
     };
 
     const data = {
-        index: [], sin: [], cos: []
+        time: [], sin: [], cos: []
     };
 
-    const view = createView(schema, data);
-    const gridchen = document.querySelector('grid-chen').resetFromView(view);
-
-    let index = 0;
+    const grid = document.querySelector('grid-chen').resetFromView(createView(schema, data));
+    let counter = 0;
 
     function addTimeSlot() {
-        view.splice(0);
-        data.index[0] = index;
-        data.sin[0] = Math.sin(index / 7);
-        data.cos[0] = Math.cos(index / 5);
-        view.getRowStyles()[0] = {createAt: new Date()};
-        index++;
-        gridchen.refresh();
+        grid.insertEmptyRow(0, {fadeOutDuration: 10});
+        // Set the values of the empty row.
+        data.time[0] = counter;
+        data.sin[0] = Math.sin(counter / 7);
+        data.cos[0] = Math.cos(counter / 5);
+        counter++;
+        // Finally refresh the grid.
+        grid.refresh();
     }
 
     window.setInterval(addTimeSlot, 1000);

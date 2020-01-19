@@ -950,8 +950,8 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         cellParent.appendChild(elem);
     }
 
+	// Elements for row highlighting
     const rowElements = [];
-
     function createRow(vpRowIndex) {
         const rowElement = document.createElement('span');
         let style = rowElement.style;
@@ -1221,6 +1221,8 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     );
 
     gridchenElement['refresh'] = refresh;
+	
+	// TODO: Move this to MatrixView.
     gridchenElement['insertEmptyRow'] = function(rowIndex, options) {
         options = Object.assign({fadeOutDuration: 10000}, options || {});
         viewModel.splice(rowIndex);

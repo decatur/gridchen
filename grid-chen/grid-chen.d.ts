@@ -150,7 +150,7 @@ declare module GridChenNS {
         getRow: (rowIndex: number) => any;
         getColumn: (colIndex: number) => any;
         setCell: (rowIndex: number, colIndex: number, value: any) => JSONPatchOperation[];
-        splice: (rowIndex: number) => JSONPatch;
+        splice: (rowIndex: number) => JSONPatch; // TODO: Rename to insertEmptyRow
         sort: (colIndex: number) => number;
         // TODO: Return the patched object as of getModel()?
         applyJSONPatch: (patch: JSONPatch) => void;

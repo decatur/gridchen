@@ -295,7 +295,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         /** Grid row */
         .GRID div {
             position: absolute;
-            height: ${innerHeight};
+            height: ${rowHeight}px;
         }
         
         /*.GRID {

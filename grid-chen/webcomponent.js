@@ -85,6 +85,29 @@ function openDialog() {
     return dialog;
 }
 
+let _timeOutHandle;
+
+/**
+ * @param {ResizeObserverEntry[]} entries
+ */
+function debounceResize(entries) {
+    for (const entry of entries) {
+        const gridChen = entry.target;
+        if (_timeOutHandle) {
+            window.clearTimeout(_timeOutHandle);
+         }
+
+        _timeOutHandle = window.setTimeout(() => {
+            _timeOutHandle = void 0;
+            if (gridChen._onresize) gridChen._onresize();
+            gridChen.reset();
+        }, 100);
+    }
+}
+
+const ro = new window.ResizeObserver(entry => debounceResize(entry));
+
+
 /**
  * We export for testability.
  * @implements {GridChenNS.GridChen}
@@ -103,20 +126,24 @@ export class GridChen extends HTMLElement {
         this._transactionManager = void 0;
         this.select = void 0;
 
-        const gridChen = this;
+        this._onresize = void 0;
 
-        function debounceResize() {
-            if (gridChen._timeOutHandle) {
-                window.clearTimeout(gridChen._timeOutHandle);
-            }
+        // If recent Firefox supports ResizeObserver, remove this window.onresize stuff.
+        // const gridChen = this;
+        //
+        // function debounceResize() {
+        //     if (gridChen._timeOutHandle) {
+        //         window.clearTimeout(gridChen._timeOutHandle);
+        //     }
+        //
+        //     gridChen._timeOutHandle = window.setTimeout(() => {
+        //         gridChen._timeOutHandle = void 0;
+        //         gridChen.reset();
+        //     }, 100);
+        // }
+        //window.addEventListener('resize', debounceResize);
 
-            gridChen._timeOutHandle = window.setTimeout(() => {
-                gridChen._timeOutHandle = void 0;
-                gridChen.reset();
-            }, 100);
-        }
-
-        window.addEventListener('resize', debounceResize);
+        ro.observe(this);
     }
 
     /**
@@ -244,7 +271,6 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         columnEnds[index] = total;
     }
 
-    const customRowStyles = [];
     let viewPortRowCount = Math.max(1, Math.floor((totalHeight) / rowHeight) - 1);
     const viewPortHeight = rowHeight * viewPortRowCount + cellBorderWidth;
     const gridWidth = columnEnds[columnEnds.length - 1] + cellBorderWidth;
@@ -264,6 +290,12 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             white-space: nowrap;
             height: ${innerHeight};
             padding: ${cellPadding}px;
+        }
+        
+        /** Grid row */
+        .GRID div {
+            position: absolute;
+            height: ${innerHeight};
         }
         
         /*.GRID {
@@ -950,10 +982,11 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         cellParent.appendChild(elem);
     }
 
-	// Elements for row highlighting
+    // Elements for row highlighting
     const rowElements = [];
+
     function createRow(vpRowIndex) {
-        const rowElement = document.createElement('span');
+        const rowElement = document.createElement('div');
         let style = rowElement.style;
         style.top = (vpRowIndex * rowHeight) + 'px';
         style.left = '0px';
@@ -1095,7 +1128,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             let elemRow = cellMatrix[index];
             const rowElement = rowElements[index];
             let row = matrix[index];
-            let customStyle = viewModel.getRowStyles?viewModel.getRowStyles()[firstRow + index]:null;
+            let customStyle = viewModel.getRowStyles ? viewModel.getRowStyles()[firstRow + index] : null;
 
             if (customStyle && customStyle.createAt && customStyle.fadeOutDuration) {
                 // Design: We use animation, not transition, because you cannot transition out (fade away)
@@ -1110,7 +1143,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
                         rowElement.style.animationName = 'bgFadeOut';
                         rowElement.style.animationDuration = remainingSeconds + 's';
                         // Always negative, meaning skip first part of animation.
-                        rowElement.style.animationDelay = (customStyle.createAt  - now) + 's';
+                        rowElement.style.animationDelay = (customStyle.createAt - now) + 's';
                     }, 10);
                 } else {
                     // Purge the expired style information.
@@ -1221,9 +1254,9 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     );
 
     gridchenElement['refresh'] = refresh;
-	
-	// TODO: Move this to MatrixView.
-    gridchenElement['insertEmptyRow'] = function(rowIndex, options) {
+
+    // TODO: Move this to MatrixView.
+    gridchenElement['insertEmptyRow'] = function (rowIndex, options) {
         options = Object.assign({fadeOutDuration: 10000}, options || {});
         viewModel.splice(rowIndex);
         if (viewModel.getRowStyles) {

@@ -1,5 +1,5 @@
 /**
- * Author: Wolfgang Kühn 2019
+ * Author: Wolfgang Kühn 2019-2020
  * Source located at https://github.com/decatur/grid-chen/grid-chen
  *
  * Module implementing data mapping for some common data types.

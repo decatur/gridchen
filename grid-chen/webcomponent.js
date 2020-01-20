@@ -1,5 +1,5 @@
 /**
- * Author: Wolfgang Kühn 2019
+ * Author: Wolfgang Kühn 2019-2020
  * Source located at https://github.com/decatur/grid-chen/grid-chen
  *
  * Module implementing the visual grid and scrolling behaviour.

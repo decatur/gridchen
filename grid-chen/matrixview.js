@@ -1,8 +1,8 @@
 /**
- * Author: Wolfgang Kühn 2019
+ * Author: Wolfgang Kühn 2019-2020
  * Source located at https://github.com/decatur/grid-chen/grid-chen
  *
- * Module implementing data (model) abstraction for some common matrix representations.
+ * Module implementing a (rowIndex, columnIndex)-based abstraction for five common JSON matrix representations.
  */
 
 //@ts-check

@@ -1,5 +1,7 @@
 /////////////////////////////
-/// grid-chen JavaScript APIs
+// Author: Wolfgang Kühn 2019-2020
+// grid-chen JavaScript APIs
+// Source located at https://github.com/decatur/grid-chen/grid-chen
 /////////////////////////////
 
 declare module GridChenNS {

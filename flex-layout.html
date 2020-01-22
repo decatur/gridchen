@@ -19,15 +19,13 @@
 <h1><a href="index.html">GridChen Index</a> / CSS Flex Layout</h1>
 <header>
     This is a vertical flow header taking exactly the size of its content.
-    Observe how the grid takes all available space between header and footer on window resize.
+    Observe how the grid takes all available space between header and footer on both <em>textarea</em> and
+    <em>window</em> resize.
     There shall not be a vertical scrollbar, so styles elements like so
-    <pre>
-        html { height: 100%; }
-        body { display: flex; flex-direction: column; height: 100%; margin: 0 2em 0 2em; }
-    </pre>
-    <div id="rect" style="background-color: red;">
-        🞁🞃Dynamic vertical spacing changes every 2 seconds...
-    </div>
+    <textarea id="rect" rows="4" cols="60" style="display: block; background-color: red;">
+html { height: 100%; }
+body { display: flex; flex-direction: column; height: 100%; margin: 0 2em 0 2em; }
+    </textarea>
 </header>
 <grid-chen style="flex: 1; margin-left: 2em;"></grid-chen>
 <footer>
@@ -63,12 +61,6 @@
     }
 
     grid._onresize = clientRectPropertiestoMatrix;
-    //clientRectPropertiestoMatrix();
-    //window.addEventListener('resize', clientRectPropertiestoMatrix);
-
-    window.setInterval(() => {
-        document.getElementById('rect').style.height = (20 + Math.random() * 100).toFixed() + 'px';
-    }, 2000)
 
 </script>
 </html>

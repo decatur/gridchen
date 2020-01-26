@@ -10,7 +10,7 @@
 import {logger, wrap, registerGlobalTransactionManager} from "./utils.js";
 import {createSelection, Range, IndexToPixelMapper} from "./selection.js";
 import {createEditor} from "./editor.js"
-
+import {renderPlot} from "./plotly_wrapper.js"
 
 //////////////////////
 // Start Configuration
@@ -894,7 +894,9 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             schemas: columnSchemas,
             columns: columns
         });
-        gridchenElement.dispatchEvent(new CustomEvent('plot', {detail: detail}));
+        // gridchenElement.dispatchEvent(new CustomEvent('plot', {detail: detail}));
+        const evt = new CustomEvent('plot', {detail: detail});
+        renderPlot(evt.detail.graphElement, evt.detail.title, evt.detail.schemas, evt.detail.columns);
     }
 
     function scrollIntoView(rowIndex, rowIncrement) {

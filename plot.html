@@ -16,7 +16,7 @@
 <p>
     Alt+F1 opens a modal chart of the selection. Try to select
     first and second column then Alt+F1, or all columns then Alt+F1, or second and third column then Alt+F1.
-    This demo uses Plotly.js and a small <a href="examples/plotly_wrapper.js">plotly wrapper</a>.
+    This demo uses Plotly.js and a small <a href="grid-chen/plotly_wrapper.js">plotly wrapper</a>.
 </p>
 
 <grid-chen style="height: 400px"></grid-chen>
@@ -24,7 +24,7 @@
 <script type="module">
     import "./grid-chen/webcomponent.js"
     import {createView} from "./grid-chen/matrixview.js"
-    import {renderPlot} from "./examples/plotly_wrapper.js"
+
 
     const schema = {
         title: 'Charting Demo',
@@ -67,10 +67,11 @@
     }
 
     document.querySelector('grid-chen')
-        .resetFromView(createView(schema, data))
-        .addEventListener('plot', function(evt) {
-            renderPlot(evt.detail.graphElement, evt.detail.title, evt.detail.schemas, evt.detail.columns);
-        });
+        .resetFromView(createView(schema, data));
+        // .addEventListener('plot', function(evt) {
+        //     import {renderPlot} from "./grid-chen/plotly_wrapper.js"
+        //     renderPlot(evt.detail.graphElement, evt.detail.title, evt.detail.schemas, evt.detail.columns);
+        // });
 
 
 </script>

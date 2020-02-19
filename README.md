@@ -8,6 +8,13 @@ If you need to edit mixed hierarchical and grid data, please visit sister projec
 
 See [grid-chen at github.io](https://decatur.github.io/grid-chen)
 
+# Releases
+
+All stable releases are tagged. The latest tagged release is functionally identical to the master branch.
+
+You either clone a release, copy the grid-chen module folder, or reference the modules at 
+https://decatur.github.io/grid-chen/grid-chen.
+
 # Usage
 
 ```HTML

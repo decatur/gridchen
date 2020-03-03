@@ -109,9 +109,6 @@ declare module GridChenNS {
         select: (Range) => void;
     }
 
-    interface SelectionChanged extends Event {
-    }
-
     export interface PlotEventDetail {
         graphElement: HTMLElement;
         title: string;

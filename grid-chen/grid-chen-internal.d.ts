@@ -42,3 +42,7 @@ declare module GridChenNS {
         repaintActiveCell: (active: Range) => void;
     }
 }
+
+export interface ResizeObserverEntry {
+    // Not yet exported by lib.dom.d.ts
+}

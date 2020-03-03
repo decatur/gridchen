@@ -231,13 +231,12 @@ export function createSelection(uiRefresher, grid) {
         }
 
         /**
-         *
          * @param evt
          * @param cellParent
          * @param {IndexToPixelMapper} indexMapper
          */
         startSelection(evt, cellParent, indexMapper) {
-            startSelection(evt, this, cellParent, indexMapper);
+            _startSelection(evt, this, cellParent, indexMapper);
         }
 
         move(rowIncrement, columnIncrement, doExpand) {
@@ -286,7 +285,6 @@ export function createSelection(uiRefresher, grid) {
 
             selection.show();
         }
-
 
         /**
          * @param {KeyboardEvent} evt
@@ -402,7 +400,7 @@ function intersectInterval(i1, i2) {
  * @param {HTMLDivElement} cellParent
  * @param {IndexToPixelMapper} indexMapper
  */
-function startSelection(evt, selection, cellParent, indexMapper) {
+function _startSelection(evt, selection, cellParent, indexMapper) {
     let {rowIndex, columnIndex} = indexMapper.pixelCoordsToCellIndex(evt.clientX, evt.clientY);
 
     let current = new Range(rowIndex, columnIndex, 1, 1);

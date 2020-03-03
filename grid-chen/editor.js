@@ -204,10 +204,18 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
         constructor() {
         }
 
+        /** @returns {GridChenNS.CellEditMode} */
         get mode() {
             return currentMode
         }
 
+        /**
+         * @param {GridChenNS.CellEditMode} mode
+         * @param value
+         * @param {CSSStyleDeclaration} spanStyle
+         * @param {object} schema
+         * @param {boolean} readOnly
+         */
         open(mode, value, spanStyle, schema, readOnly) {
             currentMode = mode;
             currentSchema = schema;

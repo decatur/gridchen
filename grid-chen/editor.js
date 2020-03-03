@@ -9,6 +9,13 @@
 
 import {logger} from "./utils.js";
 
+/** @type{GridChenNS.CellEditMode} */
+export const HIDDEN = /** @type{GridChenNS.CellEditMode} */ 'hidden';
+/** @type{GridChenNS.CellEditMode} */
+export const INPUT = /** @type{GridChenNS.CellEditMode} */ 'input';
+/** @type{GridChenNS.CellEditMode} */
+export const EDIT = /** @type{GridChenNS.CellEditMode} */ 'edit';
+
 /**
  * @param {HTMLElement} container
  * @param {function} commitCellEdit
@@ -17,7 +24,8 @@ import {logger} from "./utils.js";
  * @returns {Editor}
  */
 export function createEditor(container, commitCellEdit, selection, lineHeight) {
-    let currentMode = 'hidden';
+    /** @type{GridChenNS.CellEditMode} */
+    let currentMode = HIDDEN;
     let currentSchema = undefined;
     /** @type{boolean} */
     let currentReadOnly;
@@ -43,7 +51,7 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
     container.appendChild(textarea);
 
     function hide() {
-        currentMode = 'hidden';
+        currentMode = HIDDEN;
         setValue('');
         if (input.style.display !== 'none') {
             input.style.display = 'none';
@@ -130,16 +138,26 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
         // Clicking editor should invoke default: move caret. It should not delegate to containers action.
         evt.stopPropagation();
 
-        if (evt.code === 'ArrowLeft' && currentMode === 'input') {
+        if (evt.code === 'ArrowLeft' && currentMode === INPUT) {
             evt.preventDefault();
             evt.stopPropagation();
             commit();
             selection.move(0, -1);
-        } else if (evt.code === 'ArrowRight' && currentMode === 'input') {
+        } else if (evt.code === 'ArrowRight' && currentMode === INPUT) {
             evt.preventDefault();
             evt.stopPropagation();
             commit();
             selection.move(0, 1);
+        } else if (evt.code === 'ArrowUp' && currentMode === INPUT) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            commit();
+            selection.move(-1, 0);
+        } else if (evt.code === 'ArrowDown' && currentMode === INPUT) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            commit();
+            selection.move(1, 0);
         } else if (evt.code === 'Enter' && evt.altKey) {
             evt.preventDefault();
             evt.stopPropagation();
@@ -169,7 +187,7 @@ export function createEditor(container, commitCellEdit, selection, lineHeight) {
 
     function blurHandler(evt) {
         logger.log('editor.onblur');
-        if (currentMode !== 'hidden') {
+        if (currentMode !== HIDDEN) {
             commit();
         }
 

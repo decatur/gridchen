@@ -197,4 +197,10 @@ declare module GridChenNS {
         readonly patch: JSONPatch;
     }
 
+    enum CellEditMode {
+        HIDDEN = 'hidden',
+        INPUT = 'input',
+        EDIT = 'edit'
+    }
+
 }

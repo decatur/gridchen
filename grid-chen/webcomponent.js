@@ -9,7 +9,7 @@
 
 import {logger, wrap, registerGlobalTransactionManager} from "./utils.js";
 import {createSelection, Range, IndexToPixelMapper} from "./selection.js";
-import {createEditor} from "./editor.js"
+import * as edit from "./editor.js"
 import {renderPlot} from "./plotly_wrapper.js"
 
 //////////////////////
@@ -484,7 +484,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             } else {
                 value = schemas[selection.active.columnIndex].converter.toEditable(value);
             }
-            activeCell.openEditor('edit', value);
+            activeCell.openEditor(edit.EDIT, value);
         },
         isReadOnly: function () {
             return isColumnReadOnly(selection.active.columnIndex)
@@ -748,7 +748,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             find(window.prompt('Find which substring', lastSearchPattern));
         } else if (evt.key.length === 1 && !evt.ctrlKey && !evt.altKey) {
             // evt.key.length === 1 looks like a bad idea to sniff for character input, but keypress is deprecated.
-            if (editor.mode === 'hidden' && !activeCell.isReadOnly()) {
+            if (editor.mode === edit.HIDDEN && !activeCell.isReadOnly()) {
                 // We now focus the input element. This element would receive the key as value in interactive mode, but
                 // not when called as dispatchEvent() from unit tests!
                 // We want to make this unit testable, so we stop the propagation and hand over the key.
@@ -1196,7 +1196,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     container.addEventListener('keydown', (evt) => selection.keyDownHandler(evt));
     container.addEventListener('keydown', keyDownListener);
 
-    const editor = createEditor(cellParent, commitCellEdit, selection, lineHeight);
+    const editor = edit.createEditor(cellParent, commitCellEdit, selection, lineHeight);
 
     firstRow = 0;
     refresh();
@@ -1236,7 +1236,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
      * Dispatches the specified keyboard event.
      */
     gridchenElement['_keyboard'] = function (typeArg, eventInitDict) {
-        if (editor.mode !== 'hidden') {
+        if (editor.mode !== edit.HIDDEN) {
             editor._keyboard(typeArg, eventInitDict);
         } else {
             container.dispatchEvent(new KeyboardEvent(typeArg, eventInitDict));
@@ -1244,7 +1244,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     };
 
     gridchenElement['_sendKeys'] = function (keys) {
-        if (editor.mode !== 'hidden') {
+        if (editor.mode !== edit.HIDDEN) {
             editor._sendKeys(keys);
         } else if (!activeCell.isReadOnly()) {
             activeCell.enterInputMode(keys);

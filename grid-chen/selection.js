@@ -318,7 +318,7 @@ export function createSelection(uiRefresher, grid) {
                     columnIncrement = 1;
                 }
                 move(0, columnIncrement, doExpand);
-            } else if (evt.code === 'ArrowUp' || (evt.code === "Enter" && evt.shiftKey)) {
+            } else if (evt.code === 'ArrowUp' || (['Enter', 'NumpadEnter'].includes(evt.code) && evt.shiftKey)) {
                 const doExpand = (evt.code === 'ArrowUp' && evt.shiftKey);
                 let rowIncrement;
                 if ((evt.code === 'ArrowUp' && evt.ctrlKey)) {
@@ -327,7 +327,7 @@ export function createSelection(uiRefresher, grid) {
                     rowIncrement = -1;
                 }
                 move(rowIncrement, 0, doExpand);
-            } else if (evt.code === 'ArrowDown' || evt.code === 'Enter') {
+            } else if (evt.code === 'ArrowDown' || ['Enter', 'NumpadEnter'].includes(evt.code)) {
                 const doExpand = (evt.code === 'ArrowDown' && evt.shiftKey);
                 let rowIncrement;
                 if ((evt.code === 'ArrowDown' && evt.ctrlKey)) {

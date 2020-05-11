@@ -85,20 +85,18 @@ function openDialog() {
     return dialog;
 }
 
-let _timeOutHandle;
-
 /**
  * @param {ResizeObserverEntry[]} entries
  */
 function debounceResize(entries) {
     for (const entry of entries) {
         const gridChen = entry.target;
-        if (_timeOutHandle) {
-            window.clearTimeout(_timeOutHandle);
-         }
+        if (gridChen._timeOutHandle) {
+            window.clearTimeout(gridChen._timeOutHandle);
+        }
 
-        _timeOutHandle = window.setTimeout(() => {
-            _timeOutHandle = void 0;
+        gridChen._timeOutHandle = window.setTimeout(() => {
+            gridChen._timeOutHandle = void 0;
             if (gridChen._onresize) gridChen._onresize();
             gridChen.reset();
         }, 100);
@@ -1184,8 +1182,6 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         scrollIntoView,
         repaintActiveCell
     };
-
-    /** @type{GridChenNS.Selection} */
     let selection = createSelection(repaintSelection, gridAbstraction);
     selection.setRange(0, 0, 1, 1);
 

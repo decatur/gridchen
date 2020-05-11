@@ -426,6 +426,7 @@ function _startSelection(evt, selection, cellParent, indexMapper) {
         if (evt.shiftKey) {
             selection.areas.push(current);
             selection.convexHull();
+            selection.areas = [selection];
             selection.show();
         } else if (evt.ctrlKey) {
             selection.hide();

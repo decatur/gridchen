@@ -21,7 +21,8 @@
 <body>
 <h1><a href="index.html">GridChen Index</a> / Unicode Symbols</h1>
 <header>
-    All Unicode symbols with code points in <code>{min:0x1f300, max:0x1F9FF}</code>.
+    All Unicode symbols with code points in <input id="min" value="0x1f300"> and <input id="max" value="0x1F9FF">
+    <button id="refresh">↻</button>.
 </header>
 <grid-chen style="flex: 1;"></grid-chen>
 </body>
@@ -40,15 +41,20 @@
         }
     };
 
-    const i16 = Array.from({length: 0x10}, (_, k) =>({title: '0x' + k.toString(0x10), type: 'string', width: 30}));
+    const i16 = Array.from({length: 0x10}, (_, k) => ({title: '0x' + k.toString(0x10), type: 'string', width: 30}));
     schema.items.items.push(...i16);
 
-    const cpRange = {min: 0x1f300, max: 0x1F9FF};
-    const rows = [];
-    for (let cp = cpRange.min; cp <= cpRange.max; cp += 0x10) {
-        rows.push(['0x' + cp.toString(0x10), ...i16.map((_, k) => String.fromCodePoint(cp + k))]);
+    function refresh() {
+        const min = Number(document.getElementById('min').value);
+        const max = Number(document.getElementById('max').value);
+        const rows = [];
+        for (let cp = min; cp <= max; cp += 0x10) {
+            rows.push(['0x' + cp.toString(0x10), ...i16.map((_, k) => String.fromCodePoint(cp + k))]);
+        }
+        document.querySelector('grid-chen').resetFromView(createView(schema, rows));
     }
 
-    document.querySelector('grid-chen').resetFromView(createView(schema, rows));
+    document.querySelector('#refresh').onclick = refresh;
+    refresh();
 </script>
 </html>

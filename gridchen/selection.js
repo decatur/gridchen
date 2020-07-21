@@ -1,5 +1,5 @@
 /**
- * Author: Wolfgang Kühn 2019-2020
+ * Author: Wolfgang Kühn 2019-2021
  * Source located at https://github.com/decatur/grid-chen/grid-chen
  *
  * Module implementing Excel style multi area selection behaviour on a grid.

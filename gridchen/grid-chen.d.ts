@@ -1,5 +1,5 @@
 /////////////////////////////
-// Author: Wolfgang Kühn 2019-2020
+// Author: Wolfgang Kühn 2019-2021
 // grid-chen JavaScript APIs
 // Source located at https://github.com/decatur/grid-chen/grid-chen
 /////////////////////////////
@@ -7,8 +7,8 @@
 declare module GridChenNS {
 
     export interface JSONSchema {
-        title: string;
-        pathPrefix: string,
+        title?: string;
+        pathPrefix?: string,
         type: string;
         /**
          * If properties is set, this schema describes an object.
@@ -21,14 +21,21 @@ declare module GridChenNS {
          * with each item having the object as its schema.
          */
         items?: JSONSchema | JSONSchema[];
+		enum?: (string | number)[];						   
         readOnly?: boolean;
+		height?: number;
+        fractionDigits?: number;
+        // TODO: Rename according ISO
+        frequency?: string;
+        sortDirection?: number;
+        unit?: string;				
     }
 
     export interface ColumnSchema {
         readonly type: string;
         format?: string;
         title: string;
-        width: number;
+        width?: number;
         fractionDigits?: number;
         sortDirection?: number;
         converter?: Converter;
@@ -42,7 +49,8 @@ declare module GridChenNS {
         pathPrefix: string,
         title: string;
         columnSchemas: ColumnSchema[];
-        ids: string[];
+		detailSchemas: ColumnSchema[];							  
+        ids?: string[];
         readOnly?: boolean;
     }
 
@@ -99,14 +107,14 @@ declare module GridChenNS {
         /**
          * Rereads to data view content.
          */
-        refresh: () => GridChen;
+        refresh: (pathPrefix: string) => GridChen;
 
         /**
          * Returns the selection as a rectangle.
          */
         readonly selectedRange: Range;
 
-        select: (Range) => void;
+        select: (r: Range) => void;
     }
 
     export interface PlotEventDetail {
@@ -159,6 +167,7 @@ declare module GridChenNS {
     export interface Transaction {
         patches: Patch[];
         commit: () => void;
+		context: () => void;					
         readonly operations: JSONPatchOperation[]
     }
 

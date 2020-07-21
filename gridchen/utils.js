@@ -1,5 +1,5 @@
 /**
- * Author: Wolfgang Kühn 2019-2020
+ * Author: Wolfgang Kühn 2019-2021
  * Source located at https://github.com/decatur/grid-chen/grid-chen
  *
  * Module implementing, well, utilities.
@@ -230,7 +230,7 @@ function createLocalDateParser(locale) {
             if (dateSeparator) {
                 parts = s.split(dateSeparator);
                 if (parts.length === 3) {
-                    return [parts[yearIndex], parts[monthIndex] - 1, parts[dateIndex]]
+                    return [parts[yearIndex], Number(parts[monthIndex]) - 1, parts[dateIndex]]
                 }
                 if (dateSeparator === '-') {
                     return [NaN]
@@ -239,7 +239,7 @@ function createLocalDateParser(locale) {
 
             // Fall back to ISO.
             parts = s.split('-');
-            return [parts[0], parts[1] - 1, parts[2]]
+            return [parts[0], Number(parts[1]) - 1, parts[2]]
         }
 
         const numericParts = stringParts().map(p => Number(p));
@@ -544,13 +544,15 @@ export function createTransactionManager() {
                         }
                     }
                     return flattend;
-                }
+                },
+                context() {}							
             };
         }
 
         undo() {
             const trans = this.transactions.pop();
             if (!trans) return;
+			trans.context();				
             this.redoTransactions.push(trans);
             const reversedTransaction = /**@type{GridChenNS.Transaction}*/ Object.assign({}, trans);
             reversedTransaction.patches = [];
@@ -567,6 +569,7 @@ export function createTransactionManager() {
         redo() {
             const trans = this.redoTransactions.pop();
             if (!trans) return;
+			trans.context();				
             this.transactions.push(trans);
             for (let patch of trans.patches) {
                 patch.apply(patch);
@@ -589,7 +592,13 @@ export function createTransactionManager() {
             for (let trans of this.transactions) {
                 allPatches.push(...trans.operations);
             }
-            return allPatches;
+            return allPatches.map(function(op) {
+                if ('nodeId' in op) {
+                    op = Object.assign({}, op);
+                    delete op['nodeId']
+                }
+                return op
+            })
         }
     }
 

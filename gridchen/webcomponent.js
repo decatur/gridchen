@@ -1,5 +1,5 @@
 /**
- * Author: Wolfgang Kühn 2019-2020
+ * Author: Wolfgang Kühn 2019-2021
  * Source located at https://github.com/decatur/grid-chen/grid-chen
  *
  * Module implementing the visual grid and scrolling behaviour.
@@ -258,6 +258,7 @@ class ScrollBar {
 function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     tm = tm || registerGlobalTransactionManager();
     const schema = viewModel.schema;
+    let pathPrefix;
     const schemas = schema.columnSchemas;
     const rowHeight = lineHeight + 2 * cellBorderWidth;
     const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
@@ -378,7 +379,8 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     info.addEventListener('click', showInfo);
     container.appendChild(info);
 
-    function refresh() {
+    function refresh(path) {
+		pathPrefix = path;				  
         rowCount = viewModel.rowCount();
         // TODO: Can we do better, i.e. send event to selection.grid?
         gridAbstraction.rowCount = rowCount;
@@ -395,7 +397,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
      */
     function commitTransaction(trans) {
         // Note: First refresh, then commit!
-        refresh();
+        refresh(pathPrefix);
         trans.commit();
         gridchenElement.dispatchEvent(new CustomEvent('change', {detail: {patch: trans.patches}}));
     }
@@ -440,7 +442,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             header.addEventListener('click', function () {
                 // header.textContent = schema.title + ' ' + (header.textContent.substr(-1)==='↑'?'↓':'↑');
                 viewModel.sort(index);
-                refresh();
+                refresh(pathPrefix);
             });
             headerRow.appendChild(header);
             left = columnEnds[index];
@@ -784,7 +786,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         const {rowIndex, columnIndex} = /**@type{{rowIndex: number, columnIndex: number}}*/ (patch.detail);
         selection.setRange(rowIndex, columnIndex, 1, 1);
         // TODO: refresh on transaction level!
-        refresh();
+        refresh(pathPrefix);
     }
 
     /**
@@ -794,7 +796,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     function createPatch(operations) {
         return /** @type{GridChenNS.Patch} */ {
             operations: operations || [],
-            pathPrefix: schema.pathPrefix,
+            pathPrefix,
             apply: tmListener,
             detail: {rowIndex: selection.active.rowIndex, columnIndex: selection.active.columnIndex}
         };
@@ -1197,7 +1199,7 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     const editor = edit.createEditor(cellParent, commitCellEdit, selection, lineHeight);
 
     firstRow = 0;
-    refresh();
+    refresh(pathPrefix);
 
     Object.defineProperty(gridchenElement, 'selectedRange',
         {

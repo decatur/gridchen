@@ -1,14 +1,14 @@
 /**
- * Author: Wolfgang Kühn 2019-2020
+ * Author: Wolfgang Kühn 2019
  * Source located at https://github.com/decatur/grid-chen/grid-chen
  *
- * Module implementing a (rowIndex, columnIndex)-based abstraction for five common JSON matrix representations.
+ * Module implementing data (model) abstraction for some common matrix representations.
  */
 
 //@ts-check
 
 import * as c from "./converter.js";
-import { applyJSONPatch } from './utils.js'
+import {applyJSONPatch} from './utils.js'
 
 const numeric = new Set(['number', 'integer']);
 
@@ -17,7 +17,7 @@ const numeric = new Set(['number', 'integer']);
  * @returns {number[]}
  */
 function range(count) {
-    return Array.from({ length: count }, (_, i) => i);
+    return Array.from({length: count}, (_, i) => i);
 }
 
 /**
@@ -59,10 +59,11 @@ function updateSortDirection(schemas, colIndex) {
 }
 
 /**
- * @param {GridChenNS.ColumnSchema[]} schemas
+ * @param {GridChenNS.JSONSchema[]} schemas
+ * @returns {GridChenNS.ColumnSchema[]}
  */
-function updateSchema(schemas) {
-    for (const schema of schemas) {
+function updateSchemaInPlace(schemas) {
+    for (const schema of /**@type{GridChenNS.ColumnSchema[]}*/(schemas)) {
         schema.width = Number(schema.width || (schema.title.length * 12) || 100);
         schema.type = schema.type || 'string';
 
@@ -98,6 +99,8 @@ function updateSchema(schemas) {
             schema.converter = new c.StringConverter();
         }
     }
+
+    return /**@type{GridChenNS.ColumnSchema[]}*/ (schemas)
 }
 
 /**
@@ -117,108 +120,47 @@ function sortedColumns(properties) {
     return entries;
 }
 
+// function assert(condition, ...data) {
+//     if (!condition) throw new Error(data)
+// }
+
 /**
  * @param {GridChenNS.JSONSchema} schema
  * @param {*=} matrix
  * @returns {GridChenNS.MatrixView}
  */
 export function createView(schema, matrix) {
-    const columnSchemas = createColumnSchemas(schema);
-    if (columnSchemas instanceof Error) {
-        throw columnSchemas;
-    }
-
-    columnSchemas.readOnly = (typeof schema.readOnly === 'boolean') ? schema.readOnly : false;
-    columnSchemas.pathPrefix = schema.pathPrefix || '';
-    return columnSchemas.viewCreator(columnSchemas, matrix);
-}
-
-/**
- * @param {GridChenNS.JSONSchema} schema
- * @returns {object}
- */
-export function createColumnSchemas(schema) {
-    if (!schema) {
-        return new Error('selectViewCreator() received undefined schema')
-    }
-
-
     const invalidError = new Error('Invalid schema: ' + schema.title);
 
-    if (schema.items && Array.isArray(schema.items.items)) {
-        return {
-            title: schema.title,
-            columnSchemas: schema.items.items,
-            viewCreator: createRowMatrixView
-        }
+    if (schema.type === 'array' && typeof schema.items === 'object' && Array.isArray(schema.items['items'])) {
+        return createRowMatrixView(schema, matrix)
     }
 
-    if (schema.items && schema.items.type === 'object') {
-        const entries = sortedColumns(schema.items.properties);
-
-        return {
-            title: schema.title,
-            columnSchemas: entries.map(function (e) {
-                e[1].title = e[1].title || e[0];
-                return e[1]
-            }),
-            ids: entries.map(e => e[0]),
-            viewCreator: createRowObjectsView
-        }
+    if (schema.type === 'array' && typeof schema.items === 'object' && schema.items['properties']) {
+        return createRowObjectsView(schema, matrix)
     }
 
     if (Array.isArray(schema.items)) {
-        return {
-            title: schema.title,
-            columnSchemas: schema.items.map(item => item.items),
-            viewCreator: createColumnMatrixView
-        }
+        return createColumnMatrixView(schema, matrix)
     }
 
     if (typeof schema.properties === 'object') {
-        // Object of columns.
-
-        const entries = sortedColumns(schema.properties);
-        const colSchemas = {
-            title: schema.title,
-            columnSchemas: [],
-            ids: entries.map(e => e[0]),
-            viewCreator: createColumnObjectView
-        };
-
-        for (const entry of entries) {
-            const property = entry[1];
-            const colSchema = property.items;
-            if (typeof colSchema !== 'object') {
-                // TODO: Be much more strict!
-                return invalidError
-            }
-            if (!colSchema.title) colSchema.title = property.title || entry[0];
-            if (!colSchema.width) colSchema.width = property.width;
-
-            colSchemas.columnSchemas.push(colSchema);
-        }
-
-        return colSchemas
+        return createColumnObjectView(schema, matrix)
     }
 
     if (schema.items && schema.items.constructor === Object) {
-        const title = schema.title || schema.items.title;
-        schema.items.title = title;
-        return {
-            title: title,
-            columnSchemas: [schema.items],
-            viewCreator: createColumnVectorView
-        }
+        return createColumnVectorView(schema, matrix)
     }
 
-    return invalidError
+    throw invalidError
 }
 
 /**
- * @implements1 {GridChenNS.MatrixView}
+ * @implements {GridChenNS.MatrixView}
  */
 class MatrixView {
+    /**@type{GridChenNS.GridSchema}*/
+    schema;
 
     getModel() {
     }
@@ -282,7 +224,9 @@ class MatrixView {
     /**
      * @returns {GridChenNS.Patch}
      */
-    updateHolder() { return void 0 }
+    updateHolder() {
+        return void 0
+    }
 }
 
 // # Notes about JSON Patch
@@ -317,21 +261,21 @@ class MatrixView {
 
 /**
  * @param {number} length
- * @param {function=} mapfn
+ * @param {function(any, number): null} [mapfn]
  * @returns {null[]}
  */
 function createArray(length, mapfn) {
     // Note this is differs from Array(length), the latter not having any index set
     // (which we need for JSON Patch)
     mapfn = mapfn || (() => null);
-    return Array.from({ length: length }, mapfn)
+    return Array.from({length: length}, mapfn)
 }
 
 function padArray(a, targetLength, prefix) {
     const patch = [];
     for (let k = a.length; k < targetLength; k++) {
         a[k] = null;
-        patch.push({ op: 'add', path: prefix + k, value: null });
+        patch.push({op: 'add', path: prefix + k, value: null});
     }
     return patch
 }
@@ -348,13 +292,47 @@ function search(pattern, value) {
 }
 
 /**
- * @param {GridChenNS.GridSchema} schema
- * @param {object[]} rows
+ * @param {GridChenNS.JSONSchema} schema
+ */
+function readOnly(schema) {
+    return (typeof schema.readOnly === 'boolean') ? schema.readOnly : false;
+}
+
+/**
+ * @param {GridChenNS.JSONSchema} jsonSchema
+ * @param {(number | string | boolean | null)[][]} rows
  * @returns {GridChenNS.MatrixView}
  */
-export function createRowMatrixView(schema, rows) {
-    let schemas = schema.columnSchemas;
-    updateSchema(schemas);
+export function createRowMatrixView(jsonSchema, rows) {
+    // Array of tuples.
+    /** @type{GridChenNS.JSONSchema[]} */
+    const itemSchemas = jsonSchema.items['items'];
+    const columnSchemas = [];
+    const detailSchemas = [];
+    /** @type{number[]} */
+    const columnIndices = [];
+    /** @type{number[]} */
+    const detailIndices = [];
+
+    for (const [columnIndex, columnSchema] of itemSchemas.entries()) {
+        if (columnSchema.type === 'object' || columnSchema.type === 'array') {
+            detailSchemas.push(columnSchema);
+            detailIndices.push(columnIndex);
+        } else {
+            columnSchemas.push(columnSchema);
+            columnIndices.push(columnIndex);
+        }
+    }
+
+    const schemas = updateSchemaInPlace(columnSchemas);
+
+    /**@type{GridChenNS.GridSchema} */
+    const schema = {
+        title: jsonSchema.title,
+        columnSchemas: schemas,
+        detailSchemas,
+        readOnly: readOnly(jsonSchema)
+    };
 
     /**
      * @implements {GridChenNS.MatrixView}
@@ -367,6 +345,29 @@ export function createRowMatrixView(schema, rows) {
             this.schema = schema;
         }
 
+        /**
+         * @param {number} rowIndex
+         * @param {number} detailIndex
+         * @returns {{path: string, value: number | string | boolean}}
+         */
+        getDetail(rowIndex, detailIndex) {
+            const colIndex = detailIndices[detailIndex];
+            return {
+                path: rowIndex + '/' + colIndex,
+                value: (rows && rowIndex < rows.length ? rows[rowIndex][colIndex] : null)
+            }
+        }
+
+        getDetailId(detailIndex) {
+            return '/*/' + detailIndices[detailIndex]
+        }
+
+        setDetail(rowIndex, detailIndex, value) {
+            // Note: rowIndex should never be out of range, i.e. for this detail there must already be a master.
+            const colIndex = detailIndices[detailIndex];
+            rows[rowIndex][colIndex] = value;
+        }
+
         getModel() {
             return rows;
         }
@@ -377,7 +378,7 @@ export function createRowMatrixView(schema, rows) {
         removeModel() {
             const oldValue = rows;
             rows = null;
-            return [{ op: 'remove', path: '', oldValue: oldValue }];
+            return [{op: 'remove', path: '', oldValue: oldValue}];
         }
 
         /**
@@ -397,9 +398,10 @@ export function createRowMatrixView(schema, rows) {
         /**
          * @param {GridChenNS.Interval} rowsRange
          * @param {number} colIndex
-         * @returns {?[]}
+         * @returns {any[]}
          */
         getColumnSlice(rowsRange, colIndex) {
+            colIndex = columnIndices[colIndex];
             return range(rowsRange.sup - rowsRange.min).map(i => rowsRange[rowsRange.min + i][colIndex]);
         }
 
@@ -410,7 +412,7 @@ export function createRowMatrixView(schema, rows) {
         deleteRow(rowIndex) {
             const oldValue = rows[rowIndex];
             rows.splice(rowIndex, 1);
-            return [{ op: 'remove', path: `/${rowIndex}`, oldValue }];
+            return [{op: 'remove', path: `/${rowIndex}`, oldValue}];
         }
 
         /**
@@ -419,6 +421,7 @@ export function createRowMatrixView(schema, rows) {
          * @returns {*}
          */
         getCell(rowIndex, colIndex) {
+            colIndex = columnIndices[colIndex];
             // TODO: Should not be called with rowIndex >= rowCount.
             if (!rows[rowIndex]) {
                 return null;
@@ -433,6 +436,7 @@ export function createRowMatrixView(schema, rows) {
          * @returns {GridChenNS.JSONPatch}
          */
         setCell(rowIndex, colIndex, value) {
+            colIndex = columnIndices[colIndex];
             let patch = [];
 
             if (value == null) {
@@ -443,20 +447,21 @@ export function createRowMatrixView(schema, rows) {
                 // Important: Must not delete rows[rowIndex][colIndex], as this would produce an empty index, which is not JSON.
                 rows[rowIndex][colIndex] = null;
                 // Note: This must not be a remove op!
-                patch.push({ op: 'replace', path: `/${rowIndex}/${colIndex}`, value: null, oldValue });
+                delete rows[rowIndex][colIndex];
+                patch.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: null, oldValue});
                 return patch
             }
 
             if (!rows) {
                 rows = createArray(1 + rowIndex);
-                patch.push({ op: 'add', path: '', value: createArray(1 + rowIndex) });
+                patch.push({op: 'add', path: '', value: createArray(1 + rowIndex)});
             }
 
             patch.push(...padArray(rows, 1 + rowIndex, '/'));
 
             if (!rows[rowIndex]) {
                 rows[rowIndex] = createArray(1 + colIndex);
-                patch.push({ op: 'replace', path: `/${rowIndex}`, value: createArray(1 + colIndex), oldValue: null });
+                patch.push({op: 'replace', path: `/${rowIndex}`, value: createArray(1 + colIndex), oldValue: null});
             } else if (rows[rowIndex].length < schemas.length) {
                 patch.push(...padArray(rows[rowIndex], schemas.length, `/${rowIndex}/`));
             }
@@ -466,7 +471,7 @@ export function createRowMatrixView(schema, rows) {
                 // TODO: assert that patch is empty?
                 return patch
             }
-            patch.push({ op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value, oldValue: oldValue });
+            patch.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: value, oldValue: oldValue});
 
             rows[rowIndex][colIndex] = value;
             return patch;
@@ -478,13 +483,14 @@ export function createRowMatrixView(schema, rows) {
          */
         splice(rowIndex) {
             rows.splice(rowIndex, 0, null);
-            return [{ op: 'add', path: `/${rowIndex}`, value: null }];
+            return [{op: 'add', path: `/${rowIndex}`, value: null}];
         }
 
         /**
          * @param {number} colIndex
          */
         sort(colIndex) {
+            colIndex = columnIndices[colIndex];
             let [, sortDirection] = updateSortDirection(schemas, colIndex);
             rows.sort((row1, row2) => compare(row1[colIndex], row2[colIndex]) * sortDirection);
         }
@@ -495,7 +501,7 @@ export function createRowMatrixView(schema, rows) {
          * @returns {number[]}
          */
         search(startRowIndex, pattern) {
-            for (let rowIndex = startRowIndex; rowIndex<rows.length; rowIndex++) {
+            for (let rowIndex = startRowIndex; rowIndex < rows.length; rowIndex++) {
 
                 const columnIndex = rows[rowIndex].findIndex((value) => search(pattern, value));
                 if (columnIndex !== -1) {
@@ -514,21 +520,34 @@ export function createRowMatrixView(schema, rows) {
 }
 
 /**
- * @param {GridChenNS.GridSchema} schema
+ * @param {GridChenNS.JSONSchema} jsonSchema
  * @param {Array<object>} rows
  * @returns {GridChenNS.MatrixView}
  */
-export function createRowObjectsView(schema, rows) {
-    const schemas = schema.columnSchemas;
-    const ids = schema.ids;
+export function createRowObjectsView(jsonSchema, rows) {
+
+    const entries = sortedColumns(jsonSchema.items['properties']);
+    const columnSchemas = entries.map(function (e) {
+        e[1].title = e[1].title || e[0];
+        return e[1]
+    });
+    const ids = entries.map(e => e[0]);
     const rowStyles = new Array(rows.length);
-    updateSchema(schemas);
+    const schemas = updateSchemaInPlace(columnSchemas);
+
+    /**@type{GridChenNS.GridSchema} */
+    const schema = {
+        title: jsonSchema.title,
+        columnSchemas: schemas,
+        detailSchemas: [],
+        ids,
+        readOnly: readOnly(jsonSchema)
+    }
 
     /**
      * @implements {GridChenNS.MatrixView}
      */
     class RowObjectsView extends MatrixView {
-        schema;
 
         constructor() {
             super();
@@ -547,7 +566,7 @@ export function createRowObjectsView(schema, rows) {
          * @returns {GridChenNS.JSONPatch}
          */
         removeModel() {
-            const patch = [{ op: 'remove', path: '', oldValue: rows }];
+            const patch = [{op: 'remove', path: '', oldValue: rows}];
             rows = null;
             return patch
         }
@@ -573,7 +592,7 @@ export function createRowObjectsView(schema, rows) {
         deleteRow(rowIndex) {
             rows.splice(rowIndex, 1);
             rowStyles.splice(rowIndex, 1);
-            return [{ op: 'remove', path: `/${rowIndex}` }];
+            return [{op: 'remove', path: `/${rowIndex}`}];
         }
 
         /**
@@ -597,7 +616,7 @@ export function createRowObjectsView(schema, rows) {
 
             if (!rows) {
                 rows = createArray(1 + rowIndex);
-                patch.push({ op: 'add', path: '', value: createArray(1 + rowIndex) });
+                patch.push({op: 'add', path: '', value: createArray(1 + rowIndex)});
             }
 
             patch.push(...padArray(rows, 1 + rowIndex, '/'));
@@ -605,7 +624,7 @@ export function createRowObjectsView(schema, rows) {
             if (!rows[rowIndex]) {
                 rows[rowIndex] = {};
                 // TODO: Make this an add and previous padArray(rows, rowIndex, '/-')
-                patch.push({ op: 'replace', path: `/${rowIndex}`, value: {} });
+                patch.push({op: 'replace', path: `/${rowIndex}`, value: {}});
             }
 
             const key = ids[colIndex];
@@ -613,13 +632,13 @@ export function createRowObjectsView(schema, rows) {
             if (value == null && oldValue == null) {
                 // No Op
             } else if (value == null) {
-                patch.push({ op: 'remove', path: `/${rowIndex}/${key}`, oldValue });
+                patch.push({op: 'remove', path: `/${rowIndex}/${key}`, oldValue});
                 delete rows[rowIndex][key];
             } else if (oldValue == null) {
-                patch.push({ op: 'add', path: `/${rowIndex}/${key}`, value });
+                patch.push({op: 'add', path: `/${rowIndex}/${key}`, value});
                 rows[rowIndex][key] = value;
             } else {
-                patch.push({ op: 'replace', path: `/${rowIndex}/${key}`, value: value, oldValue: oldValue });
+                patch.push({op: 'replace', path: `/${rowIndex}/${key}`, value: value, oldValue: oldValue});
                 rows[rowIndex][key] = value;
             }
 
@@ -633,7 +652,7 @@ export function createRowObjectsView(schema, rows) {
         splice(rowIndex) {
             rows.splice(rowIndex, 0, null);
             rowStyles.splice(rowIndex, 0, null);
-            return [{ op: 'add', path: `/${rowIndex}`, value: null }];
+            return [{op: 'add', path: `/${rowIndex}`, value: null}];
         }
 
         /**
@@ -650,7 +669,7 @@ export function createRowObjectsView(schema, rows) {
          * @returns {number[]}
          */
         search(startRowIndex, pattern) {
-            for (let rowIndex = startRowIndex; rowIndex<rows.length; rowIndex++) {
+            for (let rowIndex = startRowIndex; rowIndex < rows.length; rowIndex++) {
                 const row = rows[rowIndex];
                 // TODO: Must not use String, but converter.toEditable()
                 for (const [columnIndex, id] of ids.entries()) {
@@ -671,12 +690,21 @@ export function createRowObjectsView(schema, rows) {
 }
 
 /**
- * @param {GridChenNS.GridSchema} schema
- * @param {Array<object>} columns
+ * @param {GridChenNS.JSONSchema} jsonSchema
+ * @param {object[]} columns
+ * @returns {GridChenNS.MatrixView}
  */
-export function createColumnMatrixView(schema, columns) {
-    let schemas = schema.columnSchemas;
-    updateSchema(schemas);
+export function createColumnMatrixView(jsonSchema, columns) {
+    const columnSchemas = /**@type{GridChenNS.JSONSchema[]}*/(jsonSchema.items).map(item => /**@type{GridChenNS.JSONSchema}*/(item.items));
+    const schemas = updateSchemaInPlace(columnSchemas);
+
+    /**@type{GridChenNS.GridSchema} */
+    const schema = {
+        title: jsonSchema.title,
+        columnSchemas: schemas,
+        detailSchemas: [],
+        readOnly: readOnly(jsonSchema)
+    }
 
     function getRowCount() {
         if (!columns) return 0;
@@ -702,7 +730,7 @@ export function createColumnMatrixView(schema, columns) {
          * @returns {GridChenNS.JSONPatch}
          */
         removeModel() {
-            const patch = [{ op: 'remove', path: '', oldValue: columns }];
+            const patch = [{op: 'remove', path: '', oldValue: columns}];
             columns = null;
             return patch
         }
@@ -730,7 +758,7 @@ export function createColumnMatrixView(schema, columns) {
             columns.forEach(function (column, colIndex) {
                 if (column) {
                     column.splice(rowIndex, 1);
-                    patch.push({ op: 'remove', path: `/${colIndex}/${rowIndex}` })
+                    patch.push({op: 'remove', path: `/${colIndex}/${rowIndex}`})
                 }
             });
             return patch;
@@ -756,13 +784,13 @@ export function createColumnMatrixView(schema, columns) {
             let patch = [];
             if (!columns) {
                 columns = createArray(schemas.length);
-                patch.push({ op: 'add', path: '', value: createArray(schemas.length) });
+                patch.push({op: 'add', path: '', value: createArray(schemas.length)});
             }
 
             let column = columns[colIndex];
             if (!column) {
                 column = columns[colIndex] = [];
-                patch.push({ op: 'replace', path: `/${colIndex}`, value: [] });
+                patch.push({op: 'replace', path: `/${colIndex}`, value: []});
             }
 
             if (rowIndex >= column.length) {
@@ -772,7 +800,7 @@ export function createColumnMatrixView(schema, columns) {
             const oldValue = columns[colIndex][rowIndex];
             // Must not use remove operation here!
             columns[colIndex][rowIndex] = value;
-            patch.push({ op: 'replace', path: `/${colIndex}/${rowIndex}`, value: value, oldValue });
+            patch.push({op: 'replace', path: `/${colIndex}/${rowIndex}`, value: value, oldValue});
 
             return patch;
         }
@@ -786,7 +814,7 @@ export function createColumnMatrixView(schema, columns) {
             columns.forEach(function (column, colIndex) {
                 if (column) {
                     column.splice(rowIndex, 0, null);
-                    patch.push({ op: 'add', path: `/${colIndex}/${rowIndex}`, value: null });
+                    patch.push({op: 'add', path: `/${colIndex}/${rowIndex}`, value: null});
                 }
             });
             return patch;
@@ -817,7 +845,7 @@ export function createColumnMatrixView(schema, columns) {
          */
         search(startRowIndex, pattern) {
             const rowCount = getRowCount();
-            for (let rowIndex = startRowIndex; rowIndex<rowCount; rowIndex++) {
+            for (let rowIndex = startRowIndex; rowIndex < rowCount; rowIndex++) {
                 for (let columnIndex = 0; columnIndex < columns.length; columnIndex++) {
                     const value = this.getCell(rowIndex, columnIndex);
                     if (search(pattern, value)) {
@@ -837,14 +865,39 @@ export function createColumnMatrixView(schema, columns) {
 }
 
 /**
- * @param {GridChenNS.GridSchema} schema
+ * @param {GridChenNS.JSONSchema} jsonSchema
  * @param {object} columns
  */
-export function createColumnObjectView(schema, columns) {
-    let schemas = schema.columnSchemas;
-    let ids = schema.ids;
+export function createColumnObjectView(jsonSchema, columns) {
+    // Object of columns.
+
+    const entries = sortedColumns(jsonSchema.properties);
+    const columnSchemas = [];
+    for (const entry of entries) {
+        const property = entry[1];
+        const colSchema = property.items;
+        if (typeof colSchema !== 'object') {
+            // TODO: Be much more strict!
+            throw new Error('Invalid column schema');
+        }
+        if (!colSchema.title) colSchema.title = property.title || entry[0];
+        if (!colSchema.width) colSchema.width = property.width;
+
+        columnSchemas.push(colSchema);
+    }
+
+    const ids = entries.map(e => e[0]);
     const rowStyles = new Array(getRowCount());
-    updateSchema(schemas);
+    let schemas = updateSchemaInPlace(columnSchemas);
+
+    /**@type{GridChenNS.GridSchema}*/
+    const schema = {
+        title: jsonSchema.title,
+        columnSchemas: schemas,
+        ids,
+        detailSchemas: [],
+        readOnly: readOnly(jsonSchema)
+    };
 
     function getRowCount() {
         if (!columns) return 0;
@@ -855,8 +908,6 @@ export function createColumnObjectView(schema, columns) {
      * @implements {GridChenNS.MatrixView}
      */
     class ColumnObjectView extends MatrixView {
-        schema;
-
         constructor() {
             super();
             this.schema = schema;
@@ -874,7 +925,7 @@ export function createColumnObjectView(schema, columns) {
          * @returns {GridChenNS.JSONPatch}
          */
         removeModel() {
-            const patch = [{ op: 'remove', path: '', oldValue: columns }];
+            const patch = [{op: 'remove', path: '', oldValue: columns}];
             columns = null;
             return patch
         }
@@ -903,7 +954,7 @@ export function createColumnObjectView(schema, columns) {
                 // TODO: Handle column == null
                 const column = columns[key];
                 column.splice(rowIndex, 1);
-                patch.push({ op: 'remove', path: `/${key}/${rowIndex}` })
+                patch.push({op: 'remove', path: `/${key}/${rowIndex}`})
             });
             rowStyles.splice(rowIndex, 1);
             return patch;
@@ -937,13 +988,13 @@ export function createColumnObjectView(schema, columns) {
                     return o;
                 };
                 columns = createEmptyObject();
-                patch.push({ op: 'add', path: '', value: createEmptyObject() });
+                patch.push({op: 'add', path: '', value: createEmptyObject()});
             }
 
             let column = columns[key];
             if (!column) {
                 column = columns[key] = [];
-                patch.push({ op: 'add', path: `/${key}`, value: [] });
+                patch.push({op: 'add', path: `/${key}`, value: []});
             }
 
             if (rowIndex >= column.length) {
@@ -953,7 +1004,7 @@ export function createColumnObjectView(schema, columns) {
             const oldValue = column[rowIndex];
             column[rowIndex] = value;
             // Must not use remove operation here!
-            patch.push({ op: 'replace', path: `/${key}/${rowIndex}`, value: value, oldValue });
+            patch.push({op: 'replace', path: `/${key}/${rowIndex}`, value: value, oldValue});
 
             return patch;
         }
@@ -972,7 +1023,7 @@ export function createColumnObjectView(schema, columns) {
                     return
                 }
                 column.splice(rowIndex, 0, null);
-                patch.push({ op: 'add', path: `/${key}/${rowIndex}`, value: null });
+                patch.push({op: 'add', path: `/${key}/${rowIndex}`, value: null});
             });
             rowStyles.splice(rowIndex, 0, null);
             return patch;
@@ -1006,7 +1057,7 @@ export function createColumnObjectView(schema, columns) {
          */
         search(startRowIndex, pattern) {
             const rowCount = getRowCount();
-            for (let rowIndex = startRowIndex; rowIndex<rowCount; rowIndex++) {
+            for (let rowIndex = startRowIndex; rowIndex < rowCount; rowIndex++) {
                 for (let columnIndex = 0; columnIndex < ids.length; columnIndex++) {
                     const value = this.getCell(rowIndex, columnIndex);
                     if (search(pattern, value)) {
@@ -1029,12 +1080,25 @@ export function createColumnObjectView(schema, columns) {
 }
 
 /**
- * @param {GridChenNS.GridSchema} schema
+ * @param {GridChenNS.JSONSchema} jsonSchema
  * @param {(number|string|boolean|null)[]} column
  */
-export function createColumnVectorView(schema, column) {
-    let columnSchema = schema.columnSchemas[0];
-    updateSchema(schema.columnSchemas);
+export function createColumnVectorView(jsonSchema, column) {
+
+    const items = /**@type{GridChenNS.JSONSchema} */(jsonSchema.items);
+    const title = jsonSchema.title || items.title;
+    items.title = title;
+
+    const schemas = updateSchemaInPlace([items]);
+    const columnSchema = schemas[0];
+
+    /**@type{GridChenNS.GridSchema} */
+    const schema = {
+        title: title,
+        columnSchemas: schemas,
+        detailSchemas: [],
+        readOnly: readOnly(jsonSchema)
+    }
 
     function getRowCount() {
         if (!column) return 0;
@@ -1045,8 +1109,6 @@ export function createColumnVectorView(schema, column) {
      * @implements {GridChenNS.MatrixView}
      */
     class ColumnVectorView extends MatrixView {
-        schema;
-
         constructor() {
             super();
             this.schema = schema;
@@ -1060,7 +1122,7 @@ export function createColumnVectorView(schema, column) {
          * @returns {GridChenNS.JSONPatch}
          */
         removeModel() {
-            const patch = [{ op: 'remove', path: '', oldValue: column }];
+            const patch = [{op: 'remove', path: '', oldValue: column}];
             column = null;
             return patch
         }
@@ -1085,7 +1147,7 @@ export function createColumnVectorView(schema, column) {
          */
         deleteRow(rowIndex) {
             column.splice(rowIndex, 1);
-            return [{ op: 'remove', path: `/${rowIndex}` }];
+            return [{op: 'remove', path: `/${rowIndex}`}];
         }
 
         /**
@@ -1111,7 +1173,7 @@ export function createColumnVectorView(schema, column) {
 
             if (!column) {
                 column = createArray(1 + rowIndex);
-                patch.push({ op: 'add', path: '', value: createArray(1 + rowIndex) });
+                patch.push({op: 'add', path: '', value: createArray(1 + rowIndex)});
             } else if (rowIndex >= column.length) {
                 patch.push(...padArray(column, rowIndex + 1, '/'));
             }
@@ -1120,11 +1182,11 @@ export function createColumnVectorView(schema, column) {
             if (value == null) {
                 // Important: Must not use delete column[rowIndex], see RowMatrixView.
                 column[rowIndex] = null;
-                patch.push({ op: 'replace', path: `/${rowIndex}`, value: null, oldValue });
+                patch.push({op: 'replace', path: `/${rowIndex}`, value: null, oldValue});
                 return patch
             }
 
-            patch.push({ op: 'replace', path: `/${rowIndex}`, value: value, oldValue });
+            patch.push({op: 'replace', path: `/${rowIndex}`, value: value, oldValue});
 
             column[rowIndex] = value;
             return patch;
@@ -1136,7 +1198,7 @@ export function createColumnVectorView(schema, column) {
          */
         splice(rowIndex) {
             column.splice(rowIndex, 0, null);
-            return [{ op: 'add', path: `/${rowIndex}`, value: null }]
+            return [{op: 'add', path: `/${rowIndex}`, value: null}]
         }
 
         /**
@@ -1155,7 +1217,7 @@ export function createColumnVectorView(schema, column) {
          */
         search(startRowIndex, pattern) {
             const rowCount = getRowCount();
-            for (let rowIndex = startRowIndex; rowIndex<rowCount; rowIndex++) {
+            for (let rowIndex = startRowIndex; rowIndex < rowCount; rowIndex++) {
                 const value = column[rowIndex];
                 if (search(pattern, value)) {
                     return [rowIndex, 0]

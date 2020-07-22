@@ -22,8 +22,8 @@
 <grid-chen style="height: 400px"></grid-chen>
 
 <script type="module">
-    import "./grid-chen/webcomponent.js"
-    import {createView} from "./grid-chen/matrixview.js"
+    import "./gridchen/webcomponent.js"
+    import {createView} from "./gridchen/matrixview.js"
 
 
     const schema = {
@@ -69,7 +69,7 @@
     document.querySelector('grid-chen')
         .resetFromView(createView(schema, data));
         // .addEventListener('plot', function(evt) {
-        //     import {renderPlot} from "./grid-chen/plotly_wrapper.js"
+        //     import {renderPlot} from "./gridchen/plotly_wrapper.js"
         //     renderPlot(evt.detail.graphElement, evt.detail.title, evt.detail.schemas, evt.detail.columns);
         // });
 

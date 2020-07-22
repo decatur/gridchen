@@ -1,6 +1,6 @@
 /**
  * Author: Wolfgang Kühn 2019-2021
- * Source located at https://github.com/decatur/grid-chen/grid-chen
+ * Source located at https://github.com/decatur/grid-chen/gridchen
  *
  * Module implementing, well, utilities.
  */
@@ -351,14 +351,14 @@ function createLocalDateParser(locale) {
 function reverseOp(op) {
     if (op.op === 'replace') {
         // {"op":"replace","path":"/0/1"}
-        return {op: op.op, path: op.path, value: op.oldValue, oldValue: op.value}
+        return {op: op.op, path: op.path, value: op.oldValue, oldValue: op.value, nodeId: op.nodeId}
     } else if (op.op === 'add') {
         // {"op":"add","path":"/-","value":null}
         // {"op":"add","path":"/1"}
-        return {op: 'remove', path: op.path}
+        return {op: 'remove', path: op.path, nodeId: op.nodeId}
     } else if (op.op === 'remove') {
         // {"op":"remove","path":"/1","oldValue":["2020-01-01",2]}
-        return {op: 'add', path: op.path, value: op.oldValue}
+        return {op: 'add', path: op.path, value: op.oldValue, nodeId: op.nodeId}
     }
     // No need to support move, copy, or test.
     throw new RangeError(op.op)
@@ -438,11 +438,9 @@ export function applyJSONPatch(data, patch) {
 }
 
 /**
- * Creates and globally registers a TransactionManager instance.
- * @returns {GridChenNS.TransactionManager}
+ * Add keydown listeners for KeyY and KeyZ to handle Undo/Redo.
  */
-export function registerGlobalTransactionManager() {
-    globalTransactionManager = createTransactionManager();
+export function registerUndo(container, tm) {
 
     /**
      * @param {KeyboardEvent} evt
@@ -456,25 +454,18 @@ export function registerGlobalTransactionManager() {
             } else {
                 evt.preventDefault();
                 evt.stopPropagation();
-                globalTransactionManager.undo();
+                tm.undo();
             }
         } else if (evt.code === 'KeyZ' && evt.ctrlKey) {
             // Note: It it too complex to support default browser redos. We do not support those!
             evt.preventDefault();
             evt.stopPropagation();
-            globalTransactionManager.redo();
+            tm.redo();
         }
     }
 
-    document.body.addEventListener('keydown', listener);
-    return globalTransactionManager;
+    container.addEventListener('keydown', listener);
 }
-
-/**
- * Returns the globally registered Transaction Manager.
- * @type {GridChenNS.TransactionManager|null}
- */
-export let globalTransactionManager = null;
 
 /**
  * Pure creator function for TransactionManager instances.

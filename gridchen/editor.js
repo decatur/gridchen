@@ -1,6 +1,6 @@
 /**
  * Author: Wolfgang Kühn 2019-2021
- * Source located at https://github.com/decatur/grid-chen/grid-chen
+ * Source located at https://github.com/decatur/grid-chen/gridchen
  *
  * Module implementing edit and display (for read-only cells) capabilities for cell values.
  */

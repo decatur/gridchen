@@ -13,7 +13,7 @@ See [grid-chen at github.io](https://decatur.github.io/grid-chen)
 All stable releases are tagged. The latest tagged release is functionally identical to the master branch.
 
 You either clone a release, copy the grid-chen module folder, or reference the modules at 
-https://decatur.github.io/grid-chen/grid-chen.
+https://decatur.github.io/grid-chen/gridchen.
 
 # Usage
 
@@ -24,7 +24,7 @@ https://decatur.github.io/grid-chen/grid-chen.
 </body>
 <script type="module">
     import "./webwebcomponent.js"
-    import {createView} from "./grid-chen/matrixview.js"
+    import {createView} from "./gridchen/matrixview.js"
 
     const schema = {
         title: 'Array of Row Arrays',

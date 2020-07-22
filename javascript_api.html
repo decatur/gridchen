@@ -19,7 +19,7 @@
 
 <p>
     Please see the source code of this page for usage of the JavaScript API and the
-    <a href="./grid-chen/grid-chen.d.ts">grid-chen TypeScript Definitions</a>
+    <a href="./gridchen/grid-chen.d.ts">grid-chen TypeScript Definitions</a>
 </p>
 
 <grid-chen style="display: inline-block; height: 400px;"></grid-chen>
@@ -33,9 +33,9 @@
 </body>
 
 <script type="module">
-    import "./grid-chen/webcomponent.js"
-    import {createView} from "./grid-chen/matrixview.js"
-    import {registerGlobalTransactionManager} from "./grid-chen/utils.js"
+    import "./gridchen/webcomponent.js"
+    import {createView} from "./gridchen/matrixview.js"
+    import {createTransactionManager} from "./gridchen/utils.js";
 
     const schema = {
         title: 'Array of Row Arrays',
@@ -51,7 +51,7 @@
     const rows = [['2019-01-01', 1], ['2020-01-01', 2], ['2021-01-01', 3]];
     /** @type {GridChenNS.GridChen} */
     const gridChen = document.querySelector('grid-chen');
-    const tm = registerGlobalTransactionManager();
+    const tm = createTransactionManager();
     const logElem = document.forms[0].log;
     let logValue = '';
 

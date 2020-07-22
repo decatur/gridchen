@@ -1,13 +1,13 @@
 /**
  * Author: Wolfgang Kühn 2019-2021
- * Source located at https://github.com/decatur/grid-chen/grid-chen
+ * Source located at https://github.com/decatur/grid-chen/gridchen
  *
  * Module implementing the visual grid and scrolling behaviour.
  */
 
 //@ts-check
 
-import {logger, wrap, registerGlobalTransactionManager} from "./utils.js";
+import {logger, wrap} from "./utils.js";
 import {createSelection, Range, IndexToPixelMapper} from "./selection.js";
 import * as edit from "./editor.js"
 import {renderPlot} from "./plotly_wrapper.js"
@@ -256,7 +256,6 @@ class ScrollBar {
  * @param {number} totalHeight
  */
 function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
-    tm = tm || registerGlobalTransactionManager();
     const schema = viewModel.schema;
     let pathPrefix;
     const schemas = schema.columnSchemas;

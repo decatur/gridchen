@@ -1,7 +1,7 @@
 /////////////////////////////
 // Author: Wolfgang Kühn 2019-2021
 // grid-chen JavaScript APIs
-// Source located at https://github.com/decatur/grid-chen/grid-chen
+// Source located at https://github.com/decatur/grid-chen/gridchen
 /////////////////////////////
 
 declare module GridChenNS {

@@ -1,5 +1,5 @@
-import {test, log, assert} from './grid-chen/utils.js'
-import * as c from "../grid-chen/converter.js";
+import {test, log, assert} from './gridchen/utils.js'
+import * as c from "../gridchen/converter.js";
 
 test('URIConverter', () => {
     const converter = new c.URIConverter();

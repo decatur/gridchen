@@ -1,6 +1,6 @@
-import {scope, test, assert} from './grid-chen/utils.js'
-import {createView} from '../grid-chen/matrixview.js'
-import {applyJSONPatch, reversePatch} from '../grid-chen/utils.js'
+import {scope, test, assert} from './gridchen/utils.js'
+import {createView} from '../gridchen/matrixview.js'
+import {applyJSONPatch, reversePatch} from '../gridchen/utils.js'
 
 let apply;
 if (window['jsonpatch']) {

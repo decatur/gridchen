@@ -1,8 +1,8 @@
-import {assert, test} from './grid-chen/utils.js'
-import '../grid-chen/webcomponent.js'
-import {createView} from "../grid-chen/matrixview.js";
-import {createTransactionManager} from "../grid-chen/utils.js"
-import {Range} from "../grid-chen/selection.js";
+import {assert, test} from './gridchen/utils.js'
+import '../gridchen/webcomponent.js'
+import {createView} from "../gridchen/matrixview.js";
+import {createTransactionManager} from "../gridchen/utils.js"
+import {Range} from "../gridchen/selection.js";
 
 /**
  * @type {GridChenNS.JSONSchema}

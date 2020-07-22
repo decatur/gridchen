@@ -1,8 +1,8 @@
-import {test, log, assert} from './grid-chen/utils.js'
-import {GridChen} from '../grid-chen/webcomponent.js'
-import {createColumnMatrixView, createRowMatrixView} from "../grid-chen/matrixview.js";
-import {NumberConverter} from "../grid-chen/converter.js";
-import {Range} from "../grid-chen/selection.js";
+import {test, log, assert} from './gridchen/utils.js'
+import {GridChen} from '../gridchen/webcomponent.js'
+import {createColumnMatrixView, createRowMatrixView} from "../gridchen/matrixview.js";
+import {NumberConverter} from "../gridchen/converter.js";
+import {Range} from "../gridchen/selection.js";
 
 const decimalSep = new NumberConverter(1).decimalSep;
 

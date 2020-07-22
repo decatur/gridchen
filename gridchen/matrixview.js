@@ -1,6 +1,6 @@
 /**
  * Author: Wolfgang Kühn 2019
- * Source located at https://github.com/decatur/grid-chen/grid-chen
+ * Source located at https://github.com/decatur/grid-chen/gridchen
  *
  * Module implementing data (model) abstraction for some common matrix representations.
  */

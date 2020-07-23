@@ -44,12 +44,13 @@
 
     function nextModule() {
         const url = 'testrunner.html?module=' + modulesToRun[0];
-        console.log(url)
+        console.log(url);
         window.open(url);
     }
 
     // Register callback through window.opener.
     window.moduleDone = function (moduleName) {
+        if (!modulesToRun) return;
         const index = modulesToRun.indexOf(moduleName);
         modulesToRun.splice(index, 1);
         if (modulesToRun.length) {

@@ -29,14 +29,23 @@
      * 2. In generated iframes access to the clipboard is restricted. So we use a new browser window, not an iframe.
      * 3. We rely on the given browser functionality such as 'Close Other Tabs'
      */
-    import "../../gridchen/webcomponent.js"
-    import {createView} from "../../gridchen/matrixview.js"
-    import {modules} from "../modules.js"
+    import "/gridchen/webcomponent.js"
+    import {createView} from "/gridchen/matrixview.js"
 
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('testpath')) {
+        throw new Error('Page must be loaded with module query');
+    }
+
+    const testPath = params.get('testpath');
+
+    let tests;
     let modulesToRun;
 
     function nextModule() {
-        window.open('testrunner.html?module=' + modulesToRun[0]);
+        const url = 'testrunner.html?module=' + modulesToRun[0];
+        console.log(url)
+        window.open(url);
     }
 
     // Register callback through window.opener.
@@ -54,22 +63,22 @@
         items: {
             type: 'array',
             items: [
-                {title: 'Run Single Test', type: 'string', format: 'uri', width: 200}
+                {title: 'Run Single Test', type: 'string', format: 'uri', width: 500}
             ]
         }
     };
 
     /** @type {GridChenNS.GridChen} */
     const gridChen = document.querySelector('grid-chen');
-    gridChen.resetFromView(createView(schema, modules.map(moduleName => ['#' + moduleName])));
+
+    import(testPath + 'modules.js')
+        .then(function (module) {
+            tests = module.modules;
+            gridChen.resetFromView(createView(schema, tests.map(moduleName => ['testrunner.html?module=' + testPath + moduleName])));
+        });
 
     document.getElementById('runAllTests').onclick = function () {
-        modulesToRun = Object.assign([], modules);
-        nextModule();
-    };
-
-    window.onhashchange = function () {
-        modulesToRun = [window.location.hash.substr(1)];
+        modulesToRun = tests.map(moduleName => testPath + moduleName);
         nextModule();
     };
 

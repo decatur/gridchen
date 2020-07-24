@@ -278,6 +278,10 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
         div {
             /* Do not confuse user with HTML-Selection. We have our own. */
             user-select: none;
+            /* Note that text-align is passed to the shadow dom. TODO: Reference?
+               Some elements assume left-alignment, for example the slider.
+            */
+            text-align: left;
         }
         /* Common style to all data cell elements */
         .GRID span, a {
@@ -296,9 +300,9 @@ function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
             height: ${rowHeight}px;
         }
         
-        /*.GRID {
-            background-color: red;
-         }*/
+        .GRID {
+            text-align: left;
+         }
         
         a:link {
             color: var(--a-link-color);

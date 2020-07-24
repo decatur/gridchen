@@ -42,7 +42,8 @@ declare module GridChenNS {
         // TODO: Rename according ISO
         period?: string;
         enum?: (string|number)[];
-        readOnly?: boolean;
+        readOnly?: boolean; // TODO: Remove
+        editable?: boolean;
     }
 
     export interface GridSchema {

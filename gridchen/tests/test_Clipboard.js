@@ -1,8 +1,8 @@
-import {assert, test} from './gridchen/utils.js'
-import '../gridchen/webcomponent.js'
-import {createView} from "../gridchen/matrixview.js";
-import {createTransactionManager} from "../gridchen/utils.js"
-import {Range} from "../gridchen/selection.js";
+import {assert, test} from '/gridchen/testing/utils.js'
+import '/gridchen/webcomponent.js'
+import {createView} from "/gridchen/matrixview.js";
+import {createTransactionManager} from "/gridchen/utils.js"
+import {Range} from "/gridchen/selection.js";
 
 /**
  * @type {GridChenNS.JSONSchema}

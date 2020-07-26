@@ -446,8 +446,6 @@ export function createRowMatrixView(jsonSchema, rows) {
                 const oldValue = rows[rowIndex][colIndex];
                 // Important: Must not delete rows[rowIndex][colIndex], as this would produce an empty index, which is not JSON.
                 rows[rowIndex][colIndex] = null;
-                // Note: This must not be a remove op!
-                delete rows[rowIndex][colIndex];
                 patch.push({op: 'replace', path: `/${rowIndex}/${colIndex}`, value: null, oldValue});
                 return patch
             }
@@ -532,7 +530,7 @@ export function createRowObjectsView(jsonSchema, rows) {
         return e[1]
     });
     const ids = entries.map(e => e[0]);
-    const rowStyles = new Array(rows.length);
+    const rowStyles = new Array(rows?rows.length:0);
     const schemas = updateSchemaInPlace(columnSchemas);
 
     /**@type{GridChenNS.GridSchema} */

@@ -108,7 +108,7 @@ declare module GridChenNS {
         /**
          * Rereads to data view content.
          */
-        refresh: (pathPrefix: string) => GridChen;
+        refresh: (pathPrefix?: string) => GridChen;
 
         /**
          * Returns the selection as a rectangle.
@@ -116,6 +116,8 @@ declare module GridChenNS {
         readonly selectedRange: Range;
 
         select: (r: Range) => void;
+
+        insertEmptyRow: (rowIndex: number, options: {fadeOutDuration: number}) => void;
     }
 
     export interface PlotEventDetail {

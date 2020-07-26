@@ -1,5 +1,5 @@
-import {test, assert} from './gridchen/utils.js'
-import {applyJSONPatch} from "../gridchen/utils.js";
+import {test, assert} from '../testing/utils.js'
+import {applyJSONPatch} from "../utils.js";
 
 function apply(o, op) {
     return applyJSONPatch(o, [op])

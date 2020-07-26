@@ -1,5 +1,5 @@
-import {test, assert} from './gridchen/utils.js'
-import {tsvToMatrix} from '../gridchen/webcomponent.js'
+import {test, assert} from '/gridchen/testing/utils.js'
+import {tsvToMatrix} from '/gridchen/webcomponent.js'
 
 test('tsvToMatrix', () => {
     let rows = tsvToMatrix("1\t2\r\n3\t4\r\n");

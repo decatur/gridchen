@@ -1,6 +1,6 @@
-import {scope, test, assert} from './gridchen/utils.js'
-import {createView} from '../gridchen/matrixview.js'
-import {applyJSONPatch, reversePatch} from '../gridchen/utils.js'
+import {scope, test, assert} from '/gridchen/testing/utils.js'
+import {createView} from '/gridchen/matrixview.js'
+import {applyJSONPatch, reversePatch} from '/gridchen/utils.js'
 
 let apply;
 if (window['jsonpatch']) {
@@ -174,9 +174,9 @@ scope('RowMatrixView', () => {
     const emptyModel = [];
     const schema = {
         "title": "RowMatrixView",
-        "type": "object",
+        "type": "array",
         "items": {
-            "type": "object",
+            "type": "array",
             "items": [
                 {title: 'c1', type: 'string'},
                 {title: 'c2', type: 'string'},
@@ -206,7 +206,7 @@ scope('RowObjectsView', () => {
     const emptyModel = [];
     const schema = {
         "title": "RowObjectsView",
-        "type": "object",
+        "type": "array",
         "items": {
             "type": "object",
             "properties": {
@@ -238,11 +238,11 @@ scope('ColumnMatrixView', () => {
     const emptyModel = [[], null, []];
     const schema = {
         "title": "ColumnMatrixView",
-        "type": "object",
+        "type": "array",
         "items": [
-            {"type": "object", "items": {title: 'c1', type: 'string'}},
-            {"type": "object", "items": {title: 'c2', type: 'string'}},
-            {"type": "object", "items": {title: 'c3', type: 'string'}},
+            {"type": "array", "items": {title: 'c1', type: 'string'}},
+            {"type": "array", "items": {title: 'c2', type: 'string'}},
+            {"type": "array", "items": {title: 'c3', type: 'string'}},
         ]
     };
 
@@ -271,9 +271,9 @@ scope('ColumnObjectView', () => {
         title: 'ColumnObjectView',
         type: 'object',
         properties: {
-            col1: {"type": "object", items: {title: 'number', type: 'string'}},
-            col2: {"type": "object", items: {title: 'string', type: 'string'}},
-            col3: {"type": "object", items: {title: 'string', type: 'string'}}
+            col1: {"type": "array", items: {title: 'number', type: 'string'}},
+            col2: {"type": "array", items: {title: 'string', type: 'string'}},
+            col3: {"type": "array", items: {title: 'string', type: 'string'}}
         }
     };
 
@@ -298,7 +298,7 @@ scope('ColumnVectorView', () => {
     const emptyModel = [];
     const schema = {
         "title": "ColumnVectorView",
-        "type": "object",
+        "type": "array",
         "items": {
             "width": 200,
             "type": "number"

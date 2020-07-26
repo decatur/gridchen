@@ -1,14 +1,23 @@
-import {test, log, assert} from './gridchen/utils.js'
-import {GridChen} from '../gridchen/webcomponent.js'
-import {createColumnMatrixView, createRowMatrixView} from "../gridchen/matrixview.js";
-import {NumberConverter} from "../gridchen/converter.js";
-import {Range} from "../gridchen/selection.js";
+import {test, log, assert} from '/gridchen/testing/utils.js'
+import {GridChen} from '/gridchen/webcomponent.js'
+import {createColumnMatrixView, createRowMatrixView} from "/gridchen/matrixview.js";
+import {NumberConverter} from "/gridchen/converter.js";
+import {Range} from "/gridchen/selection.js";
+import {createTransactionManager} from "/gridchen/utils.js";
 
 const decimalSep = new NumberConverter(1).decimalSep;
 
-const schema = {
+const rowMatrixSchema = {
     title: 'test',
-    columnSchemas: [{title: 'number', type: 'number', width: 0}, {title: 'string', type: 'string', width: 0}]
+    type: 'array',
+    items: {
+        type: 'array',
+        items:
+            [
+                {title: 'number', type: 'number', width: 0},
+                {title: 'string', type: 'string', width: 0}
+            ]
+    }
 };
 
 test('Activate Cell', async function () {
@@ -17,7 +26,8 @@ test('Activate Cell', async function () {
         [0, 'a'],
         [NaN, 'b']
     ];
-    const view = createRowMatrixView(schema, rows);
+    const view = createRowMatrixView(rowMatrixSchema, rows);
+    //const tm = createTransactionManager();
     gc.resetFromView(view);
     gc._click(0, 0);
     const r = gc.selectedRange;
@@ -32,8 +42,9 @@ test('Edit Cell', async function () {
         [0, 'a'],
         [NaN, 'b']
     ];
-    const view = createRowMatrixView(schema, rows);
-    gc.resetFromView(view);
+    const view = createRowMatrixView(rowMatrixSchema, rows);
+    const tm = createTransactionManager();
+    gc.resetFromView(view, tm);
     gc._click(0, 0);
     gc._keyboard('keydown', {key: " "});
     gc._sendKeys('123 ');
@@ -55,7 +66,7 @@ test('expand selection with keys', async function () {
         [0, 'a'],
         [NaN, 'b']
     ];
-    const view = createRowMatrixView(schema, rows);
+    const view = createRowMatrixView(rowMatrixSchema, rows);
     gc.resetFromView(view);
 
     gc.select(new Range(0, 0, 1, 1));
@@ -69,6 +80,15 @@ test('expand selection with keys', async function () {
 
 
 test('ColumnMatrix', () => {
+    const schema = {
+        title: 'test',
+        type: 'array',
+        items:
+            [
+                {type: 'array', items: {title: 'number', type: 'number', width: 0}},
+                {type: 'array', items: {title: 'string', type: 'string', width: 0}}
+            ]
+    };
     const gc = new GridChen();
     gc.resetFromView(createColumnMatrixView(schema, [[new Number(0)], ['a']]));
     log('ViewportText');
@@ -87,7 +107,7 @@ test('ColumnMatrix', () => {
 
 test('RowMatrix', () => {
     const gc = new GridChen();
-    gc.resetFromView(createRowMatrixView(schema, [[0, 'a']]));
+    gc.resetFromView(createRowMatrixView(rowMatrixSchema, [[0, 'a']]));
     log('ViewportText');
     assert.equal(`0${decimalSep}00a`, gc._textContent)
 
@@ -104,7 +124,8 @@ test('RowMatrix', () => {
 test('Delete Selected Rows', () => {
     const gc = new GridChen();
     const rows = [[0, 'a'], [1, 'b']];
-    gc.resetFromView(createRowMatrixView(schema, rows));
+    const tm = createTransactionManager();
+    gc.resetFromView(createRowMatrixView(rowMatrixSchema, rows), tm);
     gc._click(0, 0);
     // Delete first row
     gc._keyboard('keydown', {key: '-', ctrlKey: true});

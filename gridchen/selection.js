@@ -515,9 +515,9 @@ export class IndexToPixelMapper {
     cellIndexToPixelCoords(rowIndex, columnIndex) {
         const rect = this.element.getBoundingClientRect();
         let y = this.rowHeight * (rowIndex - this.firstRow + 0.5);
-        let clientY = y + rect.top;
+        let clientY = y + rect.y;
         let x = ((columnIndex === 0 ? 0 : this.columnEnds[columnIndex - 1]) + this.columnEnds[columnIndex]) / 2;
-        let clientX = x + rect.left;
+        let clientX = x + rect.x;
         return {clientX, clientY}
     }
 
@@ -531,8 +531,8 @@ export class IndexToPixelMapper {
      */
     pixelCoordsToCellIndex(clientX, clientY) {
         const rect = this.element.getBoundingClientRect();
-        const y = clientY - rect.top;
-        const x = clientX - rect.left;
+        const y = clientY - rect.y;
+        const x = clientX - rect.x;
         const rowIndex = this.firstRow + Math.trunc(y / this.rowHeight);
 
         let columnIndex = this._columnIndexGuess;

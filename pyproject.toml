@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gridchen"
-version = "0.3.0"
+version = "0.1.2"
 description = "Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience."
 authors = ["Wolfgang Kühn"]
 homepage = "https://github.com/decatur/grid-chen"
@@ -10,4 +10,3 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.6"
-flask = "^1.1"

@@ -25,7 +25,9 @@ https://decatur.github.io/grid-chen/gridchen, or install the [gridchen Python pa
 <script type="module">
     import "https://decatur.github.io/grid-chen/gridchen/webcomponent.js"
     import {createView} from "https://decatur.github.io/grid-chen/gridchen/matrixview.js"
+    import {createTransactionManager} from "https://decatur.github.io/grid-chen/gridchen/utils.js";
 
+    // The JSON schema defines the data structure of the matrix.
     const schema = {
         title: 'Array of Row Arrays',
         type: 'array',
@@ -37,9 +39,13 @@ https://decatur.github.io/grid-chen/gridchen, or install the [gridchen Python pa
             ]
         }
     };
+    
     const rows = [['2019-01-01', 1], ['2020-01-01', 2], ['2021-01-01', 3]];
-    document.querySelector('grid-chen').resetFromView(createView(schema, rows));
+    const view = createView(schema, rows);
+    const tm = createTransactionManager();
+    document.querySelector('grid-chen').resetFromView(view, tm);
 </script>
+
 ```
 
 # Expected Behaviour

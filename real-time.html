@@ -37,6 +37,7 @@
 <script type="module">
     import "./gridchen/webcomponent.js"
     import {createView} from "./gridchen/matrixview.js"
+    import {createTransactionManager} from "./gridchen/utils.js";
 
     const schema = {
         title: 'Charting Demo',
@@ -52,7 +53,8 @@
         time: [], sin: [], cos: []
     };
 
-    const grid = document.querySelector('grid-chen').resetFromView(createView(schema, data));
+    const tm = createTransactionManager();
+    const grid = document.querySelector('grid-chen').resetFromView(createView(schema, data), tm);
     let counter = 0;
 
     function addTimeSlot() {

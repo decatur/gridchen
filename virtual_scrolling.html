@@ -24,6 +24,7 @@
 <script type="module">
     import "./gridchen/webcomponent.js"
     import {createView} from "./gridchen/matrixview.js"
+    import {createTransactionManager} from "./gridchen/utils.js";
 
     const schema = {
         title: 'Charting Demo',
@@ -36,6 +37,7 @@
     };
 
     const rowCountElem = document.getElementById('rowCount');
+    const tm = createTransactionManager();
 
     function render() {
         const data = {
@@ -50,7 +52,7 @@
         }
 
         document.querySelector('grid-chen')
-            .resetFromView(createView(schema, data));
+            .resetFromView(createView(schema, data), tm);
     }
 
     rowCountElem.onchange = render;

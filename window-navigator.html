@@ -26,6 +26,7 @@
 <script type="module">
     import "./gridchen/webcomponent.js"
     import {createView} from "./gridchen/matrixview.js"
+    import {createTransactionManager} from "./gridchen/utils.js";
 
     const schema = {
         title: 'DOM window object properties',
@@ -39,6 +40,8 @@
             ]
         }
     };
+
+    const tm = createTransactionManager();
 
     window.onhashchange = function(evt) {
         pointer = window.location.hash.replace(/^#/, '');
@@ -58,7 +61,7 @@
             }
             return [`[${key}](#${pointer})`, type, s]
         });
-        document.querySelector('grid-chen').resetFromView(createView(schema, rows));
+        document.querySelector('grid-chen').resetFromView(createView(schema, rows), tm);
         document.querySelector('code').textContent = pointer;
     };
 

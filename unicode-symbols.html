@@ -29,6 +29,7 @@
 <script type="module">
     import "./gridchen/webcomponent.js"
     import {createView} from "./gridchen/matrixview.js"
+    import {createTransactionManager} from "./gridchen/utils.js";
 
     const schema = {
         title: 'Unicode Symbols',
@@ -41,6 +42,7 @@
         }
     };
 
+    const tm = createTransactionManager();
     const i16 = Array.from({length: 0x10}, (_, k) => ({title: '0x' + k.toString(0x10), type: 'string', width: 30}));
     schema.items.items.push(...i16);
 
@@ -51,7 +53,7 @@
         for (let cp = min; cp <= max; cp += 0x10) {
             rows.push(['0x' + cp.toString(0x10), ...i16.map((_, k) => String.fromCodePoint(cp + k))]);
         }
-        document.querySelector('grid-chen').resetFromView(createView(schema, rows));
+        document.querySelector('grid-chen').resetFromView(createView(schema, rows), tm);
     }
 
     document.querySelector('#refresh').onclick = refresh;

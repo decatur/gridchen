@@ -35,6 +35,7 @@ body { display: flex; flex-direction: column; height: 100%; margin: 0 2em 0 2em;
 <script type="module">
     import "./gridchen/webcomponent.js"
     import {createView} from "./gridchen/matrixview.js"
+    import {createTransactionManager} from "./gridchen/utils.js";
 
     const schema = {
         title: 'DOMRect Properties', type: 'array',
@@ -48,7 +49,8 @@ body { display: flex; flex-direction: column; height: 100%; margin: 0 2em 0 2em;
     };
 
     const rows = [];
-    const grid = document.querySelector('grid-chen').resetFromView(createView(schema, rows));
+    const tm = createTransactionManager();
+    const grid = document.querySelector('grid-chen').resetFromView(createView(schema, rows), tm);
 
     function clientRectPropertiestoMatrix() {
         const rect = grid.getBoundingClientRect();

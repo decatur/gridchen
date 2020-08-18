@@ -24,7 +24,7 @@
 <script type="module">
     import "./gridchen/webcomponent.js"
     import {createView} from "./gridchen/matrixview.js"
-
+    import {createTransactionManager} from "./gridchen/utils.js";
 
     const schema = {
         title: 'Charting Demo',
@@ -66,8 +66,9 @@
         data.cos.push(Math.cos(i / 5));
     }
 
+    const tm = createTransactionManager();
     document.querySelector('grid-chen')
-        .resetFromView(createView(schema, data));
+        .resetFromView(createView(schema, data), tm);
         // .addEventListener('plot', function(evt) {
         //     import {renderPlot} from "./gridchen/plotly_wrapper.js"
         //     renderPlot(evt.detail.graphElement, evt.detail.title, evt.detail.schemas, evt.detail.columns);

@@ -10,21 +10,21 @@ See [grid-chen at github.io](https://decatur.github.io/grid-chen)
 
 # Releases
 
-All stable releases are tagged. The latest tagged release is functionally identical to the master branch.
+All stable releases are tagged.
 
-You either clone a release, copy the grid-chen module folder, or reference the modules at 
-https://decatur.github.io/grid-chen/gridchen.
+You either git-clone a release, copy the grid-chen module folder, reference the modules at 
+https://decatur.github.io/grid-chen/gridchen, or install the [gridchen Python package](https://pypi.org/project/gridchen/).
 
-# Usage
+:warning: gridchen is not (yet) registered at [npmjs](npmjs.com).
+
+# Basic Usage
 
 ```HTML
 <!DOCTYPE html>
-<body>
 <grid-chen></grid-chen>
-</body>
 <script type="module">
-    import "./webwebcomponent.js"
-    import {createView} from "./gridchen/matrixview.js"
+    import "https://decatur.github.io/grid-chen/gridchen/webcomponent.js"
+    import {createView} from "https://decatur.github.io/grid-chen/gridchen/matrixview.js"
 
     const schema = {
         title: 'Array of Row Arrays',

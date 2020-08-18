@@ -315,7 +315,8 @@ export function createRowMatrixView(jsonSchema, rows) {
     const detailIndices = [];
 
     for (const [columnIndex, columnSchema] of itemSchemas.entries()) {
-        if (columnSchema.type === 'object' || columnSchema.type === 'array') {
+        // Do not test for columnSchema.type === 'object' because the type could be a Date.
+        if (columnSchema.properties || columnSchema.type === 'array') {
             detailSchemas.push(columnSchema);
             detailIndices.push(columnIndex);
         } else {

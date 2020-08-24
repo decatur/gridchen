@@ -257,8 +257,8 @@ class ScrollBar {
  */
 function createGrid(container, viewModel, gridchenElement, tm, totalHeight) {
     const schema = viewModel.schema;
-    let pathPrefix;
     const schemas = schema.columnSchemas;
+    let pathPrefix = schema.pathPrefix;
     const rowHeight = lineHeight + 2 * cellBorderWidth;
     const innerHeight = (rowHeight - 2 * cellPadding - cellBorderWidth) + 'px';
 

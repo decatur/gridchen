@@ -3,6 +3,7 @@ import {createTransactionManager, registerUndo} from "./gridchen/utils.js";
 
 export function createInteractiveDemoGrid(schema, orgData) {
     const container = document.body.appendChild(document.createElement('div'));
+    schema.pathPrefix = '';
 
     function html(html) {
         container.innerHTML = html;
@@ -75,7 +76,7 @@ export function createInteractiveDemoGrid(schema, orgData) {
      */
     tm.addEventListener('change', function (evt) {
         dataElement.value = REPR.stringify(view.getModel(), null, 2);
-        patchElement.value = REPR.stringify(evt.transaction.patch, null, 2);
+        patchElement.value = REPR.stringify(evt.transaction.operations, null, 2);
         tsvElement.value = gridElement._toTSV();
     });
     schemaElement.value = JSON.stringify(schema, null, 4);

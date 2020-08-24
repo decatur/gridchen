@@ -1,4 +1,5 @@
 export const modules = [
+    'test_json_patch_merge',
     'test_patch',
     'test_date',
     'test_GridChen',

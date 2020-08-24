@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Suite Runner</title>
+    <link rel="stylesheet" href="demo.css">
+    <script src="theme.js"></script>
+</head>
+<body>
+
+<h1><a href="index.html">Index</a> / Test Suite Runner</h1>
+
+<section>
+    You have to allow popups after <em>Run all Tests</em> the first time.
+    You also have to grant clipboard permission on the relevant test pages.
+</section>
+
+<button id="runAllTests">Run all Tests</button>
+
+<grid-chen style="display: block; height: 600px; margin: 1em;"></grid-chen>
+
+</body>
+
+<script type="module">
+    import {create} from "./gridchen/testing/suite.js"
+    create('/grid-chen/gridchen/tests')
+</script>
+</html>

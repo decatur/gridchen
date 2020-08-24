@@ -329,6 +329,7 @@ export function createRowMatrixView(jsonSchema, rows) {
 
     /**@type{GridChenNS.GridSchema} */
     const schema = {
+        pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
         columnSchemas: schemas,
         detailSchemas,
@@ -536,12 +537,13 @@ export function createRowObjectsView(jsonSchema, rows) {
 
     /**@type{GridChenNS.GridSchema} */
     const schema = {
+        pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
         columnSchemas: schemas,
         detailSchemas: [],
         ids,
         readOnly: readOnly(jsonSchema)
-    }
+    };
 
     /**
      * @implements {GridChenNS.MatrixView}
@@ -699,11 +701,12 @@ export function createColumnMatrixView(jsonSchema, columns) {
 
     /**@type{GridChenNS.GridSchema} */
     const schema = {
+        pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
         columnSchemas: schemas,
         detailSchemas: [],
         readOnly: readOnly(jsonSchema)
-    }
+    };
 
     function getRowCount() {
         if (!columns) return 0;
@@ -891,6 +894,7 @@ export function createColumnObjectView(jsonSchema, columns) {
 
     /**@type{GridChenNS.GridSchema}*/
     const schema = {
+        pathPrefix: jsonSchema.pathPrefix,
         title: jsonSchema.title,
         columnSchemas: schemas,
         ids,
@@ -1093,11 +1097,12 @@ export function createColumnVectorView(jsonSchema, column) {
 
     /**@type{GridChenNS.GridSchema} */
     const schema = {
+        pathPrefix: jsonSchema.pathPrefix,
         title: title,
         columnSchemas: schemas,
         detailSchemas: [],
         readOnly: readOnly(jsonSchema)
-    }
+    };
 
     function getRowCount() {
         if (!column) return 0;

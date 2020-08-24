@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>module name</title>
+    <link id="favicon" rel="shortcut icon" type="image/png">
+    <script src="theme.js"></script>
+</head>
+<body>
+<h1><a href="index.html">Index</a> / Running Unit Test <span id="moduleName"/></h1>
+<p>
+    Open JavaScript console for details
+</p>
+
+</body>
+
+<script type="module">
+    import {create} from "./gridchen/testing/runner.js"
+    create();
+</script>
+</html>

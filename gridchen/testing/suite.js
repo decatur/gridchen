@@ -8,12 +8,12 @@
 import "../webcomponent.js"
 import {createView} from "../matrixview.js"
 
-export function create(testPath) {
-    if (!testPath.endsWith('/')) {
-        testPath += '/'
-    }
+export function create(tests) {
+    //if (!testPath.endsWith('/')) {
+    //    testPath += '/'
+    //}
 
-    let tests;
+    //let tests;
     let modulesToRun;
 
     function nextModule() {
@@ -46,11 +46,13 @@ export function create(testPath) {
     /** @type {GridChenNS.GridChen} */
     const gridChen = document.querySelector('grid-chen');
 
-    import(testPath + 'modules.js')
-        .then(function (module) {
-            tests = module.modules;
-            gridChen.resetFromView(createView(schema, tests.map(moduleName => ['testrunner.html?module=' + testPath + moduleName])));
-        });
+    // import(testPath + 'modules.js')
+    //     .then(function (module) {
+    //         tests = module.modules;
+    //         gridChen.resetFromView(createView(schema, tests.map(moduleName => ['testrunner.html?module=' + testPath + moduleName])));
+    //     });
+
+    gridChen.resetFromView(createView(schema, tests.map(moduleName => ['testrunner.html?module=' + moduleName])));
 
     document.getElementById('runAllTests').onclick = function () {
         modulesToRun = tests.map(moduleName => testPath + moduleName);

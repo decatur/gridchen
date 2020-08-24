@@ -7,19 +7,14 @@ const yellow = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+u
 
 document.getElementById('favicon').setAttribute('href', yellow)
 
-export function create() {
+export function create(module, test) {
     const favLink = document.getElementById('favicon');
-    const params = new URLSearchParams(window.location.search);
-    if (!params.has('module')) {
-        throw new Error('Page must be loaded with module query');
-    }
-    const moduleName = params.get('module');
     document.title = moduleName;
     document.getElementById('moduleName').textContent = moduleName;
 
-    import(`${moduleName}.js`)
+    module
         .then(function () {
-            return execute(params.get('test'))
+            return execute(test)
         })
         .then(() => favLink.setAttribute('href', getErrorCount() ? red : green))
         .catch(function (reason) {

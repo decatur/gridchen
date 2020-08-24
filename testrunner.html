@@ -16,6 +16,12 @@
 
 <script type="module">
     import {create} from "./gridchen/testing/runner.js"
-    create();
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('module')) {
+        throw new Error('Page must be loaded with module query');
+    }
+    const moduleName = params.get('module');
+    const module = import(`${moduleName}.js`);
+    create(module, params.get('test'));
 </script>
 </html>

@@ -22,6 +22,6 @@
     }
     const moduleName = params.get('module');
     const module = import(`${moduleName}.js`);
-    create(module, params.get('test'));
+    create(moduleName, module, params.get('test'));
 </script>
 </html>

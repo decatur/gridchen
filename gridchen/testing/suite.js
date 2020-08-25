@@ -55,7 +55,7 @@ export function create(tests) {
     gridChen.resetFromView(createView(schema, tests.map(moduleName => ['testrunner.html?module=' + moduleName])));
 
     document.getElementById('runAllTests').onclick = function () {
-        modulesToRun = tests.map(moduleName => testPath + moduleName);
+        modulesToRun = tests.map(moduleName => moduleName);
         nextModule();
     };
 

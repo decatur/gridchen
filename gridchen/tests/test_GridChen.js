@@ -1,9 +1,9 @@
-import {test, log, assert} from '/gridchen/testing/utils.js'
-import {GridChen} from '/gridchen/webcomponent.js'
-import {createColumnMatrixView, createRowMatrixView} from "/gridchen/matrixview.js";
-import {NumberConverter} from "/gridchen/converter.js";
-import {Range} from "/gridchen/selection.js";
-import {createTransactionManager} from "/gridchen/utils.js";
+import {test, log, assert} from '../testing/utils.js'
+import {GridChen} from '../webcomponent.js'
+import {createColumnMatrixView, createRowMatrixView} from "../matrixview.js";
+import {NumberConverter} from "../converter.js";
+import {Range} from "../selection.js";
+import {createTransactionManager} from "../utils.js";
 
 const decimalSep = new NumberConverter(1).decimalSep;
 

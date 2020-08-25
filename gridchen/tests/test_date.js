@@ -1,5 +1,5 @@
-import {test, assert} from '/gridchen/testing/utils.js'
-import {localeDateParser, toUTCDateTimeString, resolvePeriod} from "/gridchen/utils.js";
+import {test, assert} from '../testing/utils.js'
+import {localeDateParser, toUTCDateTimeString, resolvePeriod} from "../utils.js";
 
 test('FullDate', () => {
     let parser = localeDateParser(undefined);

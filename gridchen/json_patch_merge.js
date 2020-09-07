@@ -1,15 +1,11 @@
+
 /**
- * Merges all operations with spurious, intermittened values.
- * With two adjacent operations other + op with op.path is prefix of other.path
- * 1) replace A + replace B -> replace B
- * 2) replace A + remove -> remove
- * 3) add A + replace B -> add B
- * 4) add A + remove -> NoOp
+ * Dispense all redundant operation values.
  *
  * @param {GridChenNS.JSONPatchOperation[]} patch
  * @returns {GridChenNS.JSONPatchOperation[]}
  */
-export function mergePatch(patch) {
+export function dispense(patch) {
     const normalizedPatch = [];
     for (const op of patch) {
         if (op.op === 'replace') {
@@ -35,28 +31,45 @@ export function mergePatch(patch) {
             key = path[0];
             if (!o.children) {
                 if (Number.isInteger(key)) {
-                    o.children = {};
+                    o.children = [];
+                    o.splices = [];
                 } else {
                     o.children = {};
                 }
             }
-            if (Number.isInteger(key)) {
-                for (const k in o.children) {
-                    const child = o.children[k];
-                    if (child.op === 'remove' && parseInt(k) < key) {
-                        key++;
-                    } else if (child.op === 'add' && parseInt(k) <= key) {
-                        key--;
-                    }
-                }
-            }
 
-            if (o.children[key] === undefined) {
+            if (!Number.isInteger(key) && o.children[key] === undefined) {
                 o.children[key] = {};
             }
+
             parent = o;
             o = o.children[key];
             path.shift();
+        }
+
+        function lastElement(a) {
+            if (a.length) return a[a.length-1];
+            return {}
+        }
+
+        if (Number.isInteger(key)) {
+            let last = lastElement(parent.splices);
+            if (op.op === 'add') {
+                if (last.index === key && last.op === 'remove') {
+                    parent.splices.pop()
+                } else
+                    parent.splices.push({index: key, op:'add'});
+                parent.children.length = Math.max(parent.children.length, key+1)
+                parent.children.splice(key, 0, op.value);
+            } else if (op.op === 'remove') {
+                if (last.index === key && last.op === 'add') {
+                    parent.splices.pop()
+                } else
+                    parent.splices.push({index: key, op:'remove'});
+                parent.children.splice(key, 1);
+            }
+
+            return
         }
 
         if (op.op === 'add') {
@@ -65,20 +78,6 @@ export function mergePatch(patch) {
             } else {
                 console.assert(o.op === undefined);
                 o.op = 'add';
-                // if (parent && Number.isInteger(key)) {
-                //     const copy = {};
-                //     for (const k in parent.children) {
-                //         if (key <= parseInt(key)) {
-                //             copy[k] = parent.children[k];
-                //         }
-                //     }
-                //     for (const k in copy) {
-                //         delete parent.children[k];
-                //     }
-                //     for (const k in copy) {
-                //         parent.children[parseInt(k) + 1] = copy[k];
-                //     }
-                // }
             }
             o.value = op.value;
         } else if (op.op === 'remove') {
@@ -87,38 +86,39 @@ export function mergePatch(patch) {
             } else {
                 console.assert(o.op === undefined);
                 o.op = 'remove';
-                // if (parent && Number.isInteger(key)) {
-                //     const copy = {};
-                //     for (const k in parent.children) {
-                //         if (key <= parseInt(key)) {
-                //             copy[k] = parent.children[k];
-                //         }
-                //     }
-                //     for (const k in copy) {
-                //         delete parent.children[k];
-                //     }
-                //     for (const k in copy) {
-                //         parent.children[parseInt(k) - 1] = copy[k];
-                //     }
-                // }
             }
             delete o.value;
             delete o.children;
+            delete o.splices;
         }
     }
 
     const mergedPatch = [];
 
     function serialize(o, path) {
+        if (o.splices) {
+            for (const splice of o.splices) {
+                if (splice.op === 'add') {
+                    mergedPatch.push({op: splice.op, path: path + '/' + splice.index, value: null});
+                } else {
+                    console.assert(splice.op === 'remove');
+                    mergedPatch.push({op: splice.op, path: path + '/' + splice.index});
+                }
+                //prev = splice;
+            }
+            for (const index in o.children) {
+                mergedPatch.push({op: 'replace', path: path + '/' + index, value: o.children[index]});
+            }
+            return
+        }
+
         if (o.op === 'add' || o.op === 'replace') {
             mergedPatch.push({op: o.op, path: path, value: o.value});
-            // serialize(o.children[key], path + '/' + key);
         } else if (o.op === 'remove') {
             mergedPatch.push({op: o.op, path: path});
         }
 
-        const keys = Object.keys(o.children || {}).sort().reverse();
-        for (const key of keys) {
+        for (const key in o.children) {
             serialize(o.children[key], path + '/' + key);
         }
     }

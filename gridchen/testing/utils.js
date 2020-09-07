@@ -38,7 +38,7 @@ function err(container, err) {
 async function testAsync(msg, asyncFct) {
     const a = document.createElement('a');
     const moduleName = new URLSearchParams(window.location.search).get('module');
-    a.href = `testrunner.html?module=${moduleName}&test=${msg}`;
+    a.href = `testrunner.html?module=${moduleName}&test=` + encodeURIComponent(msg);
     a.textContent = msg;
     const div = log(a);
 

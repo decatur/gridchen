@@ -28,19 +28,34 @@ export function mergePatch(patch) {
         const path = op.path.split('/').map(key => /^\d+$/.test(key) ? parseInt(key) : key);
         path.shift();
         let o = root;
+        let parent = undefined;
+        let key = undefined;
 
         while (path.length > 0) {
+            key = path[0];
             if (!o.children) {
-                if (Number.isInteger(path[0])) {
-                    o.children = [];
+                if (Number.isInteger(key)) {
+                    o.children = {};
                 } else {
                     o.children = {};
                 }
             }
-            if (o.children[path[0]] === undefined) {
-                o.children[path[0]] = {};
+            if (Number.isInteger(key)) {
+                for (const k in o.children) {
+                    const child = o.children[k];
+                    if (child.op === 'remove' && parseInt(k) < key) {
+                        key++;
+                    } else if (child.op === 'add' && parseInt(k) <= key) {
+                        key--;
+                    }
+                }
             }
-            o = o.children[path[0]];
+
+            if (o.children[key] === undefined) {
+                o.children[key] = {};
+            }
+            parent = o;
+            o = o.children[key];
             path.shift();
         }
 
@@ -50,6 +65,20 @@ export function mergePatch(patch) {
             } else {
                 console.assert(o.op === undefined);
                 o.op = 'add';
+                // if (parent && Number.isInteger(key)) {
+                //     const copy = {};
+                //     for (const k in parent.children) {
+                //         if (key <= parseInt(key)) {
+                //             copy[k] = parent.children[k];
+                //         }
+                //     }
+                //     for (const k in copy) {
+                //         delete parent.children[k];
+                //     }
+                //     for (const k in copy) {
+                //         parent.children[parseInt(k) + 1] = copy[k];
+                //     }
+                // }
             }
             o.value = op.value;
         } else if (op.op === 'remove') {
@@ -58,6 +87,20 @@ export function mergePatch(patch) {
             } else {
                 console.assert(o.op === undefined);
                 o.op = 'remove';
+                // if (parent && Number.isInteger(key)) {
+                //     const copy = {};
+                //     for (const k in parent.children) {
+                //         if (key <= parseInt(key)) {
+                //             copy[k] = parent.children[k];
+                //         }
+                //     }
+                //     for (const k in copy) {
+                //         delete parent.children[k];
+                //     }
+                //     for (const k in copy) {
+                //         parent.children[parseInt(k) - 1] = copy[k];
+                //     }
+                // }
             }
             delete o.value;
             delete o.children;
@@ -74,7 +117,8 @@ export function mergePatch(patch) {
             mergedPatch.push({op: o.op, path: path});
         }
 
-        for (const key in o.children) {
+        const keys = Object.keys(o.children || {}).sort().reverse();
+        for (const key of keys) {
             serialize(o.children[key], path + '/' + key);
         }
     }
@@ -84,131 +128,5 @@ export function mergePatch(patch) {
     }
 
     serialize(root, '');
-    return mergedPatch
-}
-
-/**
- * Merges all operations with spurious, intermittened values.
- * With two adjacent operations other + op with op.path is prefix of other.path
- * 1) replace A + replace B -> replace B
- * 2) replace A + remove -> remove
- * 3) add A + replace B -> add B
- * 4) add A + remove -> NoOp
- *
- * @param {GridChenNS.JSONPatchOperation[]} patch
- * @returns {GridChenNS.JSONPatchOperation[]}
- */
-export function mergePatch1(patch) {
-    const normalizedPatch = [];
-    for (const op of patch) {
-        if (op.op === 'replace') {
-            normalizedPatch.push({op: 'remove', path: op.path});
-            normalizedPatch.push({op: 'add', path: op.path, value: op.value});
-        } else {
-            normalizedPatch.push(op);
-        }
-    }
-    const mergedPatch = [];
-
-    /**
-     * Returns true if path starts with prefix
-     * @param {(string|int)[]} path
-     * @param {(string|int)[]} prefix
-     * @returns {boolean}
-     */
-    function isPrefix(path, prefix) {
-        if (prefix.length > path.length) return false;
-        for (const [index, key] of prefix.entries()) {
-            if (path[index] !== key) return false;
-        }
-        return true
-    }
-
-    /**
-     * @param {GridChenNS.JSONPatchOperation} op
-     */
-    function mergeOperation(op) {
-        op.path = op.path.split('/').map(key => /^\d+$/.test(key) ? parseInt(key) : key);
-        let removeOps = [];
-        let addOp = op;
-
-        for (let other of mergedPatch) {
-            if (op.op === 'add') {
-                for (const [index, key] of op.path.entries()) {
-                    if (index > other.path.length) break;
-                    const otherKey = other.path[index];
-                    if (Number.isInteger(key) && Number.isInteger(otherKey) && key <= otherKey) {
-                        other.path[index]++;
-                    } else if (key !== otherKey) {
-                        break;
-                    }
-                }
-            } else if (op.op === 'remove') {
-                if (isPrefix(other.path, op.path)) {
-                    if (other.op === 'replace') {
-                        console.assert(false)
-                        // 2) replace A + remove -> remove
-                        other.op = op.op;
-                        other.path = op.path;
-                        delete other.value;
-                        addOp = undefined;
-                    } else if (other.op === 'add') {
-                        // 4) add A + remove -> NoOp or remove
-                        addOp = undefined;
-                        if (other.path.length > op.path.length) {
-                            other.op = op.op;
-                            other.path = op.path;
-                            delete other.value;
-                        } else {
-                            removeOps.push(other);
-                        }
-                    }
-                } else {
-                    for (const [index, key] of op.path.entries()) {
-                        if (index > other.path.length) break;
-                        const otherKey = other.path[index];
-                        if (Number.isInteger(key) && Number.isInteger(otherKey) && key <= otherKey) {
-                            other.path[index]--;
-                        } else if (key !== otherKey) {
-                            break;
-                        }
-                    }
-                }
-            } else if (op.op === 'replace') {
-                console.assert(false)
-                if (other.op === 'add' && isPrefix(other.path, op.path)) {
-                    // Case 3) add A + replace B -> add B
-                    other.value = op.value;
-                    if (other.path.length > op.path.length) {
-                        other.op = 'replace';
-                        other.path = op.path;
-                    }
-                    addOp = undefined;
-                } else if (other.op === 'replace' && op.path.join('/') === other.path.join('/')) {
-                    // Case 1) replace A + replace B -> replace B
-                    other.value = op.value;
-                    addOp = undefined;
-                }
-            } else {
-                throw Error('JSON Patch operation not supported: ' + op.op);
-            }
-        }
-
-        for (const removeOp of removeOps) {
-            const index = mergedPatch.indexOf(removeOp);
-            console.assert(index !== -1)
-            mergedPatch.splice(index, 1);
-        }
-
-        if (addOp) {
-            mergedPatch.push(addOp);
-        }
-    }
-
-    for (let op of normalizedPatch) {
-        mergeOperation(Object.assign({}, op));
-    }
-
-    mergedPatch.forEach(op => op.path = op.path.join('/'))
     return mergedPatch
 }

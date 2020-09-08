@@ -41,6 +41,16 @@ declare module GridChenNS {
         scrollIntoView: (rowIndex: number, rowIncrement: number) => void;
         repaintActiveCell: (active: Range) => void;
     }
+
+    export interface PatchNode {
+        children: Record<string, PatchNode>;
+        items: PatchNode[];
+        splices: {op: string, index: number}[];
+        op: string;
+        value: any;
+    }
+
+
 }
 
 export interface ResizeObserverEntry {

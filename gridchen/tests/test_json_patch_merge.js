@@ -69,9 +69,9 @@ test('(indexed) replace A + remove -> remove', () => {
     ];
     mergedPatch = dispense(patch);
     assert.equal([
-        {"op":"add","path":"/a/2","value":null},
-        {"op":"remove","path":"/a/1"},
-        {"op":"replace","path":"/a/1","value":"B"}], mergedPatch);
+        {"op": "add", "path": "/a/2", "value": null},
+        {"op": "remove", "path": "/a/1"},
+        {"op": "replace", "path": "/a/1", "value": "B"}], mergedPatch);
 });
 
 test('(indexed) add A + replace B -> add B', () => {
@@ -80,7 +80,10 @@ test('(indexed) add A + replace B -> add B', () => {
         {"op": "replace", "path": "/a/1", "value": "B"}
     ];
     const mergedPatch = dispense(patch);
-    assert.equal([{"op": "add", "path": "/a/1", "value": null}, {"op": "replace", "path": "/a/1", "value": "B"}], mergedPatch);
+    assert.equal([
+        {"op": "add", "path": "/a/1", "value": null},
+        {"op": "replace", "path": "/a/1", "value": "B"}
+    ], mergedPatch);
 });
 
 test('(indexed) add A + remove -> NoOp', () => {
@@ -99,7 +102,10 @@ test('(indexed) add A + remove -> NoOp', () => {
         {"op": "remove", "path": "/a/2"}
     ];
     const mergedPatch = dispense(patch);
-    const expected = [{"op":"add","path":"/a/1","value":null},{"op":"add","path":"/a/1","value":null},{"op":"remove","path":"/a/2"},{"op":"replace","path":"/a/1","value":2}];
+    const expected = [
+        {"op": "add", "path": "/a/1", "value": null},
+        {"op": "add", "path": "/a/1", "value": null},
+        {"op": "remove", "path": "/a/2"}, {"op": "replace", "path": "/a/1", "value": 2}];
     assert.equal(expected, mergedPatch);
 });
 
@@ -111,4 +117,53 @@ test('prefix', () => {
     ];
     const mergedPatch = dispense(patch);
     assert.equal([{"op": "remove", "path": "/a"}], mergedPatch);
+});
+
+test('foo', () => {
+    const patch = [
+        {"op": "add", "path": "/a", "value": []},
+        {"op": "add", "path": "/a/0", "value": 13}
+    ];
+    const mergedPatch = dispense(patch);
+    const expected = [
+        {"op": "add", "path": "/a", "value": []},
+        {"op": "add", "path": "/a/0", "value": null},
+        {"op": "replace", "path": "/a/0", "value": 13}];
+    assert.equal(expected, mergedPatch);
+});
+
+test('foo2', () => {
+    const patch = [
+        {"op": "add", "path": "/a", "value": []},
+        {"op": "add", "path": "/a/0", "value": 13},
+        {"op": "add", "path": "/a/0/b", "value": 14}
+    ];
+    const mergedPatch = dispense(patch);
+    const expected = [
+        {"op": "add", "path": "/a", "value": []},
+        {"op": "add", "path": "/a/0", "value": null},
+        {"op": "replace", "path": "/a/0", "value": 13}, {op: "add", path: "/a/0/b", value: 14}];
+    assert.equal(expected, mergedPatch);
+});
+
+test('foo3', () => {
+    const patch = [
+        {"op": "replace", "path": "/a/0/b", "value": 14}
+    ];
+    const mergedPatch = dispense(patch);
+    const expected = [{"op": "replace", "path": "/a/0/b", "value": 14}];
+    assert.equal(expected, mergedPatch);
+});
+
+test('foo4', () => {
+    const patch = [
+        {"op": "add", "path": "/a/0", "value": []},
+        {"op": "replace", "path": "/a/0/b", "value": 14}
+    ];
+    const mergedPatch = dispense(patch);
+    const expected = [
+        {"op": "add", "path": "/a/0", "value": null},
+        {"op": "replace", "path": "/a/0", "value": []},
+        {"op": "replace", "path": "/a/0/b", "value": 14}];
+    assert.equal(expected, mergedPatch);
 });

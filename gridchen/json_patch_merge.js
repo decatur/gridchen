@@ -15,7 +15,9 @@ export function dispense(patch) {
             normalizedPatch.push(op);
         }
     }
-    const root = {children: null, op: null};
+
+    /** @type {GridChenNS.PatchNode} */
+    const root = /** @type{GridChenNS.PatchNode}*/{};
 
     /**
      * @param {GridChenNS.JSONPatchOperation} op
@@ -23,27 +25,36 @@ export function dispense(patch) {
     function mergeOperation(op) {
         const path = op.path.split('/').map(key => /^\d+$/.test(key) ? parseInt(key) : key);
         path.shift();
-        let o = root;
+        /** @type {GridChenNS.PatchNode} */
+        let node = root;
         let parent = undefined;
         let key = undefined;
 
         while (path.length > 0) {
+            parent = node;
             key = path[0];
-            if (!o.children) {
-                if (Number.isInteger(key)) {
-                    o.children = [];
-                    o.splices = [];
-                } else {
-                    o.children = {};
+
+            if (Number.isInteger(key)) {
+                if (!node.items) {
+                    node.items = [];
+                    node.splices = [];
                 }
+                if (path.length > 1 && node.items[key] === undefined) {
+                    node.items[key] = /** @type{GridChenNS.PatchNode}*/{};
+
+                }
+                node = node.items[key];
+
+            } else {
+                if (!node.children) {
+                    node.children = {};
+                }
+                if (node.children[key] === undefined) {
+                    node.children[key] = /** @type{GridChenNS.PatchNode}*/{};
+                }
+                 node = node.children[key];
             }
 
-            if (!Number.isInteger(key) && o.children[key] === undefined) {
-                o.children[key] = {};
-            }
-
-            parent = o;
-            o = o.children[key];
             path.shift();
         }
 
@@ -59,58 +70,49 @@ export function dispense(patch) {
                     parent.splices.pop()
                 } else
                     parent.splices.push({index: key, op:'add'});
-                parent.children.length = Math.max(parent.children.length, key+1)
-                parent.children.splice(key, 0, op.value);
+                parent.items.length = Math.max(parent.items.length, key+1);
+                parent.items.splice(key, 0, /** @type{GridChenNS.PatchNode}*/{value: op.value});
             } else if (op.op === 'remove') {
                 if (last.index === key && last.op === 'add') {
                     parent.splices.pop()
                 } else
                     parent.splices.push({index: key, op:'remove'});
-                parent.children.splice(key, 1);
+                parent.items.splice(key, 1);
             }
 
             return
         }
 
         if (op.op === 'add') {
-            if (o.op === 'remove') {
-                o.op = 'replace';
+            if (node.op === 'remove') {
+                node.op = 'replace';
             } else {
-                console.assert(o.op === undefined);
-                o.op = 'add';
+                console.assert(node.op === undefined);
+                node.op = 'add';
             }
-            o.value = op.value;
+            node.value = op.value;
         } else if (op.op === 'remove') {
-            if (o.op === 'add') {
-                delete o.op;
+            if (node.op === 'add') {
+                delete node.op;
             } else {
-                console.assert(o.op === undefined);
-                o.op = 'remove';
+                console.assert(node.op === undefined);
+                node.op = 'remove';
             }
-            delete o.value;
-            delete o.children;
-            delete o.splices;
+            delete node.value;
+            delete node.children;
+            delete node.items;
+            delete node.splices;
         }
     }
 
     const mergedPatch = [];
 
+    /**
+     *
+     * @param {GridChenNS.PatchNode} o
+     * @param {string} path
+     */
     function serialize(o, path) {
-        if (o.splices) {
-            for (const splice of o.splices) {
-                if (splice.op === 'add') {
-                    mergedPatch.push({op: splice.op, path: path + '/' + splice.index, value: null});
-                } else {
-                    console.assert(splice.op === 'remove');
-                    mergedPatch.push({op: splice.op, path: path + '/' + splice.index});
-                }
-                //prev = splice;
-            }
-            for (const index in o.children) {
-                mergedPatch.push({op: 'replace', path: path + '/' + index, value: o.children[index]});
-            }
-            return
-        }
 
         if (o.op === 'add' || o.op === 'replace') {
             mergedPatch.push({op: o.op, path: path, value: o.value});
@@ -118,8 +120,27 @@ export function dispense(patch) {
             mergedPatch.push({op: o.op, path: path});
         }
 
-        for (const key in o.children) {
-            serialize(o.children[key], path + '/' + key);
+        if (o.items) {
+            for (const splice of o.splices) {
+                if (splice.op === 'add') {
+                    mergedPatch.push({op: splice.op, path: path + '/' + splice.index, value: null});
+                } else {
+                    console.assert(splice.op === 'remove');
+                    mergedPatch.push({op: splice.op, path: path + '/' + splice.index});
+                }
+            }
+            for (const index in o.items) {
+                if (o.items[index].value !== undefined) {
+                    mergedPatch.push({op: 'replace', path: path + '/' + index, value: o.items[index].value});
+                }
+                serialize(o.items[index], path + '/' + index);
+            }
+        }
+
+        if (o.children) {
+            for (const key of Object.keys(o.children)) {
+                serialize(o.children[key], path + '/' + key);
+            }
         }
     }
 

@@ -113,6 +113,25 @@ results when converting light to dark mode than grid-chen's native dark mode.
 * Avoid refreshing complete viewport on cell change
 * Handling of Infinity and NaN (#NV in de-de)
 
+# Contribute
+
+## Publish as Python Package
+
+Bump version in `pyproject.toml` and `git tag`.
+
+````bash
+poetry build
+poetry publish
+````
+
+## Publish as npm Package
+
+Bump version in `gridchen/package.json` and `git tag`.
+
+````bash
+cd gridchen & npm publish
+````
+
 # Alternatives
 * [SpreadJS](https://grapecity.com)
 * [SlickGrid](https://github.com/mleibman/SlickGrid)

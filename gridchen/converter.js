@@ -1,6 +1,6 @@
 /**
  * Author: Wolfgang Kühn 2019-2021
- * Source located at https://github.com/decatur/grid-chen/gridchen
+ * Source located at https://github.com/decatur/gridchen/gridchen
  *
  * Module implementing data mapping for some common data types.
  */

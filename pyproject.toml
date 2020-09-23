@@ -3,8 +3,8 @@ name = "gridchen"
 version = "0.1.3"
 description = "Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience."
 authors = ["Wolfgang Kühn"]
-homepage = "https://github.com/decatur/grid-chen"
-repository = "https://github.com/decatur/grid-chen"
+homepage = "https://github.com/decatur/gridchen"
+repository = "https://github.com/decatur/gridchen"
 license = "MIT"
 readme = "README.md"
 

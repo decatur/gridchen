@@ -6,13 +6,15 @@ If you need to edit mixed hierarchical and grid data, please visit sister projec
 
 # Demos, PlayGrounds and Documentation
 
-See [grid-chen at github.io](https://decatur.github.io/grid-chen)
+See [gridchen at github.io](https://decatur.github.io/gridchen)
 
 # Installation
 
 Either
 * reference the modules at https://unpkg.com/gridchen@0.1.3
-* or reference the modules at https://decatur.github.io/grid-chen/gridchen
+* or reference https://cdn.skypack.dev/gridchen (a bit involved)
+* or reference the modules at https://decatur.github.io/gridchen/gridchen
+* or reference https://cdn.jsdelivr.net/gh/decatur/gridchen/gridchen
 * or git-clone a release
 * or copy the gridchen module folder
 * or `pip install gridchen`
@@ -28,9 +30,9 @@ All stable releases are tagged.
 <!DOCTYPE html>
 <grid-chen></grid-chen>
 <script type="module">
-    import "https://decatur.github.io/grid-chen/gridchen/webcomponent.js"
-    import {createView} from "https://decatur.github.io/grid-chen/gridchen/matrixview.js"
-    import {createTransactionManager} from "https://decatur.github.io/grid-chen/gridchen/utils.js";
+    import "https://decatur.github.io/gridchen/gridchen/webcomponent.js"
+    import {createView} from "https://decatur.github.io/gridchen/gridchen/matrixview.js"
+    import {createTransactionManager} from "https://decatur.github.io/gridchen/gridchen/utils.js";
 
     // The JSON schema defines the data structure of the matrix.
     const schema = {
@@ -96,12 +98,12 @@ Home                | In input or edit mode, move to the beginning of the text
 
 ## Light / Dark Mode
 
-grid-chen has a light and dark mode. 
+gridchen has a light and dark mode. 
 The desired mode is sniffed through the background color intensity of the body element.
 There are currently no other explicit CSS hooks, such as CSS custom properties.
 
 ⚠ Some dark reader (for example <a href="https://darkreader.org">Dark Reader</a>) extensions may show inferior
-results when converting light to dark mode than grid-chen's native dark mode.
+results when converting light to dark mode than gridchen's native dark mode.
 
 
 ## Undo & Redo
@@ -144,5 +146,11 @@ cd gridchen & npm publish
 * [canvas-datagrid](https://github.com/TonyGermaneri/canvas-datagrid)
 * [fin-hypergrid](https://github.com/fin-hypergrid/core)
 * FlexGrid
+
+# About JavaScript Modules
+
+* As gridchen has no dependencies, we do not need any packaging or use of bare import spec remapping like [Skypack](https://www.skypack.dev/)
+
+See https://dev.to/stereobooster/can-i-publish-es6-to-npm-5hfk
 
 

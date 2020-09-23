@@ -1,6 +1,6 @@
 /**
  * Author: Wolfgang Kühn 2019-2021
- * Source located at https://github.com/decatur/grid-chen/gridchen
+ * Source located at https://github.com/decatur/gridchen
  *
  * Module implementing, well, utilities.
  */
@@ -27,7 +27,7 @@ export function wrap(element, func) {
             console.error(e);
             const div = document.createElement('div');
             div.style.fontSize = 'large';
-            div.textContent = '🙈 Oops, grid-chen has experienced an unexpected error: ' + e.message;
+            div.textContent = '🙈 Oops, gridchen has experienced an unexpected error: ' + e.message;
             let root = element.tagName === 'GRID-CHEN' ? element.shadowRoot : element.getRootNode();
             root.textContent = '';
             root.appendChild(div);

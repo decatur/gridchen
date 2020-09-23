@@ -8,14 +8,19 @@ If you need to edit mixed hierarchical and grid data, please visit sister projec
 
 See [grid-chen at github.io](https://decatur.github.io/grid-chen)
 
+# Installation
+
+Either
+* reference the modules at https://unpkg.com/gridchen@0.1.3
+* or reference the modules at https://decatur.github.io/grid-chen/gridchen
+* or git-clone a release
+* or copy the gridchen module folder
+* or `pip install gridchen`
+* or `npm install gridchen`
+
 # Releases
 
 All stable releases are tagged.
-
-You either git-clone a release, copy the grid-chen module folder, reference the modules at 
-https://decatur.github.io/grid-chen/gridchen, or install the [gridchen Python package](https://pypi.org/project/gridchen/).
-
-:warning: gridchen is not (yet) registered at [npmjs](npmjs.com).
 
 # Basic Usage
 

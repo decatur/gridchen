@@ -1,0 +1,19 @@
+{
+  "name": "gridchen",
+  "version": "0.1.3",
+  "description": "Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience.",
+  "scripts": {
+    "prepack": "cp ../README.md ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/decatur/grid-chen.git"
+  },
+  "author": "Wolfgang Kühn",
+  "license": "MIT",
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/decatur/grid-chen/issues"
+  },
+  "homepage": "https://decatur.github.io/grid-chen"
+}

@@ -11,10 +11,11 @@ See [gridchen at github.io](https://decatur.github.io/gridchen)
 # Installation
 
 Either
-* reference the modules at https://unpkg.com/gridchen@0.1.3
-* or reference https://cdn.skypack.dev/gridchen (a bit involved)
-* or reference the modules at https://decatur.github.io/gridchen/gridchen
-* or reference https://cdn.jsdelivr.net/gh/decatur/gridchen/gridchen
+* Use a CDN such as
+    * https://raw.githubusercontent.com/decatur/gridchen/0.1.3/gridchen
+    * or https://unpkg.com/gridchen@0.1.3
+    * or https://cdn.skypack.dev/gridchen (a bit involved)
+    * or https://decatur.github.io/gridchen/gridchen (only master)
 * or git-clone a release
 * or copy the gridchen module folder
 * or `pip install gridchen`
@@ -149,8 +150,10 @@ cd gridchen & npm publish
 
 # About JavaScript Modules
 
-* As gridchen has no dependencies, we do not need any packaging or use of bare import spec remapping like [Skypack](https://www.skypack.dev/)
+As gridchen has no dependencies, we do not need any packaging or use of bare import spec remapping like [Skypack](https://www.skypack.dev/)
 
-See https://dev.to/stereobooster/can-i-publish-es6-to-npm-5hfk
+See
+* https://dev.to/stereobooster/can-i-publish-es6-to-npm-5hfk
+* https://jspm.org/jspm-dev-release#subpath-detection
 
 

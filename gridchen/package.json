@@ -12,7 +12,7 @@
   },
   "author": "Wolfgang Kühn",
   "license": "MIT",
-  "keywords": [],
+  "keywords": ["master-detail", "grid", "table"],
   "bugs": {
     "url": "https://github.com/decatur/gridchen/issues"
   },

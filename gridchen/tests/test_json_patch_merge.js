@@ -167,3 +167,60 @@ test('foo4', () => {
         {"op": "replace", "path": "/a/0/b", "value": 14}];
     assert.equal(expected, mergedPatch);
 });
+
+test('foo5', () => {
+    const patch = [
+        {
+            "op": "remove",  // dispensable
+            "path": "/storage/dischargeMax/1"
+        },
+        {
+            "op": "remove",  // dispensable
+            "path": "/storage/dischargeMax/0"
+        },
+        {
+            "op": "remove",  // dispensable
+            "path": "/storage/dischargeMax",
+            "oldValue": []
+        },
+        {
+            "op": "add",
+            "path": "/storage/dischargeMax",
+            "value": [
+                null
+            ]
+        },
+        {
+            "op": "replace",
+            "path": "/storage/dischargeMax/0",
+            "value": {}
+        },
+        {
+            "op": "add",
+            "path": "/storage/dischargeMax/0/start",
+            "value": "2020-12-03T00:00:00+01:00"
+        },
+        {
+            "op": "add",
+            "path": "/storage/dischargeMax/0/end",
+            "value": "2044-01-01T01:00:00+01:00"
+        },
+        {
+            "op": "add",
+            "path": "/storage/dischargeMax/0/value",
+            "value": 1
+        }
+    ];
+
+    const expected = patch.slice(4);
+    expected.unshift({
+        "op": "replace",
+        "path": "/storage/dischargeMax",
+        "value": [
+            null
+        ]
+    });
+    const mergedPatch = dispense(patch);
+    assert.equal(mergedPatch, expected);
+
+});

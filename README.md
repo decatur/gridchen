@@ -125,7 +125,7 @@ results when converting light to dark mode than gridchen's native dark mode.
 
 ## Publish as Python Package
 
-Bump version in `pyproject.toml` and `git tag`.
+Bump version in `setup.py` and `git tag`.
 
 ````bash
 python3 setup.py sdist bdist_wheel

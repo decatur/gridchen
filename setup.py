@@ -14,6 +14,7 @@ setup(
     name='gridchen',
     version='0.1.5',
     description='Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience.',
+    long_description_content_type="text/markdown",
     long_description=long_description,
     author='Wolfgang Kühn',
     author_email=None,

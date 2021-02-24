@@ -128,8 +128,8 @@ results when converting light to dark mode than gridchen's native dark mode.
 Bump version in `setup.py` and `git tag`.
 
 ````bash
-python3 setup.py sdist bdist_wheel
-python3 -m twine upload --repository testpypi dist/*
+python setup.py sdist bdist_wheel
+python -m twine upload dist/*
 ````
 
 ## Publish as npm Package

@@ -1,26 +1,26 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup
 
-packages = \
-['gridchen']
 
-package_data = \
-{'': ['*'], 'gridchen': ['testing/*', 'tests/*']}
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+    
+packages = ['gridchen']
 
-setup_kwargs = {
-    'name': 'gridchen',
-    'version': '0.1.4beta1',
-    'description': 'Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience.',
-    'long_description': '# About\nVery lightweight and fast editable web grid with strict MS-Excel adherence to user experience.\nModern as of year 2020 (web components, es6 modules) with **no** dependencies.\n\nIf you need to edit mixed hierarchical and grid data, please visit sister project [form-chen](https://decatur.github.io/form-chen).\n\n# Demos, PlayGrounds and Documentation\n\nSee [grid-chen at github.io](https://decatur.github.io/grid-chen)\n\n# Releases\n\nAll stable releases are tagged.\n\nYou either git-clone a release, copy the grid-chen module folder, reference the modules at \nhttps://decatur.github.io/grid-chen/gridchen, or install the [gridchen Python package](https://pypi.org/project/gridchen/).\n\n:warning: gridchen is not (yet) registered at [npmjs](npmjs.com).\n\n# Basic Usage\n\n```HTML\n<!DOCTYPE html>\n<grid-chen></grid-chen>\n<script type="module">\n    import "https://decatur.github.io/grid-chen/gridchen/webcomponent.js"\n    import {createView} from "https://decatur.github.io/grid-chen/gridchen/matrixview.js"\n    import {createTransactionManager} from "https://decatur.github.io/grid-chen/gridchen/utils.js";\n\n    // The JSON schema defines the data structure of the matrix.\n    const schema = {\n        title: \'Array of Row Arrays\',\n        type: \'array\',\n        items: {\n            type: \'array\',\n            items: [\n                {title: \'SomeDate\', type: \'string\', format:\'full-date\'},\n                {title: \'SomeNumber\', type: \'number\'}\n            ]\n        }\n    };\n    \n    const rows = [[\'2019-01-01\', 1], [\'2020-01-01\', 2], [\'2021-01-01\', 3]];\n    const view = createView(schema, rows);\n    const tm = createTransactionManager();\n    document.querySelector(\'grid-chen\').resetFromView(view, tm);\n</script>\n\n```\n\n# Expected Behaviour\n\nWe try to mimic MS-Excel as close as possible.\n\n## Supported Keyboard Shortcuts\n\nSee also [Keyboard shortcuts in Excel](https://support.office.com/en-us/article/keyboard-shortcuts-in-excel-1798d9d5-842a-42b8-9c99-9b7213f0040f)\n\n|Key            |               Action               |\n|---------------|------------------------------------|\nCtrl+Z              | Undo last transaction\nCtrl+Y              | Redo, reverse last undo\nArrows              | Move active cell up/down/left/right (not in edit mode)\nTab                 | Move active cell right (non-rolling)\nEnter               | Move active cell down (non-rolling)\nShift+Enter         | Move active cell up (non-rolling)\nShift+Tab           | Move active cell left (non-rolling)\nSHIFT+Arrows        | Select a range of cells\nCtrl+Space          | Select entire column\nShift+Space         | Select entire row\nShift+MouseClick    | Expand selection\nCtrl+MouseClick     | Multi-select cells\nCtrl+\'-\'            | Delete selected row\nCtrl+\'+\'            | Insert row before selection\nAlt + Enter         | In edit mode, insert newline\nPage Down           | Move one page down\nPage Up             | Move one page up\nCtrl+A              | Select all grid cells (same as Ctrl+A in an Excel List Object)\nCtrl+A Ctrl+A       | Select the entire grid including header (same as Ctrl+A Ctrl+A in an Excel List Object)\nESC                 | Cancel edit or input mode\nDelete              | Remove selected cells contents\nCtrl+C              | Copy selected cells to clipboard\nCtrl+V              | Paste clipboard into selected cells\nCtrl+X              | Cut\nF2                  | Enter edit mode; In input or edit mode, toggle between input and edit.\nAlt+F1              | Open a modal chart of the selection.\nBackspace           | In input or edit mode, deletes one character to the left\nDelete              | In input or edit mode, deletes one character to the right\nEnd                 | In input or edit mode, move to the end of the text\nHome                | In input or edit mode, move to the beginning of the text\n\n## Light / Dark Mode\n\ngrid-chen has a light and dark mode. \nThe desired mode is sniffed through the background color intensity of the body element.\nThere are currently no other explicit CSS hooks, such as CSS custom properties.\n\n⚠ Some dark reader (for example <a href="https://darkreader.org">Dark Reader</a>) extensions may show inferior\nresults when converting light to dark mode than grid-chen\'s native dark mode.\n\n\n## Undo & Redo\n\n![tm](tm.png)\n\n# TODOs\n\n* Do not use JSON Patch replace for a remove operation!\n* TransactionManager: Do not add properties cell to patch array.\n* Handle clipboard not permitted errors\n* Improve encapsulation of JavaScript API \n* Show 1 empty row at end (Slider issue)\n* Avoid refreshing complete viewport on cell change\n* Handling of Infinity and NaN (#NV in de-de)\n\n# Alternatives\n* [SpreadJS](https://grapecity.com)\n* [SlickGrid](https://github.com/mleibman/SlickGrid)\n* [ag-Grid](https://www.ag-grid.com/)\n* [canvas-datagrid](https://github.com/TonyGermaneri/canvas-datagrid)\n* [fin-hypergrid](https://github.com/fin-hypergrid/core)\n* FlexGrid\n\n\n',
-    'author': 'Wolfgang Kühn',
-    'author_email': None,
-    'maintainer': None,
-    'maintainer_email': None,
-    'url': 'https://github.com/decatur/grid-chen',
-    'packages': packages,
-    'package_data': package_data,
-    'python_requires': '>=3.6,<4.0',
-}
+package_data = {'': ['*'], 'gridchen': ['testing/*', 'tests/*']}
 
 
-setup(**setup_kwargs)
+setup(    
+    name='gridchen',
+    version='0.1.5',
+    description='Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience.',
+    long_description=long_description,
+    author='Wolfgang Kühn',
+    author_email=None,
+    maintainer=None,
+    maintainer_email=None,
+    url='https://github.com/decatur/grid-chen',
+    packages=packages,
+    package_data=package_data,
+    python_requires='>=3.6,<4.0'
+)

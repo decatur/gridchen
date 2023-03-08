@@ -6,6 +6,28 @@
     <link rel="stylesheet" href="demo.css">
     <script src="./theme.js"></script>
 </head>
+<script type="module">
+import { Octokit, App } from "https://cdn.skypack.dev/octokit";
+// https://github.com/octokit/core.js#readme
+let auth=prompt();
+const octokit = new Octokit({
+  auth: auth
+})
+
+async function asyncCall() {
+await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
+  owner: 'decatur',
+  repo: 'crypto',
+  path: 'contents/README.md',
+  headers: {
+    'X-GitHub-Api-Version': '2022-11-28'
+  }
+})
+}
+
+asyncCall();
+
+</script>
 <body>
 
 <h1>gridchen</h1>

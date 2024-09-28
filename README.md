@@ -1,3 +1,6 @@
+# Deprecated
+Gridchen is now merged to https://github.com/decatur/formchen
+
 # About
 Very lightweight and fast editable web grid with strict MS-Excel adherence to user experience.
 Modern as of year 2020 (web components, es6 modules) with **no** dependencies.
